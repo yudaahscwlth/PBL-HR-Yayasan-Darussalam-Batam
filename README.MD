@@ -316,9 +316,4 @@ Untuk pertanyaan atau dukungan teknis, hubungi tim pengembang:
 
 **© 2025 PBL 221 - HR Yayasan Darussalam**
 
-_Dikembangkan dengan ❤️ oleh Tim PBL 221_
-
-
-
-
-
+_Dikembangkan dengan ❤️ oleh Tim PBL 3B-3_
