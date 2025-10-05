@@ -166,12 +166,6 @@ HR Yayasan Darussalam adalah aplikasi web berbasis Progressive Web App (PWA) yan
 - **Backend API**: http://localhost:8000/api
 - **Login Page**: http://localhost:3001/login
 
-### Default Login Credentials
-
-- **Username**: `admin` | **Password**: `password` | **Role**: Kepala Yayasan
-- **Username**: `hrd` | **Password**: `password` | **Role**: HRD
-- **Username**: `pegawai` | **Password**: `password` | **Role**: Pegawai
-
 ## 📱 PWA Installation
 
 ### Android (Chrome)
@@ -185,29 +179,6 @@ HR Yayasan Darussalam adalah aplikasi web berbasis Progressive Web App (PWA) yan
 1. Buka aplikasi di Safari
 2. Tap Share button → "Add to Home Screen"
 3. Konfirmasi instalasi
-
-## 📁 Struktur Project
-
-```
-HR_Darussalam/
-├── backend/                 # Laravel Backend
-│   ├── app/
-│   │   ├── Http/Controllers/
-│   │   ├── Models/
-│   │   └── Providers/
-│   ├── database/
-│   │   ├── migrations/
-│   │   └── seeders/
-│   └── routes/
-├── frontend/               # Next.js Frontend
-│   ├── app/
-│   │   ├── components/
-│   │   ├── login/
-│   │   └── api/
-│   ├── public/
-│   └── server/
-└── README.md
-```
 
 ## 🎨 Design System
 
@@ -287,24 +258,9 @@ php artisan route:cache
 php artisan view:cache
 ```
 
-## 🤝 Contributing
-
-1. Fork repository ini
-2. Buat branch fitur baru (`git checkout -b feature/AmazingFeature`)
-3. Commit perubahan (`git commit -m 'Add some AmazingFeature'`)
-4. Push ke branch (`git push origin feature/AmazingFeature`)
-5. Buat Pull Request
-
 ## 📝 License
 
 Project ini dikembangkan untuk keperluan akademik dan internal Yayasan Darussalam.
-
-## 📞 Support
-
-Untuk pertanyaan atau dukungan teknis, hubungi tim pengembang:
-
-- **Email**: support@hrdarussalam.com
-- **GitHub Issues**: [Create Issue](https://github.com/your-repo/issues)
 
 ## 🙏 Acknowledgments
 
