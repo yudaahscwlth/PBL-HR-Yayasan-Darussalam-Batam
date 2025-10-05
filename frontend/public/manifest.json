@@ -1,0 +1,28 @@
+{
+  "name": "HR Yayasan Darussalam",
+  "short_name": "HR Darussalam",
+  "description": "Sistem HR Yayasan Darussalam",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#0c4a6e",
+  "theme_color": "#0c4a6e",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/logo-drs.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-drs.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "id",
+  "dir": "ltr"
+}
