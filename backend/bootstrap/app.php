@@ -11,6 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php'
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Trust proxies untuk Railway (HTTPS support)
+        $middleware->trustProxies(at: '*');
+        
         // Tambahkan middleware role di sini
         $middleware->alias([
             'check.role' => \App\Http\Middleware\RoleMiddleware::class,
