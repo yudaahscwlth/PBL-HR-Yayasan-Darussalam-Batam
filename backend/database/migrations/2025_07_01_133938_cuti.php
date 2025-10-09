@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('cuti', function (Blueprint $table) {
             $table->id('id_cuti');
             $table->Integer('id_pegawai'); // INT UNSIGNED, sama seperti pegawai.id_pegawai
+            $table->Integer('disetujui_oleh')->nullable(); // Pegawai yang menyetujui
             $table->date('tanggal_pengajuan');
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
@@ -30,6 +31,11 @@ return new class extends Migration
                   ->references('id_pegawai')
                   ->on('pegawai')
                   ->onDelete('cascade');
+                  
+            $table->foreign('disetujui_oleh')
+                  ->references('id_pegawai')
+                  ->on('pegawai')
+                  ->onDelete('set null');
 
             $table->foreign('id_jenis_cuti')
                   ->references('id_jenis_cuti')
@@ -38,6 +44,7 @@ return new class extends Migration
 
             // Indexes for better performance
             $table->index('id_pegawai');
+            $table->index('disetujui_oleh');
             $table->index('id_jenis_cuti');
             $table->index('status_cuti');
             $table->index('tanggal_pengajuan');
@@ -52,3 +59,4 @@ return new class extends Migration
         Schema::dropIfExists('cuti');
     }
 };
+

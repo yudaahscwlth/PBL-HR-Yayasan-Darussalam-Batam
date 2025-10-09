@@ -9,10 +9,11 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::table('pegawai', function (Blueprint $table) {
-            $table->enum('golongan', ['A', 'B', 'C', 'D'])->default('D')->after('id_departemen');
+        Schema::create('jabatan', function (Blueprint $table) {
+            $table->id('id_jabatan');
+            $table->string('nama_jabatan', 255);
         });
     }
 
@@ -21,8 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('pegawai', function (Blueprint $table) {
-            $table->dropColumn('golongan');
-        });
+        Schema::dropIfExists('jabatan');
     }
 };
+

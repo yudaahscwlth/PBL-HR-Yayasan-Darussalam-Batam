@@ -16,7 +16,7 @@ class CreatePenilaianTable extends Migration
         Schema::create('penilaian', function (Blueprint $table) {
             $table->bigIncrements('id');
             
-            // Relasi periode kuisioner
+            // Relasi periode penilaian (diperbaiki dari periode_kuisioner ke periode_penilaian)
             $table->unsignedBigInteger('periode_id');
             
             // Relasi pegawai
@@ -25,11 +25,12 @@ class CreatePenilaianTable extends Migration
 
             // Kolom lain
             $table->string('status')->default('draft');
+            $table->integer('total_nilai')->default(0);
             $table->timestamps();
 
             // Foreign keys
             $table->foreign('periode_id')
-                  ->references('id')->on('periode_kuisioner')
+                  ->references('id')->on('periode_penilaian')
                   ->onDelete('cascade');
 
             $table->foreign('dinilai_pegawai_id')
@@ -41,8 +42,8 @@ class CreatePenilaianTable extends Migration
                   ->references('id_pegawai')
                   ->on('pegawai')
                   ->onDelete('cascade');
-                  });
-            }
+        });
+    }
 
     /**
      * Reverse the migrations.
