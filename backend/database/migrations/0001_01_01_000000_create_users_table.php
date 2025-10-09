@@ -13,11 +13,14 @@ return new class extends Migration
     {
         Schema::create('user', function (Blueprint $table) {
             $table->id('id_user');
-            $table->string('username')->unique();
-            $table->string('password');
-            $table->string('role');
-            $table->unsignedBigInteger('id_pegawai');
+            $table->string('username', 255);
+            $table->string('password', 255);
+            $table->enum('role', ['pegawai', 'hrd', 'kepala_yayasan']);
+            $table->unsignedBigInteger('id_pegawai')->nullable();
             $table->timestamps();
+            
+            // Foreign key
+            $table->foreign('id_pegawai')->references('id_pegawai')->on('pegawai')->onDelete('cascade');
         });
     }
 

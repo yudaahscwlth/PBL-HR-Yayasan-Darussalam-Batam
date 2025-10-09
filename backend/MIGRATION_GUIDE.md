@@ -4,15 +4,19 @@
 
 Migrasi database telah diperbaiki dan disesuaikan dengan struktur database pada file `db/dummyhr.sql`. Urutan migrasi yang benar adalah:
 
-### 1. Tabel Dasar (2024_01_01)
+### 1. Tabel Laravel Default (0001_01_01)
+- `create_users_table` - Tabel user (dimodifikasi untuk sistem HR)
+- `create_cache_table` - Tabel cache Laravel
+- `create_jobs_table` - Tabel jobs Laravel
+
+### 2. Tabel Dasar (2024_01_01)
 - `create_departemen_table` - Tabel departemen
 - `create_jabatan_table` - Tabel jabatan
-- `create_pegawai_table` - Tabel pegawai (termasuk kolom golongan)
+- `create_pegawai_table` - Tabel pegawai (TANPA kolom golongan)
 - `create_lokasi_kantor_table` - Tabel lokasi kantor
-- `create_user_table` - Tabel user
 - `create_kehadiran_table` - Tabel kehadiran
 
-### 2. Tabel Tambahan (2025)
+### 3. Tabel Tambahan (2025)
 - `add_jam_kerja_to_kehadiran_table` - Menambahkan kolom jam kerja ke tabel kehadiran
 - `create_periode_penilaian_table` - Tabel periode penilaian
 - `create_penilaian_table` - Tabel penilaian
@@ -59,15 +63,16 @@ Masalah ini terjadi karena:
 
 Solusi:
 - Membuat migrasi lengkap untuk semua tabel dasar
-- Kolom `golongan` langsung ditambahkan saat pembuatan tabel `pegawai`
-- Menghapus migrasi `add_golongan_to_pegawai_table` yang tidak diperlukan lagi
+- Menghapus migrasi `add_golongan_to_pegawai_table` (kolom golongan tidak ada di database asli)
+- Menggunakan migrasi Laravel default `create_users_table` untuk tabel `user`
 
 ### Struktur Tabel yang Diperbaiki
 
-1. **Tabel pegawai**: Menambahkan kolom `golongan` dengan nilai default 'D'
-2. **Tabel kehadiran**: Memperbaiki enum `status_jam_kerja` untuk menambahkan 'Setengah Hari'
-3. **Tabel cuti**: Menambahkan kolom `disetujui_oleh` yang hilang
-4. **Tabel penilaian**: 
+1. **Tabel user**: Menggunakan migrasi default Laravel yang dimodifikasi dengan struktur dari dummyhr.sql
+2. **Tabel pegawai**: Dibuat sesuai dengan struktur di dummyhr.sql (TANPA kolom golongan)
+3. **Tabel kehadiran**: Memperbaiki enum `status_jam_kerja` untuk menambahkan 'Setengah Hari'
+4. **Tabel cuti**: Menambahkan kolom `disetujui_oleh` yang hilang
+5. **Tabel penilaian**: 
    - Memperbaiki foreign key dari `periode_kuisioner` ke `periode_penilaian`
    - Menambahkan kolom `total_nilai`
 
