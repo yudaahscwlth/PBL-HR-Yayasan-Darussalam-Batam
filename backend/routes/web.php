@@ -27,7 +27,7 @@ Route::controller(AuthController::class)->group(function () {
 // ====================
 Route::middleware(['auth', 'check.role:hrd'])->prefix('hrd')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.index');
-    Route::post('/absen', [AdminDashboardController::class, 'absen'])->name('admin.absensi');
+    Route::post('/absen', [AdminDashboardController::class, 'absen'])->name('admin.absen');
 
     // Lokasi Kantor
     // Lokasi Kantor
