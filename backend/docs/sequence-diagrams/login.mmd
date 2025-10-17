@@ -1,0 +1,20 @@
+sequenceDiagram
+    actor User
+    participant FE as Next.js (Login)
+    participant API as Laravel API (Sanctum)
+    participant DB as Database
+
+    User->>FE: Isi email & password
+    FE->>API: GET /sanctum/csrf-cookie
+    API-->>FE: Set XSRF-TOKEN, laravel_session
+
+    FE->>API: POST /proses-login + X-XSRF-TOKEN
+    API->>DB: Verifikasi kredensial
+    alt Berhasil
+        API-->>FE: JSON { user, role }
+        FE-->>User: Arahkan ke dashboard
+    else Gagal
+        API-->>FE: JSON { error }
+        FE-->>User: Tampilkan pesan salah
+    end
+

@@ -1,0 +1,12 @@
+sequenceDiagram
+    actor Approver
+    participant FE as Next.js
+    participant API as Laravel API
+    participant DB as Database
+
+    Approver->>FE: Setujui / Tolak
+    FE->>API: PUT /verifikasi-cuti/{role} {status, komentar?}
+    API->>DB: Update status_pengajuan
+    API-->>FE: JSON { status }
+    FE-->>Approver: Tampilkan hasil
+
