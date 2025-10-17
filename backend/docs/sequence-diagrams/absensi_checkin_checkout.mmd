@@ -1,0 +1,17 @@
+sequenceDiagram
+    actor User
+    participant FE as Next.js
+    participant API as Laravel API
+    participant DB as Database
+
+    User->>FE: Check-in/Check-out
+    FE->>API: POST /absensi/check-in atau PUT /absensi/check-out {lat, lon}
+    API->>DB: Validasi (radius, jam kerja, status) & simpan
+    alt Sukses
+        API-->>FE: JSON { ok }
+        FE-->>User: Notifikasi berhasil
+    else Gagal
+        API-->>FE: JSON { error }
+        FE-->>User: Notifikasi gagal
+    end
+

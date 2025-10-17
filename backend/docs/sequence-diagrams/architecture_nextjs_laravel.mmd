@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor User
+    participant Next as Next.js
+    participant API as Laravel Sanctum
+    participant Cookie as Cookies
+    participant DB as Database
+
+    User->>Next: Buka UI
+    Next->>API: GET /sanctum/csrf-cookie
+    API-->>Cookie: Set XSRF-TOKEN + laravel_session
+
+    Next->>API: POST /proses-login + X-XSRF-TOKEN
+    API-->>Cookie: Perbarui session
+
+    Next->>API: Request API lain (credentials: include)
+    API->>DB: Query/Write
+    API-->>Next: JSON
+

@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor Admin
+    participant FE as Next.js
+    participant API as Laravel API
+    participant DB as Database
+
+    Admin->>FE: Isi nilai
+    FE->>API: POST /evaluasi/store {id_user, id_tahun, nilai[]}
+    API->>DB: Simpan
+    API-->>FE: JSON { status }
+    FE-->>Admin: Notifikasi
+
+    Admin->>FE: Update nilai
+    FE->>API: PUT /evaluasi/{id_user}/{id_tahun}/update
+    API->>DB: Update
+    API-->>FE: JSON { status }
+    FE-->>Admin: Notifikasi
+

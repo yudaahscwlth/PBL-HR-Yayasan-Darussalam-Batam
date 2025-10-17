@@ -1,0 +1,14 @@
+sequenceDiagram
+    actor User as Pegawai
+    participant FE as Next.js
+    participant API as Laravel API
+    participant Storage as Storage
+    participant DB as Database
+
+    User->>FE: Isi form cuti
+    FE->>API: POST /pengajuan/cuti {tanggal, tipe, file?}
+    API->>Storage: Simpan file (jika ada)
+    API->>DB: Simpan pengajuan
+    API-->>FE: JSON { status }
+    FE-->>User: Tampilkan hasil
+
