@@ -60,16 +60,16 @@ export default function BerandaPage() {
                 <div className="text-3xl font-bold text-[#0066cc]">248</div>
                 <div className="text-sm text-gray-600 mt-1">Total Pegawai</div>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-3xl font-bold text-green-600">235</div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-3xl font-bold text-[#0066cc]">235</div>
                 <div className="text-sm text-gray-600 mt-1">Hadir Hari Ini</div>
               </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-3xl font-bold text-orange-600">12</div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-3xl font-bold text-[#0066cc]">12</div>
                 <div className="text-sm text-gray-600 mt-1">Pengajuan Cuti</div>
               </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-3xl font-bold text-purple-600">8</div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <div className="text-3xl font-bold text-[#0066cc]">8</div>
                 <div className="text-sm text-gray-600 mt-1">
                   Evaluasi Pending
                 </div>
@@ -81,11 +81,11 @@ export default function BerandaPage() {
               {/* Absensi */}
               <a
                 href="/absensi"
-                className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                className="flex flex-col items-center justify-center p-6 bg-[#0066cc] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg
-                    className="w-8 h-8 text-blue-600"
+                    className="w-8 h-8 text-[#0066cc]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -106,11 +106,11 @@ export default function BerandaPage() {
               {/* Pengajuan Cuti */}
               <a
                 href="/cuti"
-                className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                className="flex flex-col items-center justify-center p-6 bg-[#0066cc] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg
-                    className="w-8 h-8 text-green-600"
+                    className="w-8 h-8 text-[#0066cc]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -131,11 +131,11 @@ export default function BerandaPage() {
               {/* Evaluasi Pegawai */}
               <a
                 href="/evaluasi"
-                className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                className="flex flex-col items-center justify-center p-6 bg-[#0066cc] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg
-                    className="w-8 h-8 text-purple-600"
+                    className="w-8 h-8 text-[#0066cc]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -156,11 +156,11 @@ export default function BerandaPage() {
               {/* Data Pegawai */}
               <a
                 href="/pegawai"
-                className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                className="flex flex-col items-center justify-center p-6 bg-[#0066cc] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg
-                    className="w-8 h-8 text-orange-600"
+                    className="w-8 h-8 text-[#0066cc]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -181,11 +181,11 @@ export default function BerandaPage() {
               {/* Laporan */}
               <a
                 href="/laporan"
-                className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                className="flex flex-col items-center justify-center p-6 bg-[#0066cc] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg
-                    className="w-8 h-8 text-red-600"
+                    className="w-8 h-8 text-[#0066cc]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -206,11 +206,11 @@ export default function BerandaPage() {
               {/* Pengaturan */}
               <a
                 href="/pengaturan"
-                className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                className="flex flex-col items-center justify-center p-6 bg-[#0066cc] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg
-                    className="w-8 h-8 text-gray-600"
+                    className="w-8 h-8 text-[#0066cc]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -240,7 +240,7 @@ export default function BerandaPage() {
               onClick={() => {
                 window.location.href = "/";
               }}
-              className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg"
+              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg"
             >
               <svg
                 className="w-5 h-5"
