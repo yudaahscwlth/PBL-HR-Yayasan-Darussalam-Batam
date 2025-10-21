@@ -18,6 +18,23 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'Check_Roles_or_Permissions' => CheckRoles::class,
         ]);
+        
+        // Add CORS middleware for API routes
+        $middleware->api(prepend: [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ]);
+        
+        // Add CORS middleware
+        $middleware->web(append: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+        
+        // Exclude CSRF verification for API routes
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            'sanctum/csrf-cookie',
+            'csrf-cookie',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
