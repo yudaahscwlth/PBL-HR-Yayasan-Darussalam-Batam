@@ -137,7 +137,6 @@ export default function HRDDashboard() {
         return;
       }
 
-      // Try multiple times with different settings for better accuracy
       let attempts = 0;
       const maxAttempts = 3;
 
@@ -157,15 +156,15 @@ export default function HRDDashboard() {
             const accuracy = position.coords.accuracy;
             console.log(`GPS Accuracy: ${accuracy}m`);
 
-            // If accuracy is too poor (>20m), try again with different settings
+            // If the accuracy is poor (>20m), try again with different settings.
             if (accuracy > 20 && attempts < maxAttempts) {
               console.log(`GPS accuracy too poor (${accuracy}m), trying again...`);
               const newOptions = {
                 enableHighAccuracy: true,
-                timeout: 25000, // Increase timeout for better accuracy
+                timeout: 25000,
                 maximumAge: 0,
               };
-              setTimeout(() => tryGetLocation(newOptions), 3000); // Wait longer between attempts
+              setTimeout(() => tryGetLocation(newOptions), 3000);
               return;
             }
 
