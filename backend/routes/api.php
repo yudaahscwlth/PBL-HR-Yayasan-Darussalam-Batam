@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\LeaveController;
 use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\TempatKerjaController;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
@@ -26,10 +27,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/refresh', [AuthController::class, 'refresh']);
-    
+
     // User routes
     Route::apiResource('users', UserController::class);
-    
+
     // Profile routes
     Route::prefix('profile')->group(function () {
         Route::get('/complete', [ProfileController::class, 'getCompleteProfile']);
@@ -40,7 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/work', [ProfileController::class, 'getWork']);
         Route::put('/work', [ProfileController::class, 'updateWork']);
     });
-    
+
     // Attendance routes
     Route::prefix('attendance')->group(function () {
         Route::post('/checkin', [AttendanceController::class, 'checkIn']);
@@ -48,16 +49,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/today', [AttendanceController::class, 'getToday']);
         Route::get('/history', [AttendanceController::class, 'getHistory']);
     });
-    
+
     // Leave routes
     Route::apiResource('leave', LeaveController::class);
     Route::post('/leave/{id}/approve', [LeaveController::class, 'approve']);
     Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
-    
+
     // Evaluation routes
     Route::apiResource('evaluation', EvaluationController::class);
     Route::get('/evaluation/personal', [EvaluationController::class, 'getPersonal']);
-    
+
     // Dashboard routes
     Route::prefix('dashboard')->group(function () {
         Route::get('/stats', [DashboardController::class, 'getDashboardStats']);
@@ -67,6 +68,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/job-titles', [DashboardController::class, 'getJobTitles']);
         Route::get('/departments', [DashboardController::class, 'getDepartments']);
     });
+
+    // Tempat Kerja routes
+    Route::apiResource('tempat-kerja', TempatKerjaController::class);
 });
 
 
