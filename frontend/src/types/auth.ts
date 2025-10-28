@@ -10,8 +10,11 @@ export interface User {
   updated_at: string;
   roles?: UserRole[];
   permissions?: string[];
-  profile_pribadi?: ProfilePribadi;
+  profile_pribadi?: ProfilePribadiExtended;
   profile_pekerjaan?: ProfilePekerjaan;
+  orang_tua?: OrangTua;
+  keluarga?: Keluarga[];
+  user_sosial_media?: UserSosialMedia[];
 }
 
 // Profile interfaces based on Laravel models
@@ -67,6 +70,59 @@ export interface TempatKerja {
   id: number;
   nama_tempat_kerja: string;
   alamat?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Extended profile interfaces for profile page
+export interface ProfilePribadiExtended extends ProfilePribadi {
+  nomor_induk_kependudukan?: string;
+  npwp?: string;
+  golongan_darah?: string;
+  status_pernikahan?: string;
+  kecamatan?: string;
+  alamat_lengkap?: string;
+  no_hp?: string;
+  foto?: string;
+}
+
+export interface OrangTua {
+  id?: number;
+  id_user?: number;
+  nama_ayah?: string;
+  pekerjaan_ayah?: string;
+  nama_ibu?: string;
+  pekerjaan_ibu?: string;
+  alamat_orang_tua?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Keluarga {
+  id?: number;
+  id_user?: number;
+  nama: string;
+  hubungan: string;
+  tanggal_lahir: string;
+  pekerjaan: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserSosialMedia {
+  id?: number;
+  id_user?: number;
+  id_platform: number;
+  username: string;
+  link: string;
+  created_at?: string;
+  updated_at?: string;
+  sosial_media?: SosialMedia;
+}
+
+export interface SosialMedia {
+  id: number;
+  nama_platform: string;
   created_at: string;
   updated_at: string;
 }

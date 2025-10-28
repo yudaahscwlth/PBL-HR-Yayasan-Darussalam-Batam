@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import BottomNavbar from "@/components/BottomNavbar";
+import { User } from "@/types/auth";
 
 export default function RoleBasedProfilePage() {
   const { user, logout, isAuthenticated } = useAuthStore();
@@ -24,7 +25,7 @@ export default function RoleBasedProfilePage() {
     }
   }, [isAuthenticated, router]);
 
-  const getUserRoleDisplay = (user: any): string => {
+  const getUserRoleDisplay = (user: User | null): string => {
     if (!user?.roles) return "User";
 
     if (user.roles.includes("superadmin")) return "Super Admin";
@@ -50,16 +51,8 @@ export default function RoleBasedProfilePage() {
   };
 
   const handleProfileEdit = () => {
-    if (!user?.roles) return;
-
-    // Determine the correct profile edit path based on user role
-    if (user.roles.includes("superadmin") || user.roles.includes("kepala yayasan") || user.roles.includes("direktur pendidikan")) {
-      router.push("/admin/profile/edit");
-    } else if (user.roles.includes("kepala hrd") || user.roles.includes("staff hrd")) {
-      router.push("/hrd/profile/edit");
-    } else if (user.roles.includes("kepala departemen") || user.roles.includes("kepala sekolah") || user.roles.includes("tenaga pendidik")) {
-      router.push("/employee/profile/edit");
-    }
+    // Redirect to the general profile edit page for all roles
+    router.push("/profile/edit");
   };
 
   // Get role-specific menu items with sections
@@ -70,8 +63,14 @@ export default function RoleBasedProfilePage() {
     const isHRD = user.roles.includes("kepala hrd") || user.roles.includes("staff hrd");
     const isEmployee = user.roles.includes("kepala departemen") || user.roles.includes("kepala sekolah") || user.roles.includes("tenaga pendidik");
 
+    interface MenuItem {
+      title: string;
+      icon: React.ReactNode;
+      onClick: () => void;
+    }
+
     // Common account items for all roles
-    const accountItems = [
+    const accountItems: MenuItem[] = [
       {
         title: "Profile",
         icon: (
@@ -83,7 +82,7 @@ export default function RoleBasedProfilePage() {
       },
     ];
 
-    let otherItems: any[] = [];
+    let otherItems: MenuItem[] = [];
 
     if (isAdmin) {
       otherItems = [
