@@ -32,6 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Profile routes
     Route::prefix('profile')->group(function () {
+        Route::get('/complete', [ProfileController::class, 'getCompleteProfile']);
+        Route::get('/sosial-media-platforms', [ProfileController::class, 'getSosialMediaPlatforms']);
+        Route::put('/update', [ProfileController::class, 'updateProfile']);
         Route::get('/personal', [ProfileController::class, 'getPersonal']);
         Route::put('/personal', [ProfileController::class, 'updatePersonal']);
         Route::get('/work', [ProfileController::class, 'getWork']);
