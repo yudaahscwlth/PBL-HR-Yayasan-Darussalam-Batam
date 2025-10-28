@@ -14,7 +14,7 @@ class TempatKerjaController extends Controller
      */
     public function index()
     {
-        $tempatKerja = TempatKerja::orderBy('id', 'asc')->get();
+        $tempatKerja = TempatKerja::latest()->get();
 
         return response()->json([
             'success' => true,

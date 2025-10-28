@@ -330,7 +330,7 @@ export default function HRDKantor() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
-                            {index + 1}
+                            #{index + 1}
                           </span>
                           <h3 className="text-lg font-semibold text-gray-900 capitalize">
                             {item.nama_tempat}
@@ -462,9 +462,7 @@ export default function HRDKantor() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Tambah Data
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">Tambah Data</h2>
               <form onSubmit={handleSubmitAdd}>
                 <div className="space-y-4">
                   <div>
@@ -480,12 +478,11 @@ export default function HRDKantor() {
                           nama_tempat: e.target.value,
                         })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
+                      className={`w-full px-3 py-2 border rounded-lg ${
                         errors.nama_tempat
                           ? "border-red-500"
                           : "border-gray-300"
                       }`}
-                      placeholder="Contoh: Kantor Pusat Yayasan"
                       required
                     />
                     {errors.nama_tempat && (
@@ -504,7 +501,7 @@ export default function HRDKantor() {
                       onChange={(e) =>
                         setFormData({ ...formData, latitude: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
+                      className={`w-full px-3 py-2 border rounded-lg ${
                         errors.latitude ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="Contoh: -90 sampai 90"
@@ -526,7 +523,7 @@ export default function HRDKantor() {
                       onChange={(e) =>
                         setFormData({ ...formData, longitude: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
+                      className={`w-full px-3 py-2 border rounded-lg ${
                         errors.longitude ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="Contoh: -180 sampai 180"
@@ -543,7 +540,7 @@ export default function HRDKantor() {
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Batal
                   </button>
@@ -565,9 +562,7 @@ export default function HRDKantor() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Edit Data
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">Edit Data</h2>
               <form onSubmit={handleSubmitEdit}>
                 <div className="space-y-4">
                   <div>
@@ -583,12 +578,11 @@ export default function HRDKantor() {
                           nama_tempat: e.target.value,
                         })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
+                      className={`w-full px-3 py-2 border rounded-lg ${
                         errors.nama_tempat
                           ? "border-red-500"
                           : "border-gray-300"
                       }`}
-                      placeholder="Contoh: Kantor Pusat Yayasan"
                       required
                     />
                     {errors.nama_tempat && (
@@ -607,7 +601,7 @@ export default function HRDKantor() {
                       onChange={(e) =>
                         setFormData({ ...formData, latitude: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
+                      className={`w-full px-3 py-2 border rounded-lg ${
                         errors.latitude ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="Contoh: -90 sampai 90"
@@ -629,7 +623,7 @@ export default function HRDKantor() {
                       onChange={(e) =>
                         setFormData({ ...formData, longitude: e.target.value })
                       }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
+                      className={`w-full px-3 py-2 border rounded-lg ${
                         errors.longitude ? "border-red-500" : "border-gray-300"
                       }`}
                       placeholder="Contoh: -180 sampai 180"
@@ -646,7 +640,7 @@ export default function HRDKantor() {
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Batal
                   </button>
@@ -668,15 +662,13 @@ export default function HRDKantor() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Hapus Data
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">Hapus Data</h2>
               <p className="text-gray-700 mb-6">
                 Apakah anda yakin ingin{" "}
-                <span className="text-red-600 font-semibold">
+                <span className="text-red-500 font-semibold">
                   menghapus data
                 </span>{" "}
-                <span className="capitalize font-semibold text-gray-900">
+                <span className="capitalize font-semibold">
                   {selectedItem.nama_tempat}
                 </span>
                 ?
@@ -685,7 +677,7 @@ export default function HRDKantor() {
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Batal
                 </button>
