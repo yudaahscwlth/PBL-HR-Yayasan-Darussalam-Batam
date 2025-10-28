@@ -161,3 +161,7 @@ export default function MenuPage({ menuSections, activeTab = "menu", onTabChange
     </div>
   );
 }
+
+
+
+
