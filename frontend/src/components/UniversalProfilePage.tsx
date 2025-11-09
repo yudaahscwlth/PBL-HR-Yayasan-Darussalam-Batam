@@ -53,12 +53,16 @@ export default function UniversalProfilePage() {
     if (!user?.roles) return;
 
     // Determine the correct profile edit path based on user role
-    if (user.roles.includes("superadmin") || user.roles.includes("kepala yayasan") || user.roles.includes("direktur pendidikan")) {
+    if (user.roles.includes("superadmin")) {
       router.push("/admin/profile/edit");
     } else if (user.roles.includes("kepala hrd") || user.roles.includes("staff hrd")) {
       router.push("/hrd/profile/edit");
     } else if (user.roles.includes("kepala departemen") || user.roles.includes("kepala sekolah") || user.roles.includes("tenaga pendidik")) {
-      router.push("/employee/profile/edit");
+      const role = user?.roles?.[0];
+      if (role === "kepala departemen") router.push("/kepala-departemen/profile/edit");
+      else if (role === "kepala sekolah") router.push("/kepala-sekolah/profile/edit");
+      else if (role === "tenaga pendidik") router.push("/tenaga-pendidik/profile/edit");
+      else router.push("/employee/profile/edit");
     }
   };
 

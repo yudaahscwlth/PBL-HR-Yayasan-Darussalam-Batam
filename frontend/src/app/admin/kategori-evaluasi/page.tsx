@@ -17,7 +17,7 @@ export default function AdminKategoriEvaluasi() {
 
     if (user) {
       // Check if user has admin role
-      const isAdmin = user.roles?.includes("superadmin") || user.roles?.includes("kepala yayasan") || user.roles?.includes("direktur pendidikan");
+      const isAdmin = user.roles?.includes("superadmin");
 
       if (!isAdmin) {
         router.push("/unauthorized");

@@ -16,8 +16,8 @@ export default function AdminDepartemen() {
     }
 
     if (user) {
-      // Check if user has admin role
-      const isAdmin = user.roles?.includes("superadmin") || user.roles?.includes("kepala yayasan") || user.roles?.includes("direktur pendidikan");
+      // Check if user has admin role (only superadmin)
+      const isAdmin = user.roles?.includes("superadmin");
 
       if (!isAdmin) {
         router.push("/unauthorized");

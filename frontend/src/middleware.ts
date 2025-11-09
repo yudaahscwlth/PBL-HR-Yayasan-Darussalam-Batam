@@ -3,9 +3,11 @@ import type { NextRequest } from "next/server";
 
 // Define protected routes and their required roles
 const protectedRoutes = {
-  "/admin": ["superadmin", "kepala yayasan", "direktur pendidikan"],
+  "/admin": ["superadmin"],
   "/hrd": ["kepala hrd", "staff hrd"],
-  "/employee": ["kepala departemen", "kepala sekolah", "tenaga pendidik"],
+  "/kepala-departemen": ["kepala departemen"],
+  "/kepala-sekolah": ["kepala sekolah"],
+  "/tenaga-pendidik": ["tenaga pendidik"],
 };
 
 // Define public routes that don't require authentication
