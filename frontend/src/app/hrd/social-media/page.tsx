@@ -5,34 +5,28 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-interface TempatKerja {
+interface SosialMedia {
   id: number;
-  nama_tempat: string;
-  latitude: number;
-  longitude: number;
+  nama_platform: string;
   created_at?: string;
   updated_at?: string;
 }
 
 interface FormData {
-  nama_tempat: string;
-  latitude: string;
-  longitude: string;
+  nama_platform: string;
 }
 
-export default function HRDKantor() {
+export default function HRDSocialMedia() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [dataTempatKerja, setDataTempatKerja] = useState<TempatKerja[]>([]);
+  const [dataSosialMedia, setDataSosialMedia] = useState<SosialMedia[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<TempatKerja | null>(null);
+  const [selectedItem, setSelectedItem] = useState<SosialMedia | null>(null);
   const [formData, setFormData] = useState<FormData>({
-    nama_tempat: "",
-    latitude: "",
-    longitude: "",
+    nama_platform: "",
   });
   const [errors, setErrors] = useState<any>({});
   const [notification, setNotification] = useState<{
@@ -66,14 +60,14 @@ export default function HRDKantor() {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const response = await axios.get(`${API_BASE_URL}/api/tempat-kerja`, {
+      const response = await axios.get(`${API_BASE_URL}/api/sosial-media`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       if (response.data.success) {
-        setDataTempatKerja(response.data.data);
+        setDataSosialMedia(response.data.data);
       }
     } catch (error: any) {
       console.error("Error fetching data:", error);
@@ -87,23 +81,21 @@ export default function HRDKantor() {
   };
 
   const handleAdd = () => {
-    setFormData({ nama_tempat: "", latitude: "", longitude: "" });
+    setFormData({ nama_platform: "" });
     setErrors({});
     setShowAddModal(true);
   };
 
-  const handleEdit = (item: TempatKerja) => {
+  const handleEdit = (item: SosialMedia) => {
     setSelectedItem(item);
     setFormData({
-      nama_tempat: item.nama_tempat,
-      latitude: item.latitude.toString(),
-      longitude: item.longitude.toString(),
+      nama_platform: item.nama_platform,
     });
     setErrors({});
     setShowEditModal(true);
   };
 
-  const handleDelete = (item: TempatKerja) => {
+  const handleDelete = (item: SosialMedia) => {
     setSelectedItem(item);
     setShowDeleteModal(true);
   };
@@ -115,7 +107,7 @@ export default function HRDKantor() {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await axios.post(
-        `${API_BASE_URL}/api/tempat-kerja`,
+        `${API_BASE_URL}/api/sosial-media`,
         formData,
         {
           headers: {
@@ -147,7 +139,7 @@ export default function HRDKantor() {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await axios.put(
-        `${API_BASE_URL}/api/tempat-kerja/${selectedItem.id}`,
+        `${API_BASE_URL}/api/sosial-media/${selectedItem.id}`,
         formData,
         {
           headers: {
@@ -176,7 +168,7 @@ export default function HRDKantor() {
     try {
       const token = localStorage.getItem("auth_token");
       const response = await axios.delete(
-        `${API_BASE_URL}/api/tempat-kerja/${selectedItem.id}`,
+        `${API_BASE_URL}/api/sosial-media/${selectedItem.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -229,7 +221,9 @@ export default function HRDKantor() {
             </svg>
             Kembali
           </button>
-          <h1 className="text-lg font-semibold text-gray-800">Kelola Kantor</h1>
+          <h1 className="text-lg font-semibold text-gray-800">
+            Kelola Sosial Media
+          </h1>
           <div className="w-16"></div>
         </div>
       </div>
@@ -252,75 +246,46 @@ export default function HRDKantor() {
         <div className="bg-white rounded-lg shadow">
           {/* Header Card */}
           <div className="p-4 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                onClick={handleAdd}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"
+            <button
+              onClick={handleAdd}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center w-full sm:w-auto"
+            >
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Tambah Baru
-              </button>
-              <a
-                href="https://support.google.com/maps/answer/18539?hl=en&co=GENIE.Platform%3DDesktop"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 flex items-center justify-center"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Bantuan Latitude & Longitude
-              </a>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Tambah Baru
+            </button>
           </div>
 
           {/* Card List */}
           <div className="p-4">
-            {dataTempatKerja.length === 0 ? (
+            {dataSosialMedia.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <svg
                   className="w-16 h-16 mx-auto mb-4 text-gray-300"
-                  fill="none"
-                  stroke="currentColor"
+                  fill="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                  />
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                 </svg>
                 <p className="text-lg font-medium">Tidak ada data</p>
                 <p className="text-sm">
-                  Klik "Tambah Baru" untuk menambahkan kantor
+                  Klik "Tambah Baru" untuk menambahkan platform sosial media
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {dataTempatKerja.map((item, index) => (
+                {dataSosialMedia.map((item, index) => (
                   <div
                     key={item.id}
                     className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
@@ -328,88 +293,19 @@ export default function HRDKantor() {
                     {/* Header dengan nomor dan nama */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2">
                           <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
                             {index + 1}
                           </span>
                           <h3 className="text-lg font-semibold text-gray-900 capitalize">
-                            {item.nama_tempat}
+                            {item.nama_platform}
                           </h3>
                         </div>
                       </div>
                     </div>
 
-                    {/* Koordinat */}
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center text-sm">
-                        <svg
-                          className="w-4 h-4 mr-2 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span className="text-gray-600 font-medium mr-2">
-                          Latitude:
-                        </span>
-                        <span className="text-gray-900">{item.latitude}</span>
-                      </div>
-                      <div className="flex items-center text-sm">
-                        <svg
-                          className="w-4 h-4 mr-2 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <span className="text-gray-600 font-medium mr-2">
-                          Longitude:
-                        </span>
-                        <span className="text-gray-900">{item.longitude}</span>
-                      </div>
-                    </div>
-
                     {/* Tombol Aksi */}
                     <div className="flex gap-2 pt-3 border-t border-gray-100">
-                      <a
-                        href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        <span className="text-sm font-medium">Map</span>
-                      </a>
                       <button
                         onClick={() => handleEdit(item)}
                         className="flex-1 flex items-center justify-center gap-2 bg-yellow-50 text-yellow-600 px-4 py-2 rounded-lg hover:bg-yellow-100 transition-colors"
@@ -469,72 +365,28 @@ export default function HRDKantor() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nama <span className="text-red-500">*</span>
+                      Nama Platform <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.nama_tempat}
+                      value={formData.nama_platform}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          nama_tempat: e.target.value,
+                          nama_platform: e.target.value,
                         })
                       }
                       className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
-                        errors.nama_tempat
+                        errors.nama_platform
                           ? "border-red-500"
                           : "border-gray-300"
                       }`}
-                      placeholder="Contoh: Kantor Pusat Yayasan"
+                      placeholder="Contoh: Instagram, Facebook, Twitter"
                       required
                     />
-                    {errors.nama_tempat && (
+                    {errors.nama_platform && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.nama_tempat[0]}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Latitude <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.latitude}
-                      onChange={(e) =>
-                        setFormData({ ...formData, latitude: e.target.value })
-                      }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
-                        errors.latitude ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Contoh: -90 sampai 90"
-                      required
-                    />
-                    {errors.latitude && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.latitude[0]}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Longitude <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.longitude}
-                      onChange={(e) =>
-                        setFormData({ ...formData, longitude: e.target.value })
-                      }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
-                        errors.longitude ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Contoh: -180 sampai 180"
-                      required
-                    />
-                    {errors.longitude && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.longitude[0]}
+                        {errors.nama_platform[0]}
                       </p>
                     )}
                   </div>
@@ -572,72 +424,28 @@ export default function HRDKantor() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nama <span className="text-red-500">*</span>
+                      Nama Platform <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.nama_tempat}
+                      value={formData.nama_platform}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          nama_tempat: e.target.value,
+                          nama_platform: e.target.value,
                         })
                       }
                       className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
-                        errors.nama_tempat
+                        errors.nama_platform
                           ? "border-red-500"
                           : "border-gray-300"
                       }`}
-                      placeholder="Contoh: Kantor Pusat Yayasan"
+                      placeholder="Contoh: Instagram, Facebook, Twitter"
                       required
                     />
-                    {errors.nama_tempat && (
+                    {errors.nama_platform && (
                       <p className="text-red-500 text-xs mt-1">
-                        {errors.nama_tempat[0]}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Latitude <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.latitude}
-                      onChange={(e) =>
-                        setFormData({ ...formData, latitude: e.target.value })
-                      }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
-                        errors.latitude ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Contoh: -90 sampai 90"
-                      required
-                    />
-                    {errors.latitude && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.latitude[0]}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Longitude <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.longitude}
-                      onChange={(e) =>
-                        setFormData({ ...formData, longitude: e.target.value })
-                      }
-                      className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder:text-gray-400 ${
-                        errors.longitude ? "border-red-500" : "border-gray-300"
-                      }`}
-                      placeholder="Contoh: -180 sampai 180"
-                      required
-                    />
-                    {errors.longitude && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.longitude[0]}
+                        {errors.nama_platform[0]}
                       </p>
                     )}
                   </div>
@@ -677,7 +485,7 @@ export default function HRDKantor() {
                   menghapus data
                 </span>{" "}
                 <span className="capitalize font-semibold text-gray-900">
-                  {selectedItem.nama_tempat}
+                  {selectedItem.nama_platform}
                 </span>
                 ?
               </p>
