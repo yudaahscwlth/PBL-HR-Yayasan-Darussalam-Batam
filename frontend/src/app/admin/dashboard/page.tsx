@@ -227,7 +227,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <AccessControl allowedRoles={["superadmin", "kepala yayasan", "direktur pendidikan"]}>
+    <AccessControl allowedRoles={["superadmin"]}>
       <div className="min-h-screen bg-gray-100 pb-28">
         {/* Header */}
         <div className="bg-[#1e4d8b] px-5 pt-3 pb-16 text-white rounded-b-3xl">

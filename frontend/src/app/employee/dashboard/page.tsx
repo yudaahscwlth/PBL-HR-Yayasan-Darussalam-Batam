@@ -127,7 +127,7 @@ export default function EmployeeDashboard() {
   useEffect(() => {
     const loadAttendanceStatus = async () => {
       if (!isAuthenticated || !user) return;
-      
+
       setAttendanceLoading(true);
       try {
         const response = await apiClient.attendance.getToday();
@@ -336,7 +336,7 @@ export default function EmployeeDashboard() {
           checkInTime: data.check_in_time || new Date().toISOString(),
         });
 
-      loadDashboardData();
+        loadDashboardData();
         showToast("success", "✅ Check-in berhasil! Lokasi telah diverifikasi.");
       } else {
         // Handle specific error messages
@@ -611,12 +611,12 @@ export default function EmployeeDashboard() {
               ) : (
                 <div className="flex items-center">
                   <svg className="w-5 h-5 text-[#1e4d8b] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
                   <span className="text-[#1e4d8b] font-semibold text-sm">Absen Masuk</span>
                 </div>
               )}
-          </button>
+            </button>
             <button
               onClick={handleCheckOut}
               disabled={!attendanceStatus.hasCheckedIn || attendanceStatus.hasCheckedOut || isLoading}
@@ -649,12 +649,12 @@ export default function EmployeeDashboard() {
               ) : (
                 <div className="flex items-center">
                   <svg className="w-5 h-5 text-[#1e4d8b] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
                   <span className="text-[#1e4d8b] font-semibold text-sm">Absen Pulang</span>
                 </div>
               )}
-          </button>
+            </button>
           </div>
         </div>
       </div>
@@ -670,7 +670,13 @@ export default function EmployeeDashboard() {
               <h2 className="text-lg font-bold text-gray-800">Informasi Cuti</h2>
             </div>
             <button
-              onClick={() => router.push("/employee/pengajuan-cuti")}
+              onClick={() => {
+                const role = user?.roles?.[0];
+                if (role === "kepala departemen") router.push("/kepala-departemen/pengajuan-cuti");
+                else if (role === "kepala sekolah") router.push("/kepala-sekolah/pengajuan-cuti");
+                else if (role === "tenaga pendidik") router.push("/tenaga-pendidik/pengajuan-cuti");
+                else router.push("/employee/pengajuan-cuti");
+              }}
               className="p-2 bg-[#1e4d8b] text-white rounded-lg hover:bg-blue-700 transition-colors"
               title="Ajukan Cuti"
             >
@@ -707,24 +713,24 @@ export default function EmployeeDashboard() {
                   const leaveType = leave.tipe_cuti || leave.jenis_cuti || "Cuti";
                   const status = leave.status_pengajuan || leave.status || "pending";
                   const statusLower = status.toLowerCase();
-                  
+
                   return (
                     <div key={index} className="flex items-center justify-between py-2">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800 capitalize">
-                          {leaveType}
-                        </p>
+                        <p className="text-sm font-medium text-gray-800 capitalize">{leaveType}</p>
                         <p className="text-xs text-gray-500">
                           {new Date(leave.tanggal_mulai).toLocaleDateString("id-ID", { day: "numeric", month: "short" })} - {new Date(leave.tanggal_selesai).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                         </p>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        statusLower.includes("disetujui") || statusLower.includes("approved")
-                          ? "bg-green-100 text-green-800"
-                          : statusLower.includes("ditolak") || statusLower.includes("rejected")
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          statusLower.includes("disetujui") || statusLower.includes("approved")
+                            ? "bg-green-100 text-green-800"
+                            : statusLower.includes("ditolak") || statusLower.includes("rejected")
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
                         {statusLower.includes("disetujui") ? "Disetujui" : statusLower.includes("ditolak") ? "Ditolak" : "Sedang Ditinjau"}
                       </span>
                     </div>
@@ -735,8 +741,14 @@ export default function EmployeeDashboard() {
           )}
 
           <div className="mt-4 pt-3 border-t border-gray-200">
-            <button 
-              onClick={() => router.push("/employee/pengajuan-cuti")}
+            <button
+              onClick={() => {
+                const role = user?.roles?.[0];
+                if (role === "kepala departemen") router.push("/kepala-departemen/pengajuan-cuti");
+                else if (role === "kepala sekolah") router.push("/kepala-sekolah/pengajuan-cuti");
+                else if (role === "tenaga pendidik") router.push("/tenaga-pendidik/pengajuan-cuti");
+                else router.push("/employee/pengajuan-cuti");
+              }}
               className="w-full text-[#1e4d8b] text-sm font-medium hover:underline text-center"
             >
               Ajukan Cuti Baru

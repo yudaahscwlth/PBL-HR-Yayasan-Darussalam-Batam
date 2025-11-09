@@ -204,7 +204,7 @@ export const useAuthStore = create<AuthStore>()(
       // Convenience methods for common role checks
       isAdmin: () => {
         const { hasAnyRole } = get();
-        return hasAnyRole(["superadmin", "kepala yayasan", "direktur pendidikan"]);
+        return hasAnyRole(["superadmin"]);
       },
 
       isHRD: () => {
@@ -247,8 +247,8 @@ export const getRedirectPath = (user: User | null): string => {
   const roles = user.roles;
   console.log("User roles:", roles);
 
-  // Admin roles
-  if (roles.includes("superadmin") || roles.includes("kepala yayasan") || roles.includes("direktur pendidikan")) {
+  // Admin roles (only superadmin)
+  if (roles.includes("superadmin")) {
     console.log("Admin role detected, redirecting to /admin/dashboard");
     return "/admin/dashboard";
   }
@@ -259,10 +259,22 @@ export const getRedirectPath = (user: User | null): string => {
     return "/hrd/dashboard";
   }
 
-  // Employee roles
-  if (roles.includes("kepala departemen") || roles.includes("kepala sekolah") || roles.includes("tenaga pendidik")) {
-    console.log("Employee role detected, redirecting to /employee/dashboard");
-    return "/employee/dashboard";
+  // Kepala Departemen
+  if (roles.includes("kepala departemen")) {
+    console.log("Kepala Departemen role detected, redirecting to /kepala-departemen/dashboard");
+    return "/kepala-departemen/dashboard";
+  }
+
+  // Kepala Sekolah
+  if (roles.includes("kepala sekolah")) {
+    console.log("Kepala Sekolah role detected, redirecting to /kepala-sekolah/dashboard");
+    return "/kepala-sekolah/dashboard";
+  }
+
+  // Tenaga Pendidik
+  if (roles.includes("tenaga pendidik")) {
+    console.log("Tenaga Pendidik role detected, redirecting to /tenaga-pendidik/dashboard");
+    return "/tenaga-pendidik/dashboard";
   }
 
   console.log("No matching role, returning /dashboard");
