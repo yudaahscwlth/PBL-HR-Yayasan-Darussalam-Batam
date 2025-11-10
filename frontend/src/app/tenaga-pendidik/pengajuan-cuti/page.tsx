@@ -7,6 +7,7 @@ import { apiClient } from "@/lib/api";
 
 interface LeaveRequest {
   id: number;
+  id_user?: number;
   tanggal_mulai: string;
   tanggal_selesai: string;
   tipe_cuti: string;
@@ -90,7 +91,11 @@ export default function TenagaPendidikPengajuanCuti() {
     try {
       const response = await apiClient.leave.getAll();
       if (response.success) {
-        setLeaveRequests(response.data as LeaveRequest[]);
+        // Filter hanya pengajuan cuti milik user yang sedang login
+        const userLeaveRequests = (response.data as LeaveRequest[]).filter(
+          (request) => request.id_user === user?.id || request.user?.id === user?.id
+        );
+        setLeaveRequests(userLeaveRequests);
       }
     } catch (error) {
       console.error("Error loading leave requests:", error);
@@ -219,205 +224,291 @@ export default function TenagaPendidikPengajuanCuti() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto min-h-screen bg-zinc-100 relative overflow-auto pb-6">
-      {/* Header */}
-      <div className="px-6 pt-6 pb-4 flex items-center gap-4">
-        <button onClick={() => router.back()} className="w-6 h-6 flex items-center justify-center hover:bg-gray-200 rounded transition text-black">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-        </button>
-        <h1 className="text-xl font-medium font-['Poppins'] text-black">Pengajuan Cuti</h1>
-      </div>
-
-      {/* Ajukan Cuti Section */}
-      <div className="mx-4 mb-6 bg-white rounded-[10px] shadow-md border border-black/20 p-4">
-        <h2 className="text-base font-normal font-['Poppins'] mb-4 text-black">Ajukan Cuti</h2>
-
-        {/* Tombol Tambah Baru */}
-        <button onClick={() => setShowModal(true)} className="bg-sky-800 rounded-[5px] px-4 py-2 flex items-center gap-2 hover:bg-sky-900 transition mb-4">
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span className="text-white text-xs font-['Poppins']">Tambah Baru</span>
-        </button>
-
-        {/* Search and Show Entries */}
-        <div className="flex justify-between items-center mb-3 text-[10px] text-black">
-          <div className="flex items-center gap-1.5">
-            <span className="font-['Poppins']">Show</span>
-            <select value={entriesAjukan} onChange={(e) => setEntriesAjukan(Number(e.target.value))} className="w-8 h-3.5 px-1 bg-white rounded-sm border border-black/30 text-[10px] font-['Poppins'] text-black">
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-            </select>
-            <span className="font-['Poppins']">entries</span>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <span className="font-['Poppins']">Search:</span>
-            <input type="text" value={searchAjukan} onChange={(e) => setSearchAjukan(e.target.value)} className="w-20 h-4 px-2 bg-white rounded-sm border border-black/20 text-[10px] text-black" />
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-[9px] border-collapse">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="p-2 text-left font-bold font-['Inter'] text-black whitespace-nowrap">Tanggal Pengajuan</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black">Nama</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black whitespace-nowrap">Tipe Pengajuan</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black">Durasi</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black whitespace-nowrap">Alasan Pendukung</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black whitespace-nowrap">File Pendukung</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedAjukan.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-4 text-center text-black">
-                    Tidak ada pengajuan cuti yang sedang diproses
-                  </td>
-                </tr>
-              ) : (
-                paginatedAjukan.map((request) => (
-                  <tr key={request.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2 font-['Inter'] text-black whitespace-nowrap">{formatDate(request.created_at)}</td>
-                    <td className="p-2 font-['Inter'] text-black">{request.user?.profile_pribadi?.nama_lengkap || request.user?.email || "-"}</td>
-                    <td className="p-2 font-['Inter'] capitalize text-black">{request.tipe_cuti}</td>
-                    <td className="p-2 font-['Inter'] text-black whitespace-nowrap">{calculateDays(request.tanggal_mulai, request.tanggal_selesai)} hari</td>
-                    <td className="p-2 font-['Inter'] text-black max-w-[150px] truncate" title={request.alasan_pendukung}>
-                      {request.alasan_pendukung || "-"}
-                    </td>
-                    <td className="p-2 font-['Inter'] text-black text-center">
-                      {request.file_pendukung ? (
-                        <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/storage/${request.file_pendukung}`} target="_blank" rel="noopener noreferrer" className="text-sky-800 hover:text-sky-900 underline">
-                          Lihat
-                        </a>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="p-2">
-                      <span className={`px-2 py-0.5 rounded text-[8px] whitespace-nowrap ${getStatusColor(request.status_pengajuan)}`}>{getStatusText(request.status_pengajuan)}</span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex justify-between items-center mt-3 text-[10px] text-black">
-          <span className="font-['Poppins']">
-            Showing {filteredAjukan.length === 0 ? 0 : (currentPageAjukan - 1) * entriesAjukan + 1} to {Math.min(currentPageAjukan * entriesAjukan, filteredAjukan.length)} of {filteredAjukan.length} entries
-          </span>
-          <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
-            <button onClick={() => setCurrentPageAjukan(Math.max(1, currentPageAjukan - 1))} disabled={currentPageAjukan === 1} className="px-2 py-1 text-sky-800 text-[9px] hover:bg-gray-200 disabled:opacity-50">
-              Previous
-            </button>
-            <span className="px-2 py-1 bg-sky-800 text-white text-[10px]">{currentPageAjukan}</span>
+    <div className="min-h-screen bg-zinc-100">
+      {/* BREAKOUT WRAPPER: memaksa full-bleed di md+ meski parent membatasi width */}
+      <div className="md:ml-[calc(50%-50vw)] md:mr-[calc(50%-50vw)] md:w-screen">
+        {/* Inner container: mobile tetap max-w-md, desktop center max-w-7xl */}
+        <div className="w-full max-w-md mx-auto md:max-w-7xl md:px-6">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 flex items-center gap-4 md:px-0">
             <button
-              onClick={() => setCurrentPageAjukan(Math.min(totalPagesAjukan, currentPageAjukan + 1))}
-              disabled={currentPageAjukan === totalPagesAjukan || totalPagesAjukan === 0}
-              className="px-2 py-1 text-sky-800 text-[9px] hover:bg-gray-200 disabled:opacity-50"
+              onClick={() => router.back()}
+              className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded transition text-black md:w-9 md:h-9"
+              aria-label="Kembali"
             >
-              Next
+              <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
             </button>
+            <div className="flex-1">
+              <h1 className="text-xl font-medium font-['Poppins'] text-black md:text-2xl">Pengajuan Cuti</h1>
+              <p className="hidden md:block text-sm text-zinc-600">Kelola pengajuan dan riwayat cuti Anda.</p>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Riwayat Ajuan Section */}
-      <div className="mx-4 mb-6 bg-white rounded-[10px] shadow-md border border-black/20 p-4">
-        <h2 className="text-base font-normal font-['Poppins'] mb-4 text-black">Riwayat Ajuan</h2>
+          {/* Main Content */}
+          <div className="mx-4 md:mx-0 space-y-6">
 
-        {/* Search and Show Entries */}
-        <div className="flex justify-between items-center mb-3 text-[10px] text-black">
-          <div className="flex items-center gap-1.5">
-            <span className="font-['Poppins']">Show</span>
-            <select value={entriesRiwayat} onChange={(e) => setEntriesRiwayat(Number(e.target.value))} className="w-8 h-3.5 px-1 bg-white rounded-sm border border-black/30 text-[10px] font-['Poppins'] text-black">
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-            </select>
-            <span className="font-['Poppins']">entries</span>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <span className="font-['Poppins']">Search:</span>
-            <input type="text" value={searchRiwayat} onChange={(e) => setSearchRiwayat(e.target.value)} className="w-20 h-4 px-2 bg-white rounded-sm border border-black/20 text-[10px] text-black" />
-          </div>
-        </div>
+            {/* Ajukan Cuti */}
+            <section className="bg-white rounded-[10px] shadow-md border border-black/20 p-4 w-full">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-normal font-['Poppins'] text-black md:text-lg">Ajukan Cuti</h2>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="hidden md:flex bg-sky-800 rounded-[8px] px-4 py-2 items-center gap-2 hover:bg-sky-900 transition"
+                >
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-white text-sm font-['Poppins']">Tambah Baru</span>
+                </button>
+              </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-[9px] border-collapse">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="p-2 text-left font-bold font-['Inter'] text-black whitespace-nowrap">Tanggal Pengajuan</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black">Nama</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black whitespace-nowrap">Tipe Pengajuan</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black">Durasi</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black whitespace-nowrap">Alasan Pendukung</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black whitespace-nowrap">File Pendukung</th>
-                <th className="p-2 text-left font-bold font-['Inter'] text-black">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedRiwayat.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-4 text-center text-black">
-                    Belum ada riwayat pengajuan cuti
-                  </td>
-                </tr>
-              ) : (
-                paginatedRiwayat.map((request) => (
-                  <tr key={request.id} className="border-b hover:bg-gray-50">
-                    <td className="p-2 font-['Inter'] text-black whitespace-nowrap">{formatDate(request.created_at)}</td>
-                    <td className="p-2 font-['Inter'] text-black">{request.user?.profile_pribadi?.nama_lengkap || request.user?.email || "-"}</td>
-                    <td className="p-2 font-['Inter'] capitalize text-black">{request.tipe_cuti}</td>
-                    <td className="p-2 font-['Inter'] text-black whitespace-nowrap">{calculateDays(request.tanggal_mulai, request.tanggal_selesai)} hari</td>
-                    <td className="p-2 font-['Inter'] text-black max-w-[150px] truncate" title={request.alasan_pendukung}>
-                      {request.alasan_pendukung || "-"}
-                    </td>
-                    <td className="p-2 font-['Inter'] text-black text-center">
-                      {request.file_pendukung ? (
-                        <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/storage/${request.file_pendukung}`} target="_blank" rel="noopener noreferrer" className="text-sky-800 hover:text-sky-900 underline">
-                          Lihat
-                        </a>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="p-2">
-                      <span className={`px-2 py-0.5 rounded text-[8px] whitespace-nowrap ${getStatusColor(request.status_pengajuan)}`}>{getStatusText(request.status_pengajuan)}</span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              {/* Mobile button */}
+              <button
+                onClick={() => setShowModal(true)}
+                className="md:hidden bg-sky-800 rounded-[5px] px-4 py-2 flex items-center gap-2 hover:bg-sky-900 transition mb-4"
+              >
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span className="text-white text-xs font-['Poppins']">Tambah Baru</span>
+              </button>
 
-        {/* Pagination */}
-        <div className="flex justify-between items-center mt-3 text-[10px] text-black">
-          <span className="font-['Poppins']">
-            Showing {filteredRiwayat.length === 0 ? 0 : (currentPageRiwayat - 1) * entriesRiwayat + 1} to {Math.min(currentPageRiwayat * entriesRiwayat, filteredRiwayat.length)} of {filteredRiwayat.length} entries
-          </span>
-          <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
-            <button onClick={() => setCurrentPageRiwayat(Math.max(1, currentPageRiwayat - 1))} disabled={currentPageRiwayat === 1} className="px-2 py-1 text-sky-800 text-[9px] hover:bg-gray-200 disabled:opacity-50">
-              Previous
-            </button>
-            <span className="px-2 py-1 bg-sky-800 text-white text-[10px]">{currentPageRiwayat}</span>
-            <button
-              onClick={() => setCurrentPageRiwayat(Math.min(totalPagesRiwayat, currentPageRiwayat + 1))}
-              disabled={currentPageRiwayat === totalPagesRiwayat || totalPagesRiwayat === 0}
-              className="px-2 py-1 text-sky-800 text-[9px] hover:bg-gray-200 disabled:opacity-50"
-            >
-              Next
-            </button>
+              {/* Controls */}
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:items-center md:gap-3 mb-3 text-[10px] md:text-sm text-black">
+                {/* Kiri: Show entries */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-['Poppins'] shrink-0">Show</span>
+                  <select
+                    value={entriesAjukan}
+                    onChange={(e) => setEntriesAjukan(Number(e.target.value))}
+                    className="h-7 md:h-8 w-16 md:w-24 px-2 bg-white rounded border border-black/30 font-['Poppins'] text-black"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                  </select>
+                  <span className="font-['Poppins'] shrink-0">entries</span>
+                </div>
+
+                {/* Kanan: Search */}
+                <div className="flex items-center gap-2 md:justify-end">
+                  <label className="font-['Poppins'] shrink-0">Search:</label>
+                  <input
+                    type="text"
+                    value={searchAjukan}
+                    onChange={(e) => setSearchAjukan(e.target.value)}
+                    placeholder="Cari tipe/alasan"
+                    className="w-full md:w-72 h-8 md:h-9 px-3 bg-white rounded border border-black/20 text-black"
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto rounded-md border border-zinc-200">
+                <table className="w-full text-[9px] md:text-sm border-collapse">
+                  <thead className="bg-gray-100 border-b sticky top-0 z-10">
+                    <tr>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tanggal Pengajuan</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Nama</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tipe Pengajuan</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Durasi</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Alasan Pendukung</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">File Pendukung</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedAjukan.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="p-4 text-center text-black">
+                          Tidak ada pengajuan cuti yang sedang diproses
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedAjukan.map((request) => (
+                        <tr key={request.id} className="border-b hover:bg-gray-50">
+                          <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">{formatDate(request.created_at)}</td>
+                          <td className="p-2 md:p-3 font-sans text-black">
+                            {request.user?.profile_pribadi?.nama_lengkap || request.user?.email || '-'}
+                          </td>
+                          <td className="p-2 md:p-3 font-sans capitalize text-black">{request.tipe_cuti}</td>
+                          <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
+                            {calculateDays(request.tanggal_mulai, request.tanggal_selesai)} hari
+                          </td>
+                          <td className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate" title={request.alasan_pendukung}>
+                            {request.alasan_pendukung || '-'}
+                          </td>
+                          <td className="p-2 md:p-3 font-sans text-black text-center">
+                            {request.file_pendukung ? (
+                              <a
+                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${request.file_pendukung}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sky-800 hover:text-sky-900 underline"
+                              >
+                                Lihat
+                              </a>
+                            ) : (
+                              '-'
+                            )}
+                          </td>
+                          <td className="p-2 md:p-3">
+                            <span className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(request.status_pengajuan)}`}>
+                              {getStatusText(request.status_pengajuan)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center mt-3 text-[10px] md:text-sm text-black">
+                <span className="font-['Poppins']">
+                  Showing {filteredAjukan.length === 0 ? 0 : (currentPageAjukan - 1) * entriesAjukan + 1} to{' '}
+                  {Math.min(currentPageAjukan * entriesAjukan, filteredAjukan.length)} of {filteredAjukan.length} entries
+                </span>
+                <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
+                  <button
+                    onClick={() => setCurrentPageAjukan(Math.max(1, currentPageAjukan - 1))}
+                    disabled={currentPageAjukan === 1}
+                    className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">{currentPageAjukan}</span>
+                  <button
+                    onClick={() => setCurrentPageAjukan(Math.min(totalPagesAjukan, currentPageAjukan + 1))}
+                    disabled={currentPageAjukan === totalPagesAjukan || totalPagesAjukan === 0}
+                    className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* Riwayat */}
+            <section className="bg-white rounded-[10px] shadow-md border border-black/20 p-4 w-full">
+              <h2 className="text-base font-normal font-['Poppins'] mb-4 text-black md:text-lg">Riwayat Ajuan</h2>
+
+              {/* Controls */}
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-3 text-[10px] md:text-sm text-black">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-['Poppins']">Show</span>
+                  <select
+                    value={entriesRiwayat}
+                    onChange={(e) => setEntriesRiwayat(Number(e.target.value))}
+                    className="w-10 h-4 px-1 bg-white rounded-sm border border-black/30 text-[10px] md:text-sm md:h-8 md:px-2 font-['Poppins'] text-black"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                  </select>
+                  <span className="font-['Poppins']">entries</span>
+                </div>
+                <div className="flex items-center gap-1 md:gap-2">
+                  <span className="font-['Poppins']">Search:</span>
+                  <input
+                    type="text"
+                    value={searchRiwayat}
+                    onChange={(e) => setSearchRiwayat(e.target.value)}
+                    placeholder="Cari tipe/alasan"
+                    className="w-24 md:w-64 h-4 md:h-9 px-2 bg-white rounded-sm md:rounded-md border border-black/20 text-[10px] md:text-sm text-black"
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto rounded-md border border-zinc-200">
+                <table className="w-full text-[9px] md:text-sm border-collapse">
+                  <thead className="bg-gray-100 border-b sticky top-0 z-10">
+                    <tr>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tanggal Pengajuan</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Nama</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tipe Pengajuan</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Durasi</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Alasan Pendukung</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">File Pendukung</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedRiwayat.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="p-4 text-center text-black">
+                          Belum ada riwayat pengajuan cuti
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedRiwayat.map((request) => (
+                        <tr key={request.id} className="border-b hover:bg-gray-50">
+                          <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">{formatDate(request.created_at)}</td>
+                          <td className="p-2 md:p-3 font-sans text-black">
+                            {request.user?.profile_pribadi?.nama_lengkap || request.user?.email || '-'}
+                          </td>
+                          <td className="p-2 md:p-3 font-sans capitalize text-black">{request.tipe_cuti}</td>
+                          <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
+                            {calculateDays(request.tanggal_mulai, request.tanggal_selesai)} hari
+                          </td>
+                          <td className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate" title={request.alasan_pendukung}>
+                            {request.alasan_pendukung || '-'}
+                          </td>
+                          <td className="p-2 md:p-3 font-sans text-black text-center">
+                            {request.file_pendukung ? (
+                              <a
+                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${request.file_pendukung}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sky-800 hover:text-sky-900 underline"
+                              >
+                                Lihat
+                              </a>
+                            ) : (
+                              '-'
+                            )}
+                          </td>
+                          <td className="p-2 md:p-3">
+                            <span className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(request.status_pengajuan)}`}>
+                              {getStatusText(request.status_pengajuan)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center mt-3 text-[10px] md:text-sm text-black">
+                <span className="font-['Poppins']">
+                  Showing {filteredRiwayat.length === 0 ? 0 : (currentPageRiwayat - 1) * entriesRiwayat + 1} to{' '}
+                  {Math.min(currentPageRiwayat * entriesRiwayat, filteredRiwayat.length)} of {filteredRiwayat.length} entries
+                </span>
+                <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
+                  <button
+                    onClick={() => setCurrentPageRiwayat(Math.max(1, currentPageRiwayat - 1))}
+                    disabled={currentPageRiwayat === 1}
+                    className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">{currentPageRiwayat}</span>
+                  <button
+                    onClick={() => setCurrentPageRiwayat(Math.min(totalPagesRiwayat, currentPageRiwayat + 1))}
+                    disabled={currentPageRiwayat === totalPagesRiwayat || totalPagesRiwayat === 0}
+                    className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -425,10 +516,14 @@ export default function TenagaPendidikPengajuanCuti() {
       {/* Modal Form Tambah Cuti */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto md:max-w-xl">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
               <h3 className="text-lg font-semibold font-['Poppins'] text-black">Form Pengajuan Cuti</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 transition">
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition"
+                aria-label="Tutup"
+              >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
