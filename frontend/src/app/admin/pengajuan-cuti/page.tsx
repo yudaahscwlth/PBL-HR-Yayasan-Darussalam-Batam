@@ -25,7 +25,7 @@ interface LeaveRequest {
   };
 }
 
-export default function KepalaSekolahPengajuanCuti() {
+export default function AdminPengajuanCutiPage() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -69,9 +69,12 @@ export default function KepalaSekolahPengajuanCuti() {
     }
 
     if (user) {
-      const isKepalaSekolah = user.roles?.includes("kepala sekolah");
+      const isAdmin =
+        user.roles?.includes("superadmin") ||
+        user.roles?.includes("kepala yayasan") ||
+        user.roles?.includes("direktur pendidikan");
 
-      if (!isKepalaSekolah) {
+      if (!isAdmin) {
         router.push("/unauthorized");
         return;
       }
@@ -102,7 +105,10 @@ export default function KepalaSekolahPengajuanCuti() {
     }
   };
 
-  const showToast = (type: "success" | "error" | "warning" | "info", message: string) => {
+  const showToast = (
+    type: "success" | "error" | "warning" | "info",
+    message: string
+  ) => {
     setToastMessage({ type, message, show: true });
     setTimeout(() => {
       setToastMessage((prev) => ({ ...prev, show: false }));
@@ -142,13 +148,18 @@ export default function KepalaSekolahPengajuanCuti() {
       }
     } catch (error: any) {
       console.error("Error submitting leave request:", error);
-      showToast("error", error.response?.data?.message || "❌ Gagal mengirim pengajuan cuti");
+      showToast(
+        "error",
+        error.response?.data?.message || "❌ Gagal mengirim pengajuan cuti"
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -165,7 +176,6 @@ export default function KepalaSekolahPengajuanCuti() {
   };
 
   const getStatusText = (status: string) => {
-    // Simplify complex status text
     const statusLower = status.toLowerCase();
     if (statusLower.includes("disetujui")) {
       return "Disetujui";
@@ -180,7 +190,10 @@ export default function KepalaSekolahPengajuanCuti() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+      "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+    ];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
@@ -192,25 +205,36 @@ export default function KepalaSekolahPengajuanCuti() {
     return diffDays;
   };
 
-  // Filter data for "Ajukan Cuti" section (pending/in review)
-  const pendingRequests = leaveRequests.filter((req) => req.status_pengajuan.toLowerCase().includes("ditinjau") || req.status_pengajuan.toLowerCase().includes("menunggu"));
+  // Filter data
+  const pendingRequests = leaveRequests.filter(req =>
+    req.status_pengajuan.toLowerCase().includes("ditinjau") ||
+    req.status_pengajuan.toLowerCase().includes("menunggu")
+  );
+  const historyRequests = leaveRequests.filter(req =>
+    req.status_pengajuan.toLowerCase().includes("disetujui") ||
+    req.status_pengajuan.toLowerCase().includes("ditolak")
+  );
 
-  // Filter data for "Riwayat" section (approved/rejected)
-  const historyRequests = leaveRequests.filter((req) => req.status_pengajuan.toLowerCase().includes("disetujui") || req.status_pengajuan.toLowerCase().includes("ditolak"));
+  const filteredAjukan = pendingRequests.filter(req =>
+    req.tipe_cuti.toLowerCase().includes(searchAjukan.toLowerCase()) ||
+    req.alasan_pendukung.toLowerCase().includes(searchAjukan.toLowerCase())
+  );
+  const filteredRiwayat = historyRequests.filter(req =>
+    req.tipe_cuti.toLowerCase().includes(searchRiwayat.toLowerCase()) ||
+    req.alasan_pendukung.toLowerCase().includes(searchRiwayat.toLowerCase())
+  );
 
-  // Search and filter for Ajukan Cuti
-  const filteredAjukan = pendingRequests.filter((req) => req.tipe_cuti.toLowerCase().includes(searchAjukan.toLowerCase()) || req.alasan_pendukung.toLowerCase().includes(searchAjukan.toLowerCase()));
-
-  // Search and filter for Riwayat
-  const filteredRiwayat = historyRequests.filter((req) => req.tipe_cuti.toLowerCase().includes(searchRiwayat.toLowerCase()) || req.alasan_pendukung.toLowerCase().includes(searchRiwayat.toLowerCase()));
-
-  // Pagination for Ajukan Cuti
+  // Pagination
   const totalPagesAjukan = Math.ceil(filteredAjukan.length / entriesAjukan);
-  const paginatedAjukan = filteredAjukan.slice((currentPageAjukan - 1) * entriesAjukan, currentPageAjukan * entriesAjukan);
-
-  // Pagination for Riwayat
+  const paginatedAjukan = filteredAjukan.slice(
+    (currentPageAjukan - 1) * entriesAjukan,
+    currentPageAjukan * entriesAjukan
+  );
   const totalPagesRiwayat = Math.ceil(filteredRiwayat.length / entriesRiwayat);
-  const paginatedRiwayat = filteredRiwayat.slice((currentPageRiwayat - 1) * entriesRiwayat, currentPageRiwayat * entriesRiwayat);
+  const paginatedRiwayat = filteredRiwayat.slice(
+    (currentPageRiwayat - 1) * entriesRiwayat,
+    currentPageRiwayat * entriesRiwayat
+  );
 
   if (isLoading || !isAuthenticated || !user) {
     return (
@@ -248,7 +272,6 @@ export default function KepalaSekolahPengajuanCuti() {
 
           {/* Main Content */}
           <div className="mx-4 md:mx-0 space-y-6">
-
             {/* Ajukan Cuti */}
             <section className="bg-white rounded-[10px] shadow-md border border-black/20 p-4 w-full">
               <div className="flex items-center justify-between mb-4">
@@ -533,7 +556,9 @@ export default function KepalaSekolahPengajuanCuti() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Jenis Cuti */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">Jenis Cuti</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">
+                  Jenis Cuti
+                </label>
                 <select
                   name="jenis_cuti"
                   value={formData.jenis_cuti}
@@ -553,7 +578,9 @@ export default function KepalaSekolahPengajuanCuti() {
 
               {/* Tanggal Mulai */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins'] ">Tanggal Mulai</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins'] ">
+                  Tanggal Mulai
+                </label>
                 <input
                   type="date"
                   name="tanggal_mulai"
@@ -567,7 +594,9 @@ export default function KepalaSekolahPengajuanCuti() {
 
               {/* Tanggal Selesai */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">Tanggal Selesai</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">
+                  Tanggal Selesai
+                </label>
                 <input
                   type="date"
                   name="tanggal_selesai"
@@ -583,15 +612,21 @@ export default function KepalaSekolahPengajuanCuti() {
               {formData.tanggal_mulai && formData.tanggal_selesai && (
                 <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">Durasi Cuti</span>
-                    <span className="text-2xl font-bold text-sky-800">{calculateDays(formData.tanggal_mulai, formData.tanggal_selesai)} hari</span>
+                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">
+                      Durasi Cuti
+                    </span>
+                    <span className="text-2xl font-bold text-sky-800">
+                      {calculateDays(formData.tanggal_mulai, formData.tanggal_selesai)} hari
+                    </span>
                   </div>
                 </div>
               )}
 
               {/* Alasan */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">Alasan Cuti</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">
+                  Alasan Cuti
+                </label>
                 <textarea
                   name="alasan"
                   value={formData.alasan}
@@ -605,15 +640,39 @@ export default function KepalaSekolahPengajuanCuti() {
 
               {/* Submit Button */}
               <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition"
+                >
                   Batal
                 </button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 bg-sky-800 text-white py-3 rounded-xl font-semibold hover:bg-sky-900 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-sky-800 text-white py-3 rounded-xl font-semibold hover:bg-sky-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {isSubmitting ? (
                     <div className="flex items-center justify-center">
-                      <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Mengirim...
                     </div>
@@ -643,17 +702,29 @@ export default function KepalaSekolahPengajuanCuti() {
           >
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                {toastMessage.type === "success" && <span className="text-green-500 text-xl">✅</span>}
-                {toastMessage.type === "error" && <span className="text-red-500 text-xl">❌</span>}
-                {toastMessage.type === "warning" && <span className="text-yellow-500 text-xl">⚠️</span>}
-                {toastMessage.type === "info" && <span className="text-blue-500 text-xl">ℹ️</span>}
+                {toastMessage.type === "success" && (
+                  <span className="text-green-500 text-xl">✅</span>
+                )}
+                {toastMessage.type === "error" && (
+                  <span className="text-red-500 text-xl">❌</span>
+                )}
+                {toastMessage.type === "warning" && (
+                  <span className="text-yellow-500 text-xl">⚠️</span>
+                )}
+                {toastMessage.type === "info" && (
+                  <span className="text-blue-500 text-xl">ℹ️</span>
+                )}
               </div>
               <div className="ml-3 flex-1">
-                <p className="text-sm font-medium whitespace-pre-line">{toastMessage.message}</p>
+                <p className="text-sm font-medium whitespace-pre-line">
+                  {toastMessage.message}
+                </p>
               </div>
               <div className="ml-4 flex-shrink-0">
                 <button
-                  onClick={() => setToastMessage((prev) => ({ ...prev, show: false }))}
+                  onClick={() =>
+                    setToastMessage((prev) => ({ ...prev, show: false }))
+                  }
                   className={`inline-flex rounded-md p-1.5 ${
                     toastMessage.type === "success"
                       ? "text-green-500 hover:bg-green-100"
@@ -663,6 +734,7 @@ export default function KepalaSekolahPengajuanCuti() {
                       ? "text-yellow-500 hover:bg-yellow-100"
                       : "text-blue-500 hover:bg-blue-100"
                   }`}
+                  aria-label="Tutup notifikasi"
                 >
                   <span className="sr-only">Close</span>
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
@@ -681,3 +753,4 @@ export default function KepalaSekolahPengajuanCuti() {
     </div>
   );
 }
+
