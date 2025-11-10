@@ -3,21 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import MenuPage from "@/components/MenuPage";
-import { employeeMenuConfig } from "@/config/menuConfig";
+import { kepalaYayasanMenuConfig } from "@/config/menuConfig";
 
-export default function EmployeeMenu() {
+export default function KepalaYayasanMenu() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("menu");
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    if (tab === "dashboard") router.push("/employee/dashboard");
-    else if (tab === "notifikasi") router.push("/employee/announcements");
-    else if (tab === "profile") router.push("/employee/profile");
+    if (tab === "dashboard") router.push("/kepala-yayasan/dashboard");
+    else if (tab === "notifikasi") router.push("/kepala-yayasan/announcements");
+    else if (tab === "profile") router.push("/kepala-yayasan/profile");
   };
 
-  // Add onClick handlers to menu items
-  const menuSectionsWithHandlers = employeeMenuConfig.map((section) => ({
+  const menuSectionsWithHandlers = kepalaYayasanMenuConfig.map((section) => ({
     ...section,
     items: section.items.map((item) => ({
       ...item,
@@ -31,3 +30,4 @@ export default function EmployeeMenu() {
 
   return <MenuPage menuSections={menuSectionsWithHandlers} activeTab={activeTab} onTabChange={handleTabChange} />;
 }
+

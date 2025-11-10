@@ -133,9 +133,19 @@ class AuthController extends Controller
     {
         $roles = $user->roles->pluck('name')->toArray();
         
-        // Admin roles
-        if (in_array('superadmin', $roles) || in_array('kepala yayasan', $roles) || in_array('direktur pendidikan', $roles)) {
+        // Admin roles (only superadmin)
+        if (in_array('superadmin', $roles)) {
             return '/admin/dashboard';
+        }
+        
+        // Kepala Yayasan
+        if (in_array('kepala yayasan', $roles)) {
+            return '/kepala-yayasan/dashboard';
+        }
+        
+        // Direktur Pendidikan
+        if (in_array('direktur pendidikan', $roles)) {
+            return '/direktur-pendidikan/dashboard';
         }
         
         // HRD roles
@@ -143,9 +153,19 @@ class AuthController extends Controller
             return '/hrd/dashboard';
         }
         
-        // Employee roles
-        if (in_array('kepala departemen', $roles) || in_array('kepala sekolah', $roles) || in_array('tenaga pendidik', $roles)) {
-            return '/employee/dashboard';
+        // Kepala Departemen
+        if (in_array('kepala departemen', $roles)) {
+            return '/kepala-departemen/dashboard';
+        }
+        
+        // Kepala Sekolah
+        if (in_array('kepala sekolah', $roles)) {
+            return '/kepala-sekolah/dashboard';
+        }
+        
+        // Tenaga Pendidik
+        if (in_array('tenaga pendidik', $roles)) {
+            return '/tenaga-pendidik/dashboard';
         }
         
         return '/dashboard';

@@ -4,6 +4,8 @@ import type { NextRequest } from "next/server";
 // Define protected routes and their required roles
 const protectedRoutes = {
   "/admin": ["superadmin"],
+  "/kepala-yayasan": ["kepala yayasan"],
+  "/direktur-pendidikan": ["direktur pendidikan"],
   "/hrd": ["kepala hrd", "staff hrd"],
   "/kepala-departemen": ["kepala departemen"],
   "/kepala-sekolah": ["kepala sekolah"],

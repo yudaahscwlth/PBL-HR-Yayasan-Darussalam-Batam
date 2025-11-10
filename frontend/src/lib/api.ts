@@ -282,6 +282,66 @@ export const apiClient = {
       const response = await api.get("/attendance/history", { params });
       return response.data;
     },
+
+    getLog: async (id: number): Promise<ApiResponse> => {
+      const response = await api.get(`/attendance/${id}/log`);
+      return response.data;
+    },
+
+    createManual: async (data?: { tanggal_mulai?: string; durasi_hari?: number; status_absensi?: string; keterangan_pendukung?: string; file_pendukung?: File }): Promise<ApiResponse> => {
+      // If no file upload, use JSON instead of FormData
+      if (!data?.file_pendukung) {
+        try {
+          const response = await api.post("/attendance/manual", {
+            tanggal_mulai: data?.tanggal_mulai,
+            durasi_hari: data?.durasi_hari,
+            status_absensi: data?.status_absensi,
+            keterangan_pendukung: data?.keterangan_pendukung,
+          });
+          return response.data;
+        } catch (error: any) {
+          // Return error response in the same format as success
+          if (error.response?.data) {
+            return error.response.data;
+          }
+          throw error;
+        }
+      }
+
+      // Use FormData when file is present
+      const formData = new FormData();
+
+      if (data?.tanggal_mulai) {
+        formData.append("tanggal_mulai", data.tanggal_mulai);
+      }
+      if (data?.durasi_hari !== undefined) {
+        formData.append("durasi_hari", data.durasi_hari.toString());
+      }
+      if (data?.status_absensi) {
+        formData.append("status_absensi", data.status_absensi);
+      }
+      if (data?.keterangan_pendukung) {
+        formData.append("keterangan_pendukung", data.keterangan_pendukung);
+      }
+      if (data?.file_pendukung) {
+        formData.append("file_pendukung", data.file_pendukung);
+      }
+
+      try {
+        const response = await api.post("/attendance/manual", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        return response.data;
+      } catch (error: any) {
+        // Return error response in the same format as success
+        if (error.response?.data) {
+          return error.response.data;
+        }
+        throw error;
+      }
+    },
   },
 
   // Leave endpoints

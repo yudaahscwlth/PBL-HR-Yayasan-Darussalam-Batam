@@ -11,7 +11,6 @@ interface AuthStore extends AuthState {
   hasAnyPermission: (permissions: string[]) => boolean;
   isAdmin: () => boolean;
   isHRD: () => boolean;
-  isEmployee: () => boolean;
   initialize: () => void;
 }
 
@@ -211,11 +210,6 @@ export const useAuthStore = create<AuthStore>()(
         const { hasAnyRole } = get();
         return hasAnyRole(["kepala hrd", "staff hrd"]);
       },
-
-      isEmployee: () => {
-        const { hasAnyRole } = get();
-        return hasAnyRole(["kepala departemen", "kepala sekolah", "tenaga pendidik"]);
-      },
     }),
     {
       name: "auth-storage",
@@ -251,6 +245,18 @@ export const getRedirectPath = (user: User | null): string => {
   if (roles.includes("superadmin")) {
     console.log("Admin role detected, redirecting to /admin/dashboard");
     return "/admin/dashboard";
+  }
+
+  // Kepala Yayasan
+  if (roles.includes("kepala yayasan")) {
+    console.log("Kepala Yayasan role detected, redirecting to /kepala-yayasan/dashboard");
+    return "/kepala-yayasan/dashboard";
+  }
+
+  // Direktur Pendidikan
+  if (roles.includes("direktur pendidikan")) {
+    console.log("Direktur Pendidikan role detected, redirecting to /direktur-pendidikan/dashboard");
+    return "/direktur-pendidikan/dashboard";
   }
 
   // HRD roles

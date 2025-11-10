@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
@@ -431,6 +432,182 @@ class AttendanceController extends Controller
             'success' => true,
             'message' => 'Attendance history retrieved successfully',
             'data' => $attendance,
+        ]);
+    }
+
+    /**
+     * Create manual attendance record
+     */
+    public function createManual(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validatedData = $request->validate([
+            'tanggal_mulai' => 'required|date',
+            'durasi_hari' => 'required|integer|min:0',
+            'status_absensi' => 'required|in:Sakit,Cuti',
+            'keterangan_pendukung' => 'nullable|string|max:1000',
+            'file_pendukung' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ], [
+            'tanggal_mulai.required' => 'Tanggal mulai wajib diisi.',
+            'tanggal_mulai.date' => 'Format tanggal tidak valid.',
+            'durasi_hari.required' => 'Durasi hari wajib diisi.',
+            'durasi_hari.integer' => 'Durasi hari harus berupa angka.',
+            'durasi_hari.min' => 'Durasi hari minimal 0 (hari ini saja).',
+            'status_absensi.required' => 'Status absensi wajib dipilih.',
+            'status_absensi.in' => 'Status absensi hanya boleh: Sakit atau Cuti.',
+            'keterangan_pendukung.string' => 'Keterangan harus berupa teks.',
+            'keterangan_pendukung.max' => 'Keterangan maksimal 1000 karakter.',
+            'file_pendukung.file' => 'File pendukung harus berupa file.',
+            'file_pendukung.mimes' => 'Format file hanya boleh: jpg, jpeg, png, pdf.',
+            'file_pendukung.max' => 'Ukuran file maksimal 2MB.',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $filePath = null;
+            if ($request->hasFile('file_pendukung')) {
+                $file = $request->file('file_pendukung');
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('file_pendukung', $fileName, 'public');
+            }
+
+            $tanggalAwal = Carbon::parse($validatedData['tanggal_mulai']);
+            $durasi = (int) $validatedData['durasi_hari'];
+            $status = strtolower($validatedData['status_absensi']);
+            $jumlahDisimpan = 0;
+
+            for ($i = 0; $i <= $durasi; $i++) {
+                $tanggalAbsen = $tanggalAwal->copy()->addDays($i);
+
+                $sudahAbsen = Absensi::where('id_user', $user->id)
+                    ->whereDate('tanggal', $tanggalAbsen)
+                    ->exists();
+
+                if (!$sudahAbsen) {
+                    $attendance = Absensi::create([
+                        'id_user' => $user->id,
+                        'tanggal' => $tanggalAbsen,
+                        'status' => $status,
+                        'check_in' => Carbon::now(),
+                        'check_out' => Carbon::now(),
+                        'latitude_in' => null,
+                        'longitude_in' => null,
+                        'latitude_out' => null,
+                        'longitude_out' => null,
+                        'keterangan' => $validatedData['keterangan_pendukung'] ?? null,
+                        'file_pendukung' => $filePath,
+                    ]);
+
+                    // Create log activity
+                    LogAktivitasAbsensi::create([
+                        'id_user' => $user->id,
+                        'id_absensi' => $attendance->id,
+                        'aksi' => 'manual_create',
+                        'data_baru' => json_encode([
+                            'tanggal' => $attendance->tanggal->format('Y-m-d'),
+                            'status' => $attendance->status,
+                            'keterangan' => $attendance->keterangan,
+                            'file_pendukung' => $attendance->file_pendukung,
+                        ]),
+                    ]);
+
+                    $jumlahDisimpan++;
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => $jumlahDisimpan > 0
+                    ? 'Berhasil menambahkan absensi ' . $validatedData['status_absensi'] . ' selama ' . $jumlahDisimpan . ' hari.'
+                    : 'Semua tanggal sudah tercatat. Tidak ada data baru yang ditambahkan.',
+                'data' => [
+                    'jumlah_disimpan' => $jumlahDisimpan,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan absensi: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get attendance log by attendance ID
+     */
+    public function getLog(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        
+        // Get attendance with trashed (soft deleted)
+        $attendance = Absensi::withTrashed()
+            ->where('id', $id)
+            ->with([
+                'user.profilePribadi',
+                'logAktivitasAbsensi.user.profilePribadi'
+            ])
+            ->first();
+
+        if (!$attendance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Attendance record not found',
+            ], 404);
+        }
+
+        // Check if user has permission to view this attendance
+        // User can only view their own attendance unless they are admin/HRD
+        $isAdmin = $user->hasAnyRole(['superadmin']);
+        $isHRD = $user->hasAnyRole(['kepala hrd', 'staff hrd']);
+        
+        if (!$isAdmin && !$isHRD && $attendance->id_user !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to view this attendance log',
+            ], 403);
+        }
+
+        // Format log activities
+        $logs = $attendance->logAktivitasAbsensi->map(function ($log) {
+            return [
+                'id' => $log->id,
+                'aksi' => $log->aksi,
+                'data_lama' => $log->data_lama ? json_decode($log->data_lama, true) : null,
+                'data_baru' => $log->data_baru ? json_decode($log->data_baru, true) : null,
+                'user' => $log->user ? [
+                    'id' => $log->user->id,
+                    'nama_lengkap' => $log->user->profilePribadi->nama_lengkap ?? 'User tidak ditemukan',
+                ] : null,
+                'created_at' => $log->created_at->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance log retrieved successfully',
+            'data' => [
+                'attendance' => [
+                    'id' => $attendance->id,
+                    'tanggal' => $attendance->tanggal->format('Y-m-d'),
+                    'status' => $attendance->status,
+                    'check_in' => $attendance->check_in ? $attendance->check_in->format('Y-m-d H:i:s') : null,
+                    'check_out' => $attendance->check_out ? $attendance->check_out->format('Y-m-d H:i:s') : null,
+                    'keterangan' => $attendance->keterangan,
+                    'file_pendukung' => $attendance->file_pendukung,
+                ],
+                'user' => [
+                    'id' => $attendance->user->id,
+                    'nama_lengkap' => $attendance->user->profilePribadi->nama_lengkap ?? 'N/A',
+                    'foto' => $attendance->user->profilePribadi->foto ?? null,
+                ],
+                'logs' => $logs,
+            ],
         ]);
     }
 

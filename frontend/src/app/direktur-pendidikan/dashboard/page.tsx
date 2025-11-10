@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import BottomNavbar from "@/components/BottomNavbar";
 import AccessControl from "@/components/AccessControl";
 
-export default function KepalaDepartemenDashboard() {
+export default function DirekturPendidikanDashboard() {
   const { user } = useAuthStore();
   const router = useRouter();
   const [attendanceStatus, setAttendanceStatus] = useState<string | null>(null);
@@ -227,7 +227,7 @@ export default function KepalaDepartemenDashboard() {
   };
 
   return (
-    <AccessControl allowedRoles={["kepala departemen"]}>
+    <AccessControl allowedRoles={["direktur pendidikan"]}>
       <div className="min-h-screen bg-gray-100 pb-28">
         {/* Header */}
         <div className="bg-[#1e4d8b] px-5 pt-3 pb-16 text-white rounded-b-3xl">
@@ -332,7 +332,3 @@ export default function KepalaDepartemenDashboard() {
     </AccessControl>
   );
 }
-
-
-
-

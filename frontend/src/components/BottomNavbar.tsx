@@ -21,6 +21,8 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
     if (!user?.roles) return { dashboard: "/", menu: "/", profile: "/profile" };
 
     const isAdmin = user.roles.includes("superadmin");
+    const isKepalaYayasan = user.roles.includes("kepala yayasan");
+    const isDirekturPendidikan = user.roles.includes("direktur pendidikan");
     const isHRD = user.roles.includes("kepala hrd") || user.roles.includes("staff hrd");
     const isKepalaDepartemen = user.roles.includes("kepala departemen");
     const isKepalaSekolah = user.roles.includes("kepala sekolah");
@@ -32,6 +34,18 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
         menu: "/admin/menu",
         profile: "/profile",
       };
+    } else if (isKepalaYayasan) {
+      return {
+        dashboard: "/kepala-yayasan/dashboard",
+        menu: "/kepala-yayasan/menu",
+        profile: "/kepala-yayasan/profile",
+      };
+    } else if (isDirekturPendidikan) {
+      return {
+        dashboard: "/direktur-pendidikan/dashboard",
+        menu: "/direktur-pendidikan/menu",
+        profile: "/direktur-pendidikan/profile",
+      };
     } else if (isHRD) {
       return {
         dashboard: "/hrd/dashboard",
@@ -42,19 +56,19 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
       return {
         dashboard: "/kepala-departemen/dashboard",
         menu: "/kepala-departemen/menu",
-        profile: "/profile",
+        profile: "/kepala-departemen/profile",
       };
     } else if (isKepalaSekolah) {
       return {
         dashboard: "/kepala-sekolah/dashboard",
         menu: "/kepala-sekolah/menu",
-        profile: "/profile",
+        profile: "/kepala-sekolah/profile",
       };
     } else if (isTenagaPendidik) {
       return {
         dashboard: "/tenaga-pendidik/dashboard",
         menu: "/tenaga-pendidik/menu",
-        profile: "/profile",
+        profile: "/tenaga-pendidik/profile",
       };
     }
 
