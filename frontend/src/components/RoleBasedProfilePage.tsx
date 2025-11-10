@@ -61,7 +61,6 @@ export default function RoleBasedProfilePage() {
 
     const isAdmin = user.roles.includes("superadmin") || user.roles.includes("kepala yayasan") || user.roles.includes("direktur pendidikan");
     const isHRD = user.roles.includes("kepala hrd") || user.roles.includes("staff hrd");
-    const isEmployee = user.roles.includes("kepala departemen") || user.roles.includes("kepala sekolah") || user.roles.includes("tenaga pendidik");
 
     interface MenuItem {
       title: string;
