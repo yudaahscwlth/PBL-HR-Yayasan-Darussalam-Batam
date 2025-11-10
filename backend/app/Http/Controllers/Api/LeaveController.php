@@ -24,6 +24,7 @@ class LeaveController extends Controller
                 ->get();
         } else {
             $leaves = PengajuanCuti::where('id_user', $user->id)
+                ->with(['user.profilePribadi'])
                 ->orderBy('created_at', 'desc')
                 ->get();
         }
@@ -53,9 +54,9 @@ class LeaveController extends Controller
             'id_user' => $user->id,
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
-            'jenis_cuti' => $request->jenis_cuti,
-            'alasan' => $request->alasan,
-            'status' => 'pending',
+            'tipe_cuti' => strtolower($request->jenis_cuti),
+            'alasan_pendukung' => $request->alasan,
+            'status_pengajuan' => 'ditinjau kepala sekolah',
         ]);
 
         return response()->json([
@@ -94,7 +95,9 @@ class LeaveController extends Controller
             ], 403);
         }
 
-        if ($leave->status !== 'pending') {
+        // Check if leave request can still be updated
+        $allowedStatuses = ['ditinjau kepala sekolah', 'ditinjau hrd', 'ditinjau kepala hrd'];
+        if (!in_array($leave->status_pengajuan, $allowedStatuses)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot update approved or rejected leave request',
@@ -108,7 +111,13 @@ class LeaveController extends Controller
             'alasan' => 'sometimes|string',
         ]);
 
-        $leave->update($request->all());
+        $updateData = [];
+        if ($request->has('tanggal_mulai')) $updateData['tanggal_mulai'] = $request->tanggal_mulai;
+        if ($request->has('tanggal_selesai')) $updateData['tanggal_selesai'] = $request->tanggal_selesai;
+        if ($request->has('jenis_cuti')) $updateData['tipe_cuti'] = strtolower($request->jenis_cuti);
+        if ($request->has('alasan')) $updateData['alasan_pendukung'] = $request->alasan;
+
+        $leave->update($updateData);
 
         return response()->json([
             'success' => true,
@@ -132,7 +141,9 @@ class LeaveController extends Controller
             ], 403);
         }
 
-        if ($leave->status !== 'pending') {
+        // Check if leave request can still be deleted
+        $allowedStatuses = ['ditinjau kepala sekolah', 'ditinjau hrd', 'ditinjau kepala hrd'];
+        if (!in_array($leave->status_pengajuan, $allowedStatuses)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete approved or rejected leave request',
@@ -162,17 +173,14 @@ class LeaveController extends Controller
             ], 403);
         }
 
-        if ($leave->status !== 'pending') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Leave request is not pending',
-            ], 400);
+        // Determine approval status based on user role
+        $newStatus = 'disetujui hrd';
+        if ($user->hasRole('kepala hrd')) {
+            $newStatus = 'disetujui kepala hrd';
         }
 
         $leave->update([
-            'status' => 'approved',
-            'approved_by' => $user->id,
-            'approved_at' => Carbon::now(),
+            'status_pengajuan' => $newStatus,
         ]);
 
         return response()->json([
@@ -197,22 +205,19 @@ class LeaveController extends Controller
             ], 403);
         }
 
-        if ($leave->status !== 'pending') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Leave request is not pending',
-            ], 400);
-        }
-
         $request->validate([
-            'reason' => 'required|string',
+            'reason' => 'sometimes|string',
         ]);
 
+        // Determine rejection status based on user role
+        $newStatus = 'ditolak hrd';
+        if ($user->hasRole('kepala hrd')) {
+            $newStatus = 'ditolak kepala hrd';
+        }
+
         $leave->update([
-            'status' => 'rejected',
-            'approved_by' => $user->id,
-            'approved_at' => Carbon::now(),
-            'keterangan' => $request->reason,
+            'status_pengajuan' => $newStatus,
+            'komentar' => $request->reason ?? 'Ditolak',
         ]);
 
         return response()->json([

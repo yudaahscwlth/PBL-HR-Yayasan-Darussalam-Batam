@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "./providers";
+import { Poppins } from "next/font/google";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+
 
 export const metadata: Metadata = {
   title: "HR Yayasan Darussalam",
@@ -28,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="msapplication-TileColor" content="#1e4d8b" />
         <meta name="msapplication-tap-highlight" content="no" />
       </head>
-      <body className="antialiased" suppressHydrationWarning>
+         <body className={`antialiased ${poppins.className}`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>
