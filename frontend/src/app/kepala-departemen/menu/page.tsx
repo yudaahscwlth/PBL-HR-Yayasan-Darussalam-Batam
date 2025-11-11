@@ -13,7 +13,7 @@ export default function KepalaDepartemenMenu() {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/kepala-departemen/dashboard");
     else if (tab === "notifikasi") router.push("/kepala-departemen/announcements");
-    else if (tab === "profile") router.push("/kepala-departemen/profile");
+    else if (tab === "profile") router.push("/kepala-departemen/dashboard"); // Profile page tidak ada, redirect ke dashboard
   };
 
   const menuSectionsWithHandlers = kepalaDepartemenMenuConfig.map((section) => ({

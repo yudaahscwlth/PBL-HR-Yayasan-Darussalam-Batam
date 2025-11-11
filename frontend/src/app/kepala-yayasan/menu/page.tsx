@@ -13,7 +13,7 @@ export default function KepalaYayasanMenu() {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/kepala-yayasan/dashboard");
     else if (tab === "notifikasi") router.push("/kepala-yayasan/announcements");
-    else if (tab === "profile") router.push("/kepala-yayasan/profile");
+    else if (tab === "profile") router.push("/kepala-yayasan/dashboard"); // Profile page tidak ada, redirect ke dashboard
   };
 
   const menuSectionsWithHandlers = kepalaYayasanMenuConfig.map((section) => ({
@@ -30,4 +30,3 @@ export default function KepalaYayasanMenu() {
 
   return <MenuPage menuSections={menuSectionsWithHandlers} activeTab={activeTab} onTabChange={handleTabChange} />;
 }
-

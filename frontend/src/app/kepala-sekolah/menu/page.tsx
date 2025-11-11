@@ -13,7 +13,7 @@ export default function KepalaSekolahMenu() {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/kepala-sekolah/dashboard");
     else if (tab === "notifikasi") router.push("/kepala-sekolah/announcements");
-    else if (tab === "profile") router.push("/kepala-sekolah/profile");
+    else if (tab === "profile") router.push("/kepala-sekolah/dashboard"); // Profile page tidak ada, redirect ke dashboard
   };
 
   const menuSectionsWithHandlers = kepalaSekolahMenuConfig.map((section) => ({
