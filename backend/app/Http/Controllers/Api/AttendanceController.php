@@ -436,6 +436,31 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Get all attendance records for today (for HRD/Admin)
+     */
+    public function getTodayAll(Request $request): JsonResponse
+    {
+        $today = Carbon::today();
+
+        $attendance = Absensi::whereDate('tanggal', $today)
+            ->with([
+                'user.profilePekerjaan.departemen',
+                'user.profilePekerjaan.tempatKerja',
+                'user.profilePekerjaan.jabatan',
+                'user.profilePribadi'
+            ])
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('check_in', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Today attendance records retrieved successfully',
+            'data' => $attendance,
+        ]);
+    }
+
+    /**
      * Create manual attendance record
      */
     public function createManual(Request $request): JsonResponse
