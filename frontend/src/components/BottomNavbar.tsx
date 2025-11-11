@@ -18,7 +18,7 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
 
   // Get role-based paths
   const getRoleBasedPaths = () => {
-    if (!user?.roles) return { dashboard: "/", menu: "/", profile: "/profile" };
+    if (!user?.roles) return { dashboard: "/", menu: "/", profile: "/profile", notifikasi: "/" };
 
     const isAdmin = user.roles.includes("superadmin");
     const isKepalaYayasan = user.roles.includes("kepala yayasan");
@@ -33,46 +33,53 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
         dashboard: "/admin/dashboard",
         menu: "/admin/menu",
         profile: "/profile",
+        notifikasi: "/admin/announcements",
       };
     } else if (isKepalaYayasan) {
       return {
         dashboard: "/kepala-yayasan/dashboard",
         menu: "/kepala-yayasan/menu",
         profile: "/kepala-yayasan/profile",
+        notifikasi: "/kepala-yayasan/announcements",
       };
     } else if (isDirekturPendidikan) {
       return {
         dashboard: "/direktur-pendidikan/dashboard",
         menu: "/direktur-pendidikan/menu",
         profile: "/direktur-pendidikan/profile",
+        notifikasi: "/direktur-pendidikan/announcements",
       };
     } else if (isHRD) {
       return {
         dashboard: "/hrd/dashboard",
         menu: "/hrd/menu",
-        profile: "/profile",
+        profile: "/hrd/profile",
+        notifikasi: "/hrd/announcements",
       };
     } else if (isKepalaDepartemen) {
       return {
         dashboard: "/kepala-departemen/dashboard",
         menu: "/kepala-departemen/menu",
         profile: "/kepala-departemen/profile",
+        notifikasi: "/kepala-departemen/announcements",
       };
     } else if (isKepalaSekolah) {
       return {
         dashboard: "/kepala-sekolah/dashboard",
         menu: "/kepala-sekolah/menu",
         profile: "/kepala-sekolah/profile",
+        notifikasi: "/kepala-sekolah/announcements",
       };
     } else if (isTenagaPendidik) {
       return {
         dashboard: "/tenaga-pendidik/dashboard",
         menu: "/tenaga-pendidik/menu",
         profile: "/tenaga-pendidik/profile",
+        notifikasi: "/tenaga-pendidik/announcements",
       };
     }
 
-    return { dashboard: "/", menu: "/", profile: "/profile" };
+    return { dashboard: "/", menu: "/", profile: "/profile", notifikasi: "/" };
   };
 
   const rolePaths = getRoleBasedPaths();
@@ -118,7 +125,7 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
           />
         </svg>
       ),
-      path: "/hrd/announcements",
+      path: rolePaths.notifikasi,
     },
     {
       id: "profile",
