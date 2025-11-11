@@ -278,6 +278,11 @@ export const apiClient = {
       return response.data;
     },
 
+    getTodayAll: async (): Promise<ApiResponse> => {
+      const response = await api.get("/attendance/today-all");
+      return response.data;
+    },
+
     getHistory: async (params?: Record<string, unknown>): Promise<ApiResponse> => {
       const response = await api.get("/attendance/history", { params });
       return response.data;

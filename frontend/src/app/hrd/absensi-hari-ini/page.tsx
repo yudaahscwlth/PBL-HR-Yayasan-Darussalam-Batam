@@ -20,9 +20,24 @@ interface AttendanceRecord {
   longitude_out: number | null;
   created_at: string;
   updated_at: string;
+  user?: {
+    id: number;
+    email: string;
+    profile_pribadi?: {
+      nama_lengkap: string;
+    };
+    profile_pekerjaan?: {
+      departemen?: {
+        nama_departemen: string;
+      };
+      jabatan?: {
+        nama_jabatan: string;
+      };
+    };
+  };
 }
 
-export default function HRDAbsensiPribadi() {
+export default function HRDAbsensiHariIni() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
@@ -32,79 +47,18 @@ export default function HRDAbsensiPribadi() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
 
-  // Modal state
-  const [showModal, setShowModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    tanggal_mulai: new Date().toISOString().split("T")[0],
-    durasi_hari: "",
-    status_absensi: "Sakit",
-    file_pendukung: null as File | null,
-    keterangan_pendukung: "",
-  });
-  const [selectedFileName, setSelectedFileName] = useState("Tidak ada file yang dipilih");
-
   // File preview modal state
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
   const [previewFileType, setPreviewFileType] = useState<string | null>(null);
   const [imageLoadError, setImageLoadError] = useState(false);
-  const [lastToastTime, setLastToastTime] = useState<number>(0);
-
-  // Toast function
-  const showToast = (message: string, type: "success" | "error" | "warning" | "info" = "info") => {
-    const now = Date.now();
-    if (now - lastToastTime < 2000) return; // Debounce
-
-    setLastToastTime(now);
-
-    const toast = document.createElement("div");
-    toast.className = `fixed top-4 right-4 z-[60] px-6 py-3 rounded-lg shadow-lg text-white font-medium max-w-sm transform transition-all duration-300 ease-in-out ${
-      type === "success" ? "bg-green-500" : type === "error" ? "bg-red-500" : type === "warning" ? "bg-yellow-500" : "bg-blue-500"
-    }`;
-
-    const icon = type === "success" ? "✅" : type === "error" ? "❌" : type === "warning" ? "⚠️" : "ℹ️";
-
-    // Create toast content safely
-    const toastContent = document.createElement("div");
-    toastContent.className = "flex items-center gap-2";
-    const iconSpan = document.createElement("span");
-    iconSpan.textContent = icon;
-    const messageSpan = document.createElement("span");
-    messageSpan.textContent = message;
-    toastContent.appendChild(iconSpan);
-    toastContent.appendChild(messageSpan);
-    toast.appendChild(toastContent);
-
-    // Add animation
-    toast.style.opacity = "0";
-    toast.style.transform = "translateX(100%)";
-    document.body.appendChild(toast);
-
-    // Trigger animation
-    setTimeout(() => {
-      toast.style.opacity = "1";
-      toast.style.transform = "translateX(0)";
-    }, 10);
-
-    // Auto remove
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateX(100%)";
-      setTimeout(() => {
-        if (toast.parentNode) {
-          toast.remove();
-        }
-      }, 300);
-    }, 5000);
-  };
 
   // Fetch attendance data
   useEffect(() => {
     const loadAttendanceData = async () => {
       try {
         setIsLoading(true);
-        const response = await apiClient.attendance.getHistory();
+        const response = await apiClient.attendance.getTodayAll();
 
         if (response.success && response.data) {
           const data = response.data as AttendanceRecord[];
@@ -123,7 +77,14 @@ export default function HRDAbsensiPribadi() {
 
   // Filter data based on search term
   const filteredData = attendanceData.filter(
-    (record) => record.tanggal.toLowerCase().includes(searchTerm.toLowerCase()) || record.status.toLowerCase().includes(searchTerm.toLowerCase()) || (record.keterangan && record.keterangan.toLowerCase().includes(searchTerm.toLowerCase()))
+    (record) =>
+      record.user?.profile_pribadi?.nama_lengkap?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.tanggal.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (record.keterangan && record.keterangan.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      record.user?.profile_pekerjaan?.departemen?.nama_departemen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.user?.profile_pekerjaan?.jabatan?.nama_jabatan?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination
@@ -158,37 +119,13 @@ export default function HRDAbsensiPribadi() {
         return "bg-blue-100 text-blue-800";
       case "tidak hadir":
         return "bg-red-100 text-red-800";
+      case "sakit":
+        return "bg-yellow-100 text-yellow-800";
+      case "cuti":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
-  };
-
-  const handleOpenModal = () => {
-    setFormData({
-      tanggal_mulai: new Date().toISOString().split("T")[0],
-      durasi_hari: "",
-      status_absensi: "Sakit",
-      file_pendukung: null,
-      keterangan_pendukung: "",
-    });
-    setSelectedFileName("Tidak ada file yang dipilih");
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setIsSubmitting(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFormData((prev) => ({ ...prev, file_pendukung: file }));
-    setSelectedFileName(file ? file.name : "Tidak ada file yang dipilih");
   };
 
   const handleOpenFilePreview = (filePath: string) => {
@@ -218,50 +155,6 @@ export default function HRDAbsensiPribadi() {
     setImageLoadError(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // Validate durasi_hari
-      const durasiHari = parseInt(formData.durasi_hari) || 0;
-      if (durasiHari < 0) {
-        showToast("Durasi hari tidak boleh negatif", "error");
-        setIsSubmitting(false);
-        return;
-      }
-
-      // Call API to create manual attendance
-      const response = await apiClient.attendance.createManual({
-        tanggal_mulai: formData.tanggal_mulai,
-        durasi_hari: durasiHari,
-        status_absensi: formData.status_absensi,
-        keterangan_pendukung: formData.keterangan_pendukung || undefined,
-        file_pendukung: formData.file_pendukung || undefined,
-      });
-
-      if (response.success) {
-        // Reload attendance data
-        const historyResponse = await apiClient.attendance.getHistory();
-        if (historyResponse.success && historyResponse.data) {
-          setAttendanceData(historyResponse.data as AttendanceRecord[]);
-          setTotalRecords((historyResponse.data as AttendanceRecord[]).length);
-        }
-
-        handleCloseModal();
-        showToast(response.message || "Absensi berhasil ditambahkan!", "success");
-      } else {
-        showToast(response.message || "Gagal menambahkan absensi. Silakan coba lagi.", "error");
-      }
-    } catch (error: any) {
-      console.error("Error submitting attendance:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Gagal menambahkan absensi. Silakan coba lagi.";
-      showToast(errorMessage, "error");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
       <div className="min-h-screen bg-gray-100 pb-28">
@@ -273,7 +166,7 @@ export default function HRDAbsensiPribadi() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </button>
-            <h1 className="text-xl font-bold text-gray-800">Absensi Pribadi</h1>
+            <h1 className="text-xl font-bold text-gray-800">Absensi Hari Ini</h1>
           </div>
         </div>
 
@@ -281,10 +174,7 @@ export default function HRDAbsensiPribadi() {
         <div className="px-5 mt-4">
           <div className="bg-white rounded-2xl shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800">Absensi Pribadi</h2>
-              <button onClick={handleOpenModal} className="bg-[#1e4d8b] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                Tambah Baru
-              </button>
+              <h2 className="text-lg font-bold text-gray-800">Absensi Hari Ini</h2>
             </div>
 
             {/* Search and Filter */}
@@ -292,7 +182,7 @@ export default function HRDAbsensiPribadi() {
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="Cari berdasarkan tanggal, status, atau keterangan..."
+                  placeholder="Cari berdasarkan nama, email, tanggal, status, departemen, atau jabatan..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -314,6 +204,9 @@ export default function HRDAbsensiPribadi() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Nama</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Departemen</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Jabatan</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Tanggal</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Check In</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700">Check Out</th>
@@ -326,7 +219,7 @@ export default function HRDAbsensiPribadi() {
                 <tbody>
                   {isLoading ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-gray-500">
+                      <td colSpan={10} className="text-center py-8 text-gray-500">
                         <div className="flex items-center justify-center">
                           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
                           Loading...
@@ -335,13 +228,16 @@ export default function HRDAbsensiPribadi() {
                     </tr>
                   ) : currentData.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-gray-500">
-                        Tidak ada data absensi
+                      <td colSpan={10} className="text-center py-8 text-gray-500">
+                        Tidak ada data absensi hari ini
                       </td>
                     </tr>
                   ) : (
                     currentData.map((record) => (
                       <tr key={record.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 text-gray-700">{record.user?.profile_pribadi?.nama_lengkap || record.user?.email || "-"}</td>
+                        <td className="py-3 px-4 text-gray-700">{record.user?.profile_pekerjaan?.departemen?.nama_departemen || "-"}</td>
+                        <td className="py-3 px-4 text-gray-700">{record.user?.profile_pekerjaan?.jabatan?.nama_jabatan || "-"}</td>
                         <td className="py-3 px-4 text-gray-700">{formatDate(record.tanggal)}</td>
                         <td className="py-3 px-4 text-gray-700">{formatTime(record.check_in)}</td>
                         <td className="py-3 px-4 text-gray-700">{formatTime(record.check_out)}</td>
@@ -417,136 +313,22 @@ export default function HRDAbsensiPribadi() {
                   <span className="w-3 h-3 bg-red-100 rounded-full"></span>
                   <span className="text-red-800">Tidak Hadir</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 bg-yellow-100 rounded-full"></span>
+                  <span className="text-yellow-800">Sakit</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 bg-purple-100 rounded-full"></span>
+                  <span className="text-purple-800">Cuti</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Modal Tambah Absensi */}
-        {showModal && (
-          <div className="fixed inset-0 backdrop-blur-md bg-white/10 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-              {/* Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
-                <h3 className="text-lg font-semibold text-gray-800">Tambah Absensi</h3>
-                <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600 transition">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Modal Body */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                {/* Tanggal Mulai */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tanggal Mulai</label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      name="tanggal_mulai"
-                      value={formData.tanggal_mulai}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
-                      required
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Durasi Hari */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Durasi Hari</label>
-                  <input
-                    type="number"
-                    name="durasi_hari"
-                    value={formData.durasi_hari}
-                    onChange={handleInputChange}
-                    placeholder="Jumlah hari absen (0 = hari ini saja)"
-                    min="0"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
-                    required
-                  />
-                </div>
-
-                {/* Status Absensi */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Status Absensi</label>
-                  <div className="relative">
-                    <select
-                      name="status_absensi"
-                      value={formData.status_absensi}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-gray-800"
-                      required
-                    >
-                      <option value="Sakit">Sakit</option>
-                      <option value="Cuti">Cuti</option>
-                    </select>
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* File Pendukung */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">File Pendukung</label>
-                  <div className="flex items-center gap-3">
-                    <label className="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors text-sm font-medium">
-                      Pilih File
-                      <input type="file" onChange={handleFileChange} className="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
-                    </label>
-                    <span className="text-sm text-gray-600 flex-1">{selectedFileName}</span>
-                  </div>
-                </div>
-
-                {/* Keterangan Pendukung */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Keterangan Pendukung</label>
-                  <textarea
-                    name="keterangan_pendukung"
-                    value={formData.keterangan_pendukung}
-                    onChange={handleInputChange}
-                    placeholder="Dapat dikosongkan jika tidak ada"
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-gray-800"
-                  />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-3 pt-4">
-                  <button type="button" onClick={handleCloseModal} disabled={isSubmitting} className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50">
-                    Close
-                  </button>
-                  <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-[#1e4d8b] text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    {isSubmitting ? (
-                      <div className="flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Menyimpan...
-                      </div>
-                    ) : (
-                      "Simpan"
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
         {/* File Preview Modal */}
         {showFilePreview && previewFileUrl && (
-          <div className="fixed inset-0 backdrop-blur-md bg-white/10 bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 backdrop-blur-md bg-white/10 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
               {/* Modal Header */}
               <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
