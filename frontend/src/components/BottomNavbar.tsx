@@ -18,7 +18,7 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
 
   // Get role-based paths
   const getRoleBasedPaths = () => {
-    if (!user?.roles) return { dashboard: "/", menu: "/", profile: "/profile", notifikasi: "/" };
+    if (!user?.roles) return { dashboard: "/", menu: "/", profile: "/", notifikasi: "/" };
 
     const isAdmin = user.roles.includes("superadmin");
     const isKepalaYayasan = user.roles.includes("kepala yayasan");
@@ -32,21 +32,21 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
       return {
         dashboard: "/admin/dashboard",
         menu: "/admin/menu",
-        profile: "/profile",
+        profile: "/admin/dashboard", // Profile page tidak ada, redirect ke dashboard
         notifikasi: "/admin/announcements",
       };
     } else if (isKepalaYayasan) {
       return {
         dashboard: "/kepala-yayasan/dashboard",
         menu: "/kepala-yayasan/menu",
-        profile: "/kepala-yayasan/profile",
+        profile: "/kepala-yayasan/dashboard", // Profile page tidak ada, redirect ke dashboard
         notifikasi: "/kepala-yayasan/announcements",
       };
     } else if (isDirekturPendidikan) {
       return {
         dashboard: "/direktur-pendidikan/dashboard",
         menu: "/direktur-pendidikan/menu",
-        profile: "/direktur-pendidikan/profile",
+        profile: "/direktur-pendidikan/dashboard", // Profile page tidak ada, redirect ke dashboard
         notifikasi: "/direktur-pendidikan/announcements",
       };
     } else if (isHRD) {
@@ -60,26 +60,26 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
       return {
         dashboard: "/kepala-departemen/dashboard",
         menu: "/kepala-departemen/menu",
-        profile: "/kepala-departemen/profile",
+        profile: "/kepala-departemen/dashboard", // Profile page tidak ada, redirect ke dashboard
         notifikasi: "/kepala-departemen/announcements",
       };
     } else if (isKepalaSekolah) {
       return {
         dashboard: "/kepala-sekolah/dashboard",
         menu: "/kepala-sekolah/menu",
-        profile: "/kepala-sekolah/profile",
+        profile: "/kepala-sekolah/dashboard", // Profile page tidak ada, redirect ke dashboard
         notifikasi: "/kepala-sekolah/announcements",
       };
     } else if (isTenagaPendidik) {
       return {
         dashboard: "/tenaga-pendidik/dashboard",
         menu: "/tenaga-pendidik/menu",
-        profile: "/tenaga-pendidik/profile",
+        profile: "/tenaga-pendidik/dashboard", // Profile page tidak ada, redirect ke dashboard
         notifikasi: "/tenaga-pendidik/announcements",
       };
     }
 
-    return { dashboard: "/", menu: "/", profile: "/profile", notifikasi: "/" };
+    return { dashboard: "/", menu: "/", profile: "/", notifikasi: "/" };
   };
 
   const rolePaths = getRoleBasedPaths();
