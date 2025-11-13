@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\TempatKerjaController;
 use App\Http\Controllers\Api\SosialMediaController;
+use App\Http\Controllers\Api\JabatanController;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
@@ -78,6 +79,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Sosial Media routes
     Route::apiResource('sosial-media', SosialMediaController::class);
+
+    // Jabatan routes
+    Route::apiResource('jabatan', JabatanController::class);
 });
 
 
