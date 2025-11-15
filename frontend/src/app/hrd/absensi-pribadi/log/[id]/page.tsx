@@ -195,12 +195,18 @@ export default function LogAbsensiPage() {
                   Log Absensi {logData.user.nama_lengkap} / {formatDateShort(logData.attendance.tanggal)}
                 </h2>
                 <div className="mt-2 text-sm text-gray-600">
-                  <p>Status: <span className="font-semibold capitalize">{logData.attendance.status}</span></p>
+                  <p>
+                    Status: <span className="font-semibold capitalize">{logData.attendance.status}</span>
+                  </p>
                   {logData.attendance.check_in && (
-                    <p>Check In: <span className="font-semibold">{formatDate(logData.attendance.check_in)}</span></p>
+                    <p>
+                      Check In: <span className="font-semibold">{formatDate(logData.attendance.check_in)}</span>
+                    </p>
                   )}
                   {logData.attendance.check_out && (
-                    <p>Check Out: <span className="font-semibold">{formatDate(logData.attendance.check_out)}</span></p>
+                    <p>
+                      Check Out: <span className="font-semibold">{formatDate(logData.attendance.check_out)}</span>
+                    </p>
                   )}
                 </div>
               </div>
@@ -215,7 +221,7 @@ export default function LogAbsensiPage() {
           {/* Logs Card */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Riwayat Aktivitas</h3>
-            
+
             {logData.logs.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,24 +239,14 @@ export default function LogAbsensiPage() {
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-semibold text-sm">{getActionLabel(log.aksi)}</span>
                             <span className="text-xs opacity-75">oleh</span>
-                            <span className="font-semibold text-sm">
-                              {log.user ? log.user.nama_lengkap : "Sistem (Auto-generated)"}
-                            </span>
+                            <span className="font-semibold text-sm">{log.user ? log.user.nama_lengkap : "Sistem (Auto-generated)"}</span>
                           </div>
                           <p className="text-xs opacity-75">{formatDate(log.created_at)}</p>
                         </div>
                         {(log.data_lama || log.data_baru) && (
-                          <button
-                            onClick={() => toggleLogExpansion(log.id)}
-                            className="ml-4 text-sm font-medium hover:opacity-75 transition-opacity flex items-center gap-1"
-                          >
+                          <button onClick={() => toggleLogExpansion(log.id)} className="ml-4 text-sm font-medium hover:opacity-75 transition-opacity flex items-center gap-1">
                             {expandedLogs.has(log.id) ? "Sembunyikan" : "Lihat Detail"}
-                            <svg
-                              className={`w-4 h-4 transition-transform ${expandedLogs.has(log.id) ? "rotate-180" : ""}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
+                            <svg className={`w-4 h-4 transition-transform ${expandedLogs.has(log.id) ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </button>
@@ -262,17 +258,13 @@ export default function LogAbsensiPage() {
                           {log.data_lama && (
                             <div>
                               <h4 className="font-semibold text-sm mb-2">Data Lama:</h4>
-                              <pre className="bg-white bg-opacity-50 p-3 rounded text-xs overflow-x-auto">
-                                {JSON.stringify(log.data_lama, null, 2)}
-                              </pre>
+                              <pre className="bg-white bg-opacity-50 p-3 rounded text-xs overflow-x-auto">{JSON.stringify(log.data_lama, null, 2)}</pre>
                             </div>
                           )}
                           {log.data_baru && (
                             <div>
                               <h4 className="font-semibold text-sm mb-2">Data Baru:</h4>
-                              <pre className="bg-white bg-opacity-50 p-3 rounded text-xs overflow-x-auto">
-                                {JSON.stringify(log.data_baru, null, 2)}
-                              </pre>
+                              <pre className="bg-white bg-opacity-50 p-3 rounded text-xs overflow-x-auto">{JSON.stringify(log.data_baru, null, 2)}</pre>
                             </div>
                           )}
                         </div>
@@ -288,4 +280,3 @@ export default function LogAbsensiPage() {
     </AccessControl>
   );
 }
-
