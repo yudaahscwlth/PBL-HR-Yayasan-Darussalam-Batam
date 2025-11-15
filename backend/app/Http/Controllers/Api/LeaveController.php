@@ -161,9 +161,19 @@ class LeaveController extends Controller
     /**
      * Approve leave request
      */
-    public function approve(Request $request, PengajuanCuti $leave): JsonResponse
+    public function approve(Request $request, $id): JsonResponse
     {
         $user = $request->user();
+        
+        // Find the leave request by ID
+        $leave = PengajuanCuti::find($id);
+        
+        if (!$leave) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request not found',
+            ], 404);
+        }
         
         // Check if user has permission to approve
         if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
@@ -173,15 +183,48 @@ class LeaveController extends Controller
             ], 403);
         }
 
-        // Determine approval status based on user role
-        $newStatus = 'disetujui hrd';
+        // Determine approval status based on user role and leave type
         if ($user->hasRole('kepala hrd')) {
-            $newStatus = 'disetujui kepala hrd';
+            // For cuti tahunan, status should be "disetujui kepala hrd menunggu tinjauan dirpen"
+            if (strtolower($leave->tipe_cuti) === 'cuti tahunan') {
+                $newStatus = 'disetujui kepala hrd menunggu tinjauan dirpen';
+            } else {
+                $newStatus = 'disetujui kepala hrd';
+            }
+        } else {
+            // Staff HRD: For cuti tahunan, status should be "disetujui hrd menunggu tinjauan dirpen"
+            if (strtolower($leave->tipe_cuti) === 'cuti tahunan') {
+                $newStatus = 'disetujui hrd menunggu tinjauan dirpen';
+            } else {
+                $newStatus = 'disetujui hrd';
+            }
         }
 
-        $leave->update([
+        // Get komentar from request if provided
+        $komentar = $request->input('komentar', null);
+
+        // Prepare update data
+        $updateData = [
             'status_pengajuan' => $newStatus,
-        ]);
+        ];
+
+        if ($komentar !== null && $komentar !== '') {
+            $updateData['komentar'] = $komentar;
+        }
+
+        // Update in database using update method to ensure it's an UPDATE query, not INSERT
+        $updated = $leave->update($updateData);
+        
+        if (!$updated) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update leave request status',
+            ], 500);
+        }
+
+        // Refresh model and reload relationships to get latest data from database
+        $leave->refresh();
+        $leave->load(['user.profilePribadi']);
 
         return response()->json([
             'success' => true,
@@ -193,9 +236,19 @@ class LeaveController extends Controller
     /**
      * Reject leave request
      */
-    public function reject(Request $request, PengajuanCuti $leave): JsonResponse
+    public function reject(Request $request, $id): JsonResponse
     {
         $user = $request->user();
+        
+        // Find the leave request by ID
+        $leave = PengajuanCuti::find($id);
+        
+        if (!$leave) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request not found',
+            ], 404);
+        }
         
         // Check if user has permission to reject
         if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
@@ -215,10 +268,25 @@ class LeaveController extends Controller
             $newStatus = 'ditolak kepala hrd';
         }
 
-        $leave->update([
+        // Prepare update data
+        $updateData = [
             'status_pengajuan' => $newStatus,
             'komentar' => $request->reason ?? 'Ditolak',
-        ]);
+        ];
+
+        // Update in database using update method to ensure it's an UPDATE query, not INSERT
+        $updated = $leave->update($updateData);
+        
+        if (!$updated) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update leave request status',
+            ], 500);
+        }
+
+        // Refresh model and reload relationships to get latest data from database
+        $leave->refresh();
+        $leave->load(['user.profilePribadi']);
 
         return response()->json([
             'success' => true,
