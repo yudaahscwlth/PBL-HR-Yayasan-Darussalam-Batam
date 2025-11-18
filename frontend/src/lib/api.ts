@@ -400,6 +400,25 @@ export const apiClient = {
     },
   },
 
+  kategoriEvaluasi: {
+    getAll: async (): Promise<ApiResponse> => {
+      const response = await api.get("/kategori-evaluasi");
+      return response.data;
+    },
+    create: async (data: { nama: string }): Promise<ApiResponse> => {
+      const response = await api.post("/kategori-evaluasi", data);
+      return response.data;
+    },
+    update: async (id: number, data: { nama: string }): Promise<ApiResponse> => {
+      const response = await api.put(`/kategori-evaluasi/${id}`, data);
+      return response.data;
+    },
+    delete: async (id: number): Promise<ApiResponse> => {
+      const response = await api.delete(`/kategori-evaluasi/${id}`);
+      return response.data;
+    },
+  },
+
   // Dashboard endpoints
   dashboard: {
     getStats: async (): Promise<ApiResponse> => {
