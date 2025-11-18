@@ -8,17 +8,23 @@ import AccessControl from "@/components/AccessControl";
 
 export default function HRDProfile() {
   const router = useRouter();
-  const { logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
 
   const handleLogout = async () => {
     try {
-      console.log("🚪 Logging out...");
       await logout();
       router.push("/");
     } catch (error) {
-      console.error("❌ Logout error:", error);
+      console.error("Logout error:", error);
     }
+  };
+
+  const getUserRoleDisplay = (): string => {
+    if (!user?.roles) return "User";
+    if (user.roles.includes("kepala hrd")) return "Kepala HRD";
+    if (user.roles.includes("staff hrd")) return "Staff HRD";
+    return "User";
   };
 
   const accountMenu = [
@@ -29,6 +35,7 @@ export default function HRDProfile() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
+      onClick: () => router.push("/hrd/profile/edit"),
     },
   ];
 
@@ -46,6 +53,7 @@ export default function HRDProfile() {
         </svg>
       ),
       path: "/hrd/jabatan",
+      onClick: () => router.push("/hrd/jabatan"),
     },
     {
       title: "Departemen",
@@ -55,6 +63,7 @@ export default function HRDProfile() {
         </svg>
       ),
       path: "/hrd/departemen",
+      onClick: () => router.push("/hrd/departemen"),
     },
     {
       title: "Kantor",
@@ -64,6 +73,7 @@ export default function HRDProfile() {
         </svg>
       ),
       path: "/hrd/kantor",
+      onClick: () => router.push("/hrd/kantor"),
     },
     {
       title: "Social Media",
@@ -73,6 +83,7 @@ export default function HRDProfile() {
         </svg>
       ),
       path: "/hrd/social-media",
+      onClick: () => router.push("/hrd/social-media"),
     },
     {
       title: "Tahun Ajaran",
@@ -82,6 +93,7 @@ export default function HRDProfile() {
         </svg>
       ),
       path: "/hrd/tahun-ajaran",
+      onClick: () => router.push("/hrd/tahun-ajaran"),
     },
     {
       title: "Kategori Evaluasi",
@@ -91,6 +103,7 @@ export default function HRDProfile() {
         </svg>
       ),
       path: "/hrd/kategori-evaluasi",
+      onClick: () => router.push("/hrd/kategori-evaluasi"),
     },
   ];
 
@@ -99,12 +112,23 @@ export default function HRDProfile() {
       <div className="min-h-screen bg-gray-100 pb-28">
         {/* Main Content */}
         <div className="px-5 py-6">
+          {/* Profile Header */}
+          <div className="mb-8 text-center">
+            <div className="w-24 h-24 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold text-gray-800 mb-1">{user?.profile_pribadi?.nama_lengkap || user?.email}</h1>
+            <p className="text-gray-600 text-sm">{getUserRoleDisplay()}</p>
+          </div>
+
           {/* Account Section */}
           <div className="mb-8">
             <h2 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider">ACCOUNT</h2>
             <div className="bg-white rounded-xl overflow-hidden">
               {accountMenu.map((item, index) => (
-                <button key={index} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100" onClick={() => console.log(`Clicked: ${item.title}`)}>
+                <button key={index} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100" onClick={item.onClick}>
                   <div className="flex items-center gap-4">
                     {item.icon}
                     <span className="text-base text-gray-800">{item.title}</span>
@@ -127,6 +151,7 @@ export default function HRDProfile() {
                   className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100"
                   onClick={() => (item.path ? router.push(item.path) : console.log(`Clicked: ${item.title}`))}
                 >
+                <button key={index} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100" onClick={item.onClick}>
                   <div className="flex items-center gap-4">
                     {item.icon}
                     <span className="text-base text-gray-800">{item.title}</span>
@@ -153,7 +178,7 @@ export default function HRDProfile() {
         </div>
 
         {/* Bottom Navigation */}
-        <BottomNavbar />
+        <BottomNavbar activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </AccessControl>
   );

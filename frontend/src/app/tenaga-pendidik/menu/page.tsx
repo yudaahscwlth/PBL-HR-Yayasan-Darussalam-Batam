@@ -13,7 +13,7 @@ export default function TenagaPendidikMenu() {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/tenaga-pendidik/dashboard");
     else if (tab === "notifikasi") router.push("/tenaga-pendidik/announcements");
-    else if (tab === "profile") router.push("/tenaga-pendidik/profile");
+    else if (tab === "profile") router.push("/tenaga-pendidik/dashboard"); // Profile page tidak ada, redirect ke dashboard
   };
 
   const menuSectionsWithHandlers = tenagaPendidikMenuConfig.map((section) => ({

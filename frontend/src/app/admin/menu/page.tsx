@@ -13,7 +13,7 @@ export default function AdminMenu() {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/admin/dashboard");
     else if (tab === "notifikasi") router.push("/admin/announcements");
-    else if (tab === "profile") router.push("/admin/profile");
+    else if (tab === "profile") router.push("/admin/dashboard"); // Profile page tidak ada, redirect ke dashboard
   };
 
   // Add onClick handlers to menu items

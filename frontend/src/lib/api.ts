@@ -366,8 +366,8 @@ export const apiClient = {
       return response.data;
     },
 
-    approve: async (id: number): Promise<ApiResponse> => {
-      const response = await api.post(`/leave/${id}/approve`);
+    approve: async (id: number, komentar?: string): Promise<ApiResponse> => {
+      const response = await api.post(`/leave/${id}/approve`, komentar ? { komentar } : {});
       return response.data;
     },
 
