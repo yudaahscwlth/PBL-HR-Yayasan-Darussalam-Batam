@@ -142,27 +142,28 @@ export default function HRDProfile() {
           </div>
 
           {/* Other Section */}
-          <div className="mb-8">
-            <h2 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider">Other</h2>
-            <div className="bg-white rounded-xl overflow-hidden">
-              {otherMenu.map((item, index) => (
-                <button
-                  key={index}
-                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100"
-                  onClick={() => (item.path ? router.push(item.path) : console.log(`Clicked: ${item.title}`))}
-                >
-                <button key={index} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100" onClick={item.onClick}>
-                  <div className="flex items-center gap-4">
-                    {item.icon}
-                    <span className="text-base text-gray-800">{item.title}</span>
-                  </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          </div>
+<div className="mb-8">
+  <h2 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider">Other</h2>
+  <div className="bg-white rounded-xl overflow-hidden">
+    {otherMenu.map((item, index) => (
+      <button
+        key={index}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100"
+        onClick={() => (item.path ? router.push(item.path) : item.onClick ? item.onClick() : console.log(`Clicked: ${item.title}`))}
+        type="button"
+      >
+        <div className="flex items-center gap-4">
+          {item.icon}
+          <span className="text-base text-gray-800">{item.title}</span>
+        </div>
+        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    ))}
+  </div>
+</div>
+
 
           {/* Logout Section */}
           <div className="mb-8">
