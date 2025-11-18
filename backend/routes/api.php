@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\EvaluationController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\TempatKerjaController;
 use App\Http\Controllers\Api\SosialMediaController;
+use App\Http\Controllers\Api\KategoriEvaluasiController as ApiKategoriEvaluasiController;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
@@ -78,6 +79,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Sosial Media routes
     Route::apiResource('sosial-media', SosialMediaController::class);
+
+    // Kategori Evaluasi routes
+    Route::get('/kategori-evaluasi', [ApiKategoriEvaluasiController::class, 'index']);
+    Route::post('/kategori-evaluasi', [ApiKategoriEvaluasiController::class, 'store']);
+    Route::put('/kategori-evaluasi/{kategoriEvaluasi}', [ApiKategoriEvaluasiController::class, 'update']);
+    Route::delete('/kategori-evaluasi/{kategoriEvaluasi}', [ApiKategoriEvaluasiController::class, 'destroy']);
 });
 
 
