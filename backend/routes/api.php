@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\TempatKerjaController;
 use App\Http\Controllers\Api\SosialMediaController;
 use App\Http\Controllers\Api\JabatanController;
+use App\Http\Controllers\Api\KategoriEvaluasiController as KategoriEvaluasiController;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
@@ -82,6 +83,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Jabatan routes
     Route::apiResource('jabatan', JabatanController::class);
+
+    // Kategori Evaluasi routes
+    Route::get('/kategori-evaluasi', [KategoriEvaluasiController::class, 'index']);
+    Route::post('/kategori-evaluasi', [KategoriEvaluasiController::class, 'store']);
+    Route::put('/kategori-evaluasi/{kategoriEvaluasi}', [KategoriEvaluasiController::class, 'update']);
+    Route::delete('/kategori-evaluasi/{kategoriEvaluasi}', [KategoriEvaluasiController::class, 'destroy']);
 });
 
 
