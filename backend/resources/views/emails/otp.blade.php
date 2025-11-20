@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,12 +14,14 @@
             margin: 0 auto;
             padding: 20px;
         }
+
         .container {
             background-color: #f9f9f9;
             border-radius: 10px;
             padding: 30px;
             margin: 20px 0;
         }
+
         .header {
             background-color: #1e4d8b;
             color: white;
@@ -26,6 +29,7 @@
             border-radius: 10px 10px 0 0;
             text-align: center;
         }
+
         .otp-code {
             background-color: #ffffff;
             border: 2px dashed #1e4d8b;
@@ -38,12 +42,14 @@
             color: #1e4d8b;
             letter-spacing: 5px;
         }
+
         .footer {
             text-align: center;
             margin-top: 30px;
             color: #666;
             font-size: 12px;
         }
+
         .warning {
             background-color: #fff3cd;
             border-left: 4px solid #ffc107;
@@ -53,22 +59,23 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>HR YAYASAN DARUSSALAM</h1>
         </div>
-        
+
         <h2>Kode OTP untuk Reset Password</h2>
-        
+
         <p>Halo,</p>
-        
+
         <p>Anda telah meminta untuk mereset password akun Anda. Gunakan kode OTP berikut untuk melanjutkan proses reset password:</p>
-        
+
         <div class="otp-code">
             {{ $kodeOtp }}
         </div>
-        
+
         <div class="warning">
             <strong>⚠️ Peringatan:</strong>
             <ul style="margin: 10px 0; padding-left: 20px;">
@@ -77,19 +84,20 @@
                 <li>Jika Anda tidak meminta reset password, abaikan email ini</li>
             </ul>
         </div>
-        
+
         <p>Kode OTP akan kadaluarsa pada: <strong>{{ $expiresAt }}</strong></p>
-        
+
         <p>Jika Anda tidak meminta reset password, silakan abaikan email ini atau hubungi administrator sistem.</p>
-        
+
         <p>Terima kasih,<br>
-        <strong>Tim HR Yayasan Darussalam</strong></p>
-        
+            <strong>Tim HR Yayasan Darussalam</strong>
+        </p>
+
         <div class="footer">
             <p>Email ini dikirim secara otomatis. Mohon jangan membalas email ini.</p>
             <p>&copy; {{ date('Y') }} HR Yayasan Darussalam. All rights reserved.</p>
         </div>
     </div>
 </body>
-</html>
 
+</html>
