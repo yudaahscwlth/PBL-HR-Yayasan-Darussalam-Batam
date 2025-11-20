@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\LupaPasswordController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\AttendanceController;
@@ -23,6 +24,13 @@ Route::get('/csrf-cookie', function () {
     ]);
 });
 Route::post('/auth/login', [AuthController::class, 'login']);
+
+// Lupa Password routes (public)
+Route::prefix('lupa-password')->group(function () {
+    Route::post('/request-otp', [LupaPasswordController::class, 'requestOtp']);
+    Route::post('/verify-otp', [LupaPasswordController::class, 'verifyOtp']);
+    Route::post('/reset-password', [LupaPasswordController::class, 'resetPassword']);
+});
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

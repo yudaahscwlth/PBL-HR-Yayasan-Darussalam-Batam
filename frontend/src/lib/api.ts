@@ -1,4 +1,9 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
+import axios, {
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+  AxiosError,
+} from "axios";
 import { ApiResponse } from "@/types/auth";
 import { API_CONFIG } from "@/config/api";
 import http from "http";
@@ -10,18 +15,26 @@ const RETRY_CONFIG = {
   retryDelay: 1000, // 1 second
   retryCondition: (error: AxiosError) => {
     // Retry on network errors or 5xx server errors
-    return !error.response || (error.response.status >= 500 && error.response.status < 600);
+    return (
+      !error.response ||
+      (error.response.status >= 500 && error.response.status < 600)
+    );
   },
 };
 
 // Retry function
-const retryRequest = async (fn: () => Promise<unknown>, retries = RETRY_CONFIG.retries): Promise<unknown> => {
+const retryRequest = async (
+  fn: () => Promise<unknown>,
+  retries = RETRY_CONFIG.retries
+): Promise<unknown> => {
   try {
     return await fn();
   } catch (error: unknown) {
     if (retries > 0 && RETRY_CONFIG.retryCondition(error as AxiosError)) {
       console.log(`Retrying request... ${retries} attempts left`);
-      await new Promise((resolve) => setTimeout(resolve, RETRY_CONFIG.retryDelay));
+      await new Promise((resolve) =>
+        setTimeout(resolve, RETRY_CONFIG.retryDelay)
+      );
       return retryRequest(fn, retries - 1);
     }
     throw error;
@@ -85,7 +98,10 @@ api.interceptors.response.use(
       localStorage.removeItem("user_data");
 
       // Only redirect if we're not already on login page
-      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.includes("/login")
+      ) {
         window.location.href = "/";
       }
     }
@@ -112,11 +128,15 @@ export const apiClient = {
       try {
         // Test connection first with retry
         console.log("Testing API connection...");
-        const testResponse = (await retryRequest(() => api.get("/csrf-cookie", { timeout: 5000 }))) as AxiosResponse;
+        const testResponse = (await retryRequest(() =>
+          api.get("/csrf-cookie", { timeout: 5000 })
+        )) as AxiosResponse;
         console.log("Connection test successful:", testResponse.status);
 
         // Skip CSRF token for now since we're using API routes
-        const response = (await retryRequest(() => api.post("/auth/login", { email, password }))) as AxiosResponse;
+        const response = (await retryRequest(() =>
+          api.post("/auth/login", { email, password })
+        )) as AxiosResponse;
         console.log("API login response status:", response.status);
         console.log("API login response data:", response.data);
         console.log("API login response headers:", response.headers);
@@ -133,9 +153,16 @@ export const apiClient = {
 
         // Provide more specific error messages
         if (axiosError.code === "ECONNREFUSED") {
-          throw new Error("Tidak dapat terhubung ke server. Pastikan backend Laravel berjalan di http://localhost:8000");
-        } else if (axiosError.code === "ETIMEDOUT" || axiosError.message.includes("timeout")) {
-          throw new Error("Koneksi timeout. Server mungkin lambat atau tidak merespons.");
+          throw new Error(
+            "Tidak dapat terhubung ke server. Pastikan backend Laravel berjalan di http://localhost:8000"
+          );
+        } else if (
+          axiosError.code === "ETIMEDOUT" ||
+          axiosError.message.includes("timeout")
+        ) {
+          throw new Error(
+            "Koneksi timeout. Server mungkin lambat atau tidak merespons."
+          );
         } else if (axiosError.response?.status === 404) {
           throw new Error("Endpoint tidak ditemukan. Periksa konfigurasi API.");
         } else if (axiosError.response?.status === 500) {
@@ -143,7 +170,11 @@ export const apiClient = {
         } else if (axiosError.response?.status === 401) {
           throw new Error("Email atau password salah.");
         } else if (axiosError.response?.status === 422) {
-          throw new Error("Data tidak valid: " + ((axiosError.response?.data as { message?: string })?.message || "Periksa input Anda"));
+          throw new Error(
+            "Data tidak valid: " +
+              ((axiosError.response?.data as { message?: string })?.message ||
+                "Periksa input Anda")
+          );
         }
 
         throw error;
@@ -162,6 +193,45 @@ export const apiClient = {
 
     refresh: async (): Promise<ApiResponse> => {
       const response = await api.post("/auth/refresh");
+      return response.data;
+    },
+
+    // Lupa Password endpoints
+    requestOtp: async (email: string): Promise<ApiResponse> => {
+      try {
+        const response = await api.post("/lupa-password/request-otp", {
+          email,
+        });
+        return response.data;
+      } catch (error: any) {
+        // Return error response in the same format as success
+        if (error.response?.data) {
+          return error.response.data;
+        }
+        throw error;
+      }
+    },
+
+    verifyOtp: async (email: string, kodeOtp: string): Promise<ApiResponse> => {
+      const response = await api.post("/lupa-password/verify-otp", {
+        email,
+        kode_otp: kodeOtp,
+      });
+      return response.data;
+    },
+
+    resetPassword: async (
+      email: string,
+      kodeOtp: string,
+      password: string,
+      passwordConfirmation: string
+    ): Promise<ApiResponse> => {
+      const response = await api.post("/lupa-password/reset-password", {
+        email,
+        kode_otp: kodeOtp,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
       return response.data;
     },
   },
@@ -209,7 +279,12 @@ export const apiClient = {
 
   // Attendance endpoints
   attendance: {
-    checkIn: async (data?: { latitude_in?: number; longitude_in?: number; keterangan?: string; file_pendukung?: File }): Promise<ApiResponse> => {
+    checkIn: async (data?: {
+      latitude_in?: number;
+      longitude_in?: number;
+      keterangan?: string;
+      file_pendukung?: File;
+    }): Promise<ApiResponse> => {
       // If no file upload, use JSON instead of FormData
       if (!data?.file_pendukung) {
         try {
@@ -260,7 +335,11 @@ export const apiClient = {
       }
     },
 
-    checkOut: async (data?: { latitude_out?: number; longitude_out?: number; keterangan?: string }): Promise<ApiResponse> => {
+    checkOut: async (data?: {
+      latitude_out?: number;
+      longitude_out?: number;
+      keterangan?: string;
+    }): Promise<ApiResponse> => {
       try {
         const response = await api.post("/attendance/checkout", data);
         return response.data;
@@ -283,7 +362,9 @@ export const apiClient = {
       return response.data;
     },
 
-    getHistory: async (params?: Record<string, unknown>): Promise<ApiResponse> => {
+    getHistory: async (
+      params?: Record<string, unknown>
+    ): Promise<ApiResponse> => {
       const response = await api.get("/attendance/history", { params });
       return response.data;
     },
@@ -293,7 +374,13 @@ export const apiClient = {
       return response.data;
     },
 
-    createManual: async (data?: { tanggal_mulai?: string; durasi_hari?: number; status_absensi?: string; keterangan_pendukung?: string; file_pendukung?: File }): Promise<ApiResponse> => {
+    createManual: async (data?: {
+      tanggal_mulai?: string;
+      durasi_hari?: number;
+      status_absensi?: string;
+      keterangan_pendukung?: string;
+      file_pendukung?: File;
+    }): Promise<ApiResponse> => {
       // If no file upload, use JSON instead of FormData
       if (!data?.file_pendukung) {
         try {
@@ -367,7 +454,10 @@ export const apiClient = {
     },
 
     approve: async (id: number, komentar?: string): Promise<ApiResponse> => {
-      const response = await api.post(`/leave/${id}/approve`, komentar ? { komentar } : {});
+      const response = await api.post(
+        `/leave/${id}/approve`,
+        komentar ? { komentar } : {}
+      );
       return response.data;
     },
 
@@ -409,7 +499,10 @@ export const apiClient = {
       const response = await api.post("/kategori-evaluasi", data);
       return response.data;
     },
-    update: async (id: number, data: { nama: string }): Promise<ApiResponse> => {
+    update: async (
+      id: number,
+      data: { nama: string }
+    ): Promise<ApiResponse> => {
       const response = await api.put(`/kategori-evaluasi/${id}`, data);
       return response.data;
     },
