@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\SosialMediaController;
 use App\Http\Controllers\Api\JabatanController;
 use App\Http\Controllers\Api\DepartemenController;
 use App\Http\Controllers\Api\KategoriEvaluasiController as KategoriEvaluasiController;
+use App\Http\Controllers\Api\TahunAjaranController;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
@@ -93,7 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Jabatan routes
     Route::apiResource('jabatan', JabatanController::class);
 
-     // Departemen routes
+    // Departemen routes
     Route::prefix('departemen')->group(function () {
         Route::get('/', [DepartemenController::class, 'index']);
         Route::get('/{id}', [DepartemenController::class, 'show']);
@@ -108,6 +109,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/kategori-evaluasi', [KategoriEvaluasiController::class, 'store']);
     Route::put('/kategori-evaluasi/{kategoriEvaluasi}', [KategoriEvaluasiController::class, 'update']);
     Route::delete('/kategori-evaluasi/{kategoriEvaluasi}', [KategoriEvaluasiController::class, 'destroy']);
+
+    // Tahun Ajaran routes
+    Route::apiResource('tahun-ajaran', TahunAjaranController::class);
 });
 
 
