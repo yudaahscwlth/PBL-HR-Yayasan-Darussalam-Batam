@@ -32,7 +32,7 @@ class Evaluasi extends Model
         return $this->belongsTo(User::class, 'id_penilai');
     }
 
-    public function kategori()
+    public function kategoriEvaluasi()
     {
         return $this->belongsTo(KategoriEvaluasi::class, 'id_kategori');
     }

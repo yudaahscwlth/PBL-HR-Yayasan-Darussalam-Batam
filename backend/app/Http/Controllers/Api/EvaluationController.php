@@ -52,25 +52,46 @@ class EvaluationController extends Controller
 
         $request->validate([
             'id_user' => 'required|exists:users,id',
-            'id_kategori_evaluasi' => 'required|exists:kategori_evaluasi,id',
-            'nilai' => 'required|numeric|min:0|max:100',
-            'keterangan' => 'nullable|string',
+            'id_tahun_ajaran' => 'required|exists:tahun_ajarans,id',
+            'evaluations' => 'required|array',
+            'evaluations.*.id_kategori' => 'required|exists:kategori_evaluasis,id',
+            'evaluations.*.nilai' => 'required|numeric|min:0|max:100',
+            'evaluations.*.catatan' => 'nullable|string',
         ]);
 
-        $evaluation = Evaluasi::create([
-            'id_user' => $request->id_user,
-            'id_kategori_evaluasi' => $request->id_kategori_evaluasi,
-            'nilai' => $request->nilai,
-            'keterangan' => $request->keterangan,
-            'created_by' => $user->id,
-        ]);
+        $createdEvaluations = [];
 
-        $evaluation->load(['user.profilePribadi', 'kategoriEvaluasi']);
+        foreach ($request->evaluations as $evalData) {
+            // Check if evaluation already exists for this user, year, and category
+            $existingEvaluation = Evaluasi::where('id_user', $request->id_user)
+                ->where('id_tahun_ajaran', $request->id_tahun_ajaran)
+                ->where('id_kategori', $evalData['id_kategori'])
+                ->first();
+
+            if ($existingEvaluation) {
+                $existingEvaluation->update([
+                    'nilai' => $evalData['nilai'],
+                    'catatan' => $evalData['catatan'] ?? null,
+                    'id_penilai' => $user->id,
+                ]);
+                $createdEvaluations[] = $existingEvaluation;
+            } else {
+                $evaluation = Evaluasi::create([
+                    'id_user' => $request->id_user,
+                    'id_penilai' => $user->id,
+                    'id_tahun_ajaran' => $request->id_tahun_ajaran,
+                    'id_kategori' => $evalData['id_kategori'],
+                    'nilai' => $evalData['nilai'],
+                    'catatan' => $evalData['catatan'] ?? null,
+                ]);
+                $createdEvaluations[] = $evaluation;
+            }
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Evaluation created successfully',
-            'data' => $evaluation,
+            'message' => 'Evaluations submitted successfully',
+            'data' => $createdEvaluations,
         ], 201);
     }
 
@@ -158,6 +179,44 @@ class EvaluationController extends Controller
             'success' => true,
             'message' => 'Personal evaluations retrieved successfully',
             'data' => $evaluations,
+        ]);
+    }
+
+    /**
+     * Check if evaluation exists for a specific user and academic year
+     */
+    public function checkExists(Request $request): JsonResponse
+    {
+        $request->validate([
+            'id_user' => 'required|exists:users,id',
+            'id_tahun_ajaran' => 'required|exists:tahun_ajarans,id',
+        ]);
+
+        $evaluations = Evaluasi::where('id_user', $request->id_user)
+            ->where('id_tahun_ajaran', $request->id_tahun_ajaran)
+            ->with('kategoriEvaluasi')
+            ->get();
+
+        $exists = $evaluations->count() > 0;
+        
+        // Format evaluations data for frontend
+        $evaluationData = [];
+        $catatan = '';
+        
+        if ($exists) {
+            foreach ($evaluations as $index => $eval) {
+                $evaluationData[$eval->id_kategori] = $eval->nilai;
+                if ($index === 0 && $eval->catatan) {
+                    $catatan = $eval->catatan;
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'exists' => $exists,
+            'evaluations' => $evaluationData,
+            'catatan' => $catatan,
         ]);
     }
 }
