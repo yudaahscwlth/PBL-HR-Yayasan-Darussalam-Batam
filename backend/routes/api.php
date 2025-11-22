@@ -72,8 +72,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
 
     // Evaluation routes
-    Route::apiResource('evaluation', EvaluationController::class);
     Route::get('/evaluation/personal', [EvaluationController::class, 'getPersonal']);
+    Route::post('/evaluation/check-exists', [EvaluationController::class, 'checkExists']);
+    Route::apiResource('evaluation', EvaluationController::class);
 
     // Dashboard routes
     Route::prefix('dashboard')->group(function () {
@@ -111,6 +112,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/kategori-evaluasi/{kategoriEvaluasi}', [KategoriEvaluasiController::class, 'destroy']);
 
     // Tahun Ajaran routes
+    Route::get('/tahun-ajaran', [\App\Http\Controllers\Api\TahunAjaranController::class, 'index']);
+    Route::post('/tahun-ajaran', [\App\Http\Controllers\Api\TahunAjaranController::class, 'store']);
+    Route::get('/tahun-ajaran/{tahunAjaran}', [\App\Http\Controllers\Api\TahunAjaranController::class, 'show']);
+    Route::put('/tahun-ajaran/{tahunAjaran}', [\App\Http\Controllers\Api\TahunAjaranController::class, 'update']);
+    Route::delete('/tahun-ajaran/{tahunAjaran}', [\App\Http\Controllers\Api\TahunAjaranController::class, 'destroy']);
     Route::apiResource('tahun-ajaran', TahunAjaranController::class);
 });
 
