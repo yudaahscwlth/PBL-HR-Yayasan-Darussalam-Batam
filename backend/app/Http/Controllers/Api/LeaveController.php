@@ -22,6 +22,20 @@ class LeaveController extends Controller
             $leaves = PengajuanCuti::with(['user.profilePribadi'])
                 ->orderBy('created_at', 'desc')
                 ->get();
+        } elseif ($user->hasRole('kepala sekolah')) {
+            // Kepala sekolah hanya melihat pengajuan cuti dari tempat kerja yang sama
+            $departemenId = $user->profilePekerjaan?->id_tempat_kerja;
+            
+            if ($departemenId) {
+                $leaves = PengajuanCuti::whereHas('user.profilePekerjaan', function ($query) use ($departemenId) {
+                    $query->where('id_tempat_kerja', $departemenId);
+                })
+                ->with(['user.profilePribadi'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+            } else {
+                $leaves = collect([]);
+            }
         } else {
             $leaves = PengajuanCuti::where('id_user', $user->id)
                 ->with(['user.profilePribadi'])
@@ -285,6 +299,147 @@ class LeaveController extends Controller
         }
 
         // Refresh model and reload relationships to get latest data from database
+        $leave->refresh();
+        $leave->load(['user.profilePribadi']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leave request rejected successfully',
+            'data' => $leave,
+        ]);
+    }
+
+    /**
+     * Approve leave request by kepala sekolah
+     */
+    public function approveKepsek(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        
+        // Find the leave request by ID
+        $leave = PengajuanCuti::find($id);
+        
+        if (!$leave) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request not found',
+            ], 404);
+        }
+        
+        // Check if user has permission to approve (kepala sekolah)
+        if (!$user->hasAnyRole(['kepala sekolah', 'superadmin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to approve leave requests',
+            ], 403);
+        }
+
+        // Check if leave request is in correct status
+        if ($leave->status_pengajuan !== 'ditinjau kepala sekolah') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request is not in correct status for kepala sekolah approval',
+            ], 400);
+        }
+
+        // Get komentar from request if provided
+        $komentar = $request->input('komentar', null);
+
+        // Determine approval status based on leave type
+        // For cuti tahunan, status should be "disetujui kepala sekolah menunggu tinjauan dirpen"
+        // For other types, status should be "disetujui kepala sekolah"
+        if (strtolower($leave->tipe_cuti) === 'cuti tahunan') {
+            $newStatus = 'disetujui kepala sekolah menunggu tinjauan dirpen';
+        } else {
+            $newStatus = 'disetujui kepala sekolah';
+        }
+
+        // Prepare update data
+        $updateData = [
+            'status_pengajuan' => $newStatus,
+        ];
+
+        if ($komentar !== null && $komentar !== '') {
+            $updateData['komentar'] = $komentar;
+        }
+
+        // Update in database
+        $updated = $leave->update($updateData);
+        
+        if (!$updated) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update leave request status',
+            ], 500);
+        }
+
+        // Refresh model and reload relationships
+        $leave->refresh();
+        $leave->load(['user.profilePribadi']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leave request approved successfully',
+            'data' => $leave,
+        ]);
+    }
+
+    /**
+     * Reject leave request by kepala sekolah
+     */
+    public function rejectKepsek(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        
+        // Find the leave request by ID
+        $leave = PengajuanCuti::find($id);
+        
+        if (!$leave) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request not found',
+            ], 404);
+        }
+        
+        // Check if user has permission to reject (kepala sekolah)
+        if (!$user->hasAnyRole(['kepala sekolah', 'superadmin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to reject leave requests',
+            ], 403);
+        }
+
+        // Check if leave request is in correct status
+        if ($leave->status_pengajuan !== 'ditinjau kepala sekolah') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request is not in correct status for kepala sekolah rejection',
+            ], 400);
+        }
+
+        $request->validate([
+            'reason' => 'required|string',
+        ], [
+            'reason.required' => 'Alasan penolakan wajib diisi',
+        ]);
+
+        // Prepare update data
+        $updateData = [
+            'status_pengajuan' => 'ditolak kepala sekolah',
+            'komentar' => $request->reason,
+        ];
+
+        // Update in database
+        $updated = $leave->update($updateData);
+        
+        if (!$updated) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update leave request status',
+            ], 500);
+        }
+
+        // Refresh model and reload relationships
         $leave->refresh();
         $leave->load(['user.profilePribadi']);
 

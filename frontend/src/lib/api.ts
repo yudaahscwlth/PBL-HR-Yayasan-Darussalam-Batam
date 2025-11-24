@@ -465,6 +465,19 @@ export const apiClient = {
       const response = await api.post(`/leave/${id}/reject`, { reason });
       return response.data;
     },
+
+    approveKepsek: async (id: number, komentar?: string): Promise<ApiResponse> => {
+      const response = await api.post(
+        `/leave/${id}/approve-kepsek`,
+        komentar ? { komentar } : {}
+      );
+      return response.data;
+    },
+
+    rejectKepsek: async (id: number, reason?: string): Promise<ApiResponse> => {
+      const response = await api.post(`/leave/${id}/reject-kepsek`, { reason });
+      return response.data;
+    },
   },
 
   // Evaluation endpoints
