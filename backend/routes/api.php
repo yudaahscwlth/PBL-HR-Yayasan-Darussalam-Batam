@@ -70,6 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('leave', LeaveController::class);
     Route::post('/leave/{id}/approve', [LeaveController::class, 'approve']);
     Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
+    Route::post('/leave/{id}/approve-kepsek', [LeaveController::class, 'approveKepsek']);
+    Route::post('/leave/{id}/reject-kepsek', [LeaveController::class, 'rejectKepsek']);
 
     // Evaluation routes
     Route::apiResource('evaluation', EvaluationController::class);
