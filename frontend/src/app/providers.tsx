@@ -1,7 +1,11 @@
+// src/app/providers.tsx
 "use client";
 
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
+import RegisterServiceWorker from "../components/RegisterServiceWorker";
+import InstallPWA from "../app/components/InstallPWA";
+import NetworkStatus from "@/components/NetworkStatus";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const { checkAuth } = useAuthStore();
@@ -11,5 +15,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
-  return <>{children}</>;
+  return (
+    <>
+      <NetworkStatus />
+      <RegisterServiceWorker />
+      <InstallPWA />
+      {children}
+    </>
+  );
 }
