@@ -96,7 +96,8 @@ export default function AdminPengajuanCutiPage() {
       if (response.success) {
         // Filter hanya pengajuan cuti milik user yang sedang login
         const userLeaveRequests = (response.data as LeaveRequest[]).filter(
-          (request) => request.id_user === user?.id || request.user?.id === user?.id
+          (request) =>
+            request.id_user === user?.id || request.user?.id === user?.id
         );
         setLeaveRequests(userLeaveRequests);
       }
@@ -121,8 +122,13 @@ export default function AdminPengajuanCutiPage() {
 
     try {
       // Validate dates
-      if (new Date(formData.tanggal_mulai) > new Date(formData.tanggal_selesai)) {
-        showToast("error", "Tanggal selesai harus lebih besar dari tanggal mulai");
+      if (
+        new Date(formData.tanggal_mulai) > new Date(formData.tanggal_selesai)
+      ) {
+        showToast(
+          "error",
+          "Tanggal selesai harus lebih besar dari tanggal mulai"
+        );
         setIsSubmitting(false);
         return;
       }
@@ -144,7 +150,10 @@ export default function AdminPengajuanCutiPage() {
         setShowModal(false);
         await loadLeaveRequests();
       } else {
-        showToast("error", response.message || "❌ Gagal mengirim pengajuan cuti");
+        showToast(
+          "error",
+          response.message || "❌ Gagal mengirim pengajuan cuti"
+        );
       }
     } catch (error: any) {
       console.error("Error submitting leave request:", error);
@@ -158,7 +167,9 @@ export default function AdminPengajuanCutiPage() {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -166,9 +177,17 @@ export default function AdminPengajuanCutiPage() {
 
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower.includes("disetujui") || statusLower.includes("approved")) {
+    if (
+      statusLower.includes("disetujui") &&
+      !statusLower.includes("menunggu")
+    ) {
       return "bg-green-100 text-green-800";
-    } else if (statusLower.includes("ditolak") || statusLower.includes("rejected")) {
+    } else if (
+      statusLower.includes("disetujui") &&
+      statusLower.includes("menunggu")
+    ) {
+      return "bg-blue-100 text-blue-800";
+    } else if (statusLower.includes("ditolak")) {
       return "bg-red-100 text-red-800";
     } else {
       return "bg-yellow-100 text-yellow-800";
@@ -177,22 +196,53 @@ export default function AdminPengajuanCutiPage() {
 
   const getStatusText = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower.includes("disetujui")) {
-      return "Disetujui";
-    } else if (statusLower.includes("ditolak")) {
-      return "Ditolak";
-    } else if (statusLower.includes("ditinjau")) {
-      return "Sedang Ditinjau";
-    } else {
-      return status;
+
+    // Mapping status enum ke teks yang lebih jelas
+    const statusMap: { [key: string]: string } = {
+      "ditinjau kepala sekolah": "Ditinjau Kepala Sekolah",
+      "disetujui kepala sekolah": "Disetujui Kepala Sekolah",
+      "disetujui kepala sekolah menunggu tinjauan dirpen":
+        "Disetujui Kepala Sekolah (Menunggu Dirpen)",
+      "ditolak kepala sekolah": "Ditolak Kepala Sekolah",
+      "ditinjau hrd": "Ditinjau Staff HRD",
+      "disetujui hrd": "Disetujui Staff HRD",
+      "disetujui hrd menunggu tinjauan dirpen":
+        "Disetujui Staff HRD (Menunggu Dirpen)",
+      "ditolak hrd": "Ditolak Staff HRD",
+      "ditinjau kepala hrd": "Ditinjau Kepala HRD",
+      "disetujui kepala hrd": "Disetujui Kepala HRD",
+      "disetujui kepala hrd menunggu tinjauan dirpen":
+        "Disetujui Kepala HRD (Menunggu Dirpen)",
+      "ditolak kepala hrd": "Ditolak Kepala HRD",
+      "ditinjau dirpen": "Ditinjau Direktur Pendidikan",
+      "disetujui dirpen": "Disetujui Direktur Pendidikan",
+      "ditolak dirpen": "Ditolak Direktur Pendidikan",
+    };
+
+    // Cek apakah status ada di mapping
+    if (statusMap[statusLower]) {
+      return statusMap[statusLower];
     }
+
+    // Fallback untuk status yang tidak terdaftar
+    return status;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const months = [
-      "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-      "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Agu",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Des",
     ];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
@@ -206,22 +256,32 @@ export default function AdminPengajuanCutiPage() {
   };
 
   // Filter data
-  const pendingRequests = leaveRequests.filter(req =>
-    req.status_pengajuan.toLowerCase().includes("ditinjau") ||
-    req.status_pengajuan.toLowerCase().includes("menunggu")
+  const pendingRequests = leaveRequests.filter(
+    (req) =>
+      req.status_pengajuan.toLowerCase().includes("ditinjau") ||
+      req.status_pengajuan.toLowerCase().includes("menunggu")
   );
-  const historyRequests = leaveRequests.filter(req =>
-    req.status_pengajuan.toLowerCase().includes("disetujui") ||
-    req.status_pengajuan.toLowerCase().includes("ditolak")
-  );
+  // Filter data for "Riwayat" section (final status only - approved/rejected without pending)
+  const historyRequests = leaveRequests.filter((req) => {
+    const statusLower = req.status_pengajuan.toLowerCase().trim();
+    // Only show final status: rejected or final approved (without "menunggu" or "ditinjau")
+    // Explicitly exclude any status with "menunggu" or "ditinjau"
+    if (statusLower.includes("menunggu") || statusLower.includes("ditinjau")) {
+      return false;
+    }
+    // Only include rejected or final approved status
+    return statusLower.includes("ditolak") || statusLower.includes("disetujui");
+  });
 
-  const filteredAjukan = pendingRequests.filter(req =>
-    req.tipe_cuti.toLowerCase().includes(searchAjukan.toLowerCase()) ||
-    req.alasan_pendukung.toLowerCase().includes(searchAjukan.toLowerCase())
+  const filteredAjukan = pendingRequests.filter(
+    (req) =>
+      req.tipe_cuti.toLowerCase().includes(searchAjukan.toLowerCase()) ||
+      req.alasan_pendukung.toLowerCase().includes(searchAjukan.toLowerCase())
   );
-  const filteredRiwayat = historyRequests.filter(req =>
-    req.tipe_cuti.toLowerCase().includes(searchRiwayat.toLowerCase()) ||
-    req.alasan_pendukung.toLowerCase().includes(searchRiwayat.toLowerCase())
+  const filteredRiwayat = historyRequests.filter(
+    (req) =>
+      req.tipe_cuti.toLowerCase().includes(searchRiwayat.toLowerCase()) ||
+      req.alasan_pendukung.toLowerCase().includes(searchRiwayat.toLowerCase())
   );
 
   // Pagination
@@ -260,13 +320,25 @@ export default function AdminPengajuanCutiPage() {
               className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded transition text-black md:w-9 md:h-9"
               aria-label="Kembali"
             >
-              <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-4 h-4 md:w-5 md:h-5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
             <div className="flex-1">
-              <h1 className="text-xl font-medium font-['Poppins'] text-black md:text-2xl">Pengajuan Cuti</h1>
-              <p className="hidden md:block text-sm text-zinc-600">Kelola pengajuan dan riwayat cuti Anda.</p>
+              <h1 className="text-xl font-medium font-['Poppins'] text-black md:text-2xl">
+                Pengajuan Cuti
+              </h1>
+              <p className="hidden md:block text-sm text-zinc-600">
+                Kelola pengajuan dan riwayat cuti Anda.
+              </p>
             </div>
           </div>
 
@@ -275,15 +347,29 @@ export default function AdminPengajuanCutiPage() {
             {/* Ajukan Cuti */}
             <section className="bg-white rounded-[10px] shadow-md border border-black/20 p-4 w-full">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-normal font-['Poppins'] text-black md:text-lg">Ajukan Cuti</h2>
+                <h2 className="text-base font-normal font-['Poppins'] text-black md:text-lg">
+                  Ajukan Cuti
+                </h2>
                 <button
                   onClick={() => setShowModal(true)}
                   className="hidden md:flex bg-sky-800 rounded-[8px] px-4 py-2 items-center gap-2 hover:bg-sky-900 transition"
                 >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
-                  <span className="text-white text-sm font-['Poppins']">Tambah Baru</span>
+                  <span className="text-white text-sm font-['Poppins']">
+                    Tambah Baru
+                  </span>
                 </button>
               </div>
 
@@ -292,10 +378,22 @@ export default function AdminPengajuanCutiPage() {
                 onClick={() => setShowModal(true)}
                 className="md:hidden bg-sky-800 rounded-[5px] px-4 py-2 flex items-center gap-2 hover:bg-sky-900 transition mb-4"
               >
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
-                <span className="text-white text-xs font-['Poppins']">Tambah Baru</span>
+                <span className="text-white text-xs font-['Poppins']">
+                  Tambah Baru
+                </span>
               </button>
 
               {/* Controls */}
@@ -333,13 +431,27 @@ export default function AdminPengajuanCutiPage() {
                 <table className="w-full text-[9px] md:text-sm border-collapse">
                   <thead className="bg-gray-100 border-b sticky top-0 z-10">
                     <tr>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tanggal Pengajuan</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Nama</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tipe Pengajuan</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Durasi</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Alasan Pendukung</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">File Pendukung</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Status</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        Tanggal Pengajuan
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                        Nama
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        Tipe Pengajuan
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                        Durasi
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        Alasan Pendukung
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        File Pendukung
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -351,22 +463,41 @@ export default function AdminPengajuanCutiPage() {
                       </tr>
                     ) : (
                       paginatedAjukan.map((request) => (
-                        <tr key={request.id} className="border-b hover:bg-gray-50">
-                          <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">{formatDate(request.created_at)}</td>
-                          <td className="p-2 md:p-3 font-sans text-black">
-                            {request.user?.profile_pribadi?.nama_lengkap || request.user?.email || '-'}
-                          </td>
-                          <td className="p-2 md:p-3 font-sans capitalize text-black">{request.tipe_cuti}</td>
+                        <tr
+                          key={request.id}
+                          className="border-b hover:bg-gray-50"
+                        >
                           <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
-                            {calculateDays(request.tanggal_mulai, request.tanggal_selesai)} hari
+                            {formatDate(request.created_at)}
                           </td>
-                          <td className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate" title={request.alasan_pendukung}>
-                            {request.alasan_pendukung || '-'}
+                          <td className="p-2 md:p-3 font-sans text-black">
+                            {request.user?.profile_pribadi?.nama_lengkap ||
+                              request.user?.email ||
+                              "-"}
+                          </td>
+                          <td className="p-2 md:p-3 font-sans capitalize text-black">
+                            {request.tipe_cuti}
+                          </td>
+                          <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
+                            {calculateDays(
+                              request.tanggal_mulai,
+                              request.tanggal_selesai
+                            )}{" "}
+                            hari
+                          </td>
+                          <td
+                            className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate"
+                            title={request.alasan_pendukung}
+                          >
+                            {request.alasan_pendukung || "-"}
                           </td>
                           <td className="p-2 md:p-3 font-sans text-black text-center">
                             {request.file_pendukung ? (
                               <a
-                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${request.file_pendukung}`}
+                                href={`${
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  "http://localhost:8000"
+                                }/storage/${request.file_pendukung}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sky-800 hover:text-sky-900 underline"
@@ -374,11 +505,15 @@ export default function AdminPengajuanCutiPage() {
                                 Lihat
                               </a>
                             ) : (
-                              '-'
+                              "-"
                             )}
                           </td>
                           <td className="p-2 md:p-3">
-                            <span className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(request.status_pengajuan)}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(
+                                request.status_pengajuan
+                              )}`}
+                            >
                               {getStatusText(request.status_pengajuan)}
                             </span>
                           </td>
@@ -392,21 +527,40 @@ export default function AdminPengajuanCutiPage() {
               {/* Pagination */}
               <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center mt-3 text-[10px] md:text-sm text-black">
                 <span className="font-['Poppins']">
-                  Showing {filteredAjukan.length === 0 ? 0 : (currentPageAjukan - 1) * entriesAjukan + 1} to{' '}
-                  {Math.min(currentPageAjukan * entriesAjukan, filteredAjukan.length)} of {filteredAjukan.length} entries
+                  Showing{" "}
+                  {filteredAjukan.length === 0
+                    ? 0
+                    : (currentPageAjukan - 1) * entriesAjukan + 1}{" "}
+                  to{" "}
+                  {Math.min(
+                    currentPageAjukan * entriesAjukan,
+                    filteredAjukan.length
+                  )}{" "}
+                  of {filteredAjukan.length} entries
                 </span>
                 <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
                   <button
-                    onClick={() => setCurrentPageAjukan(Math.max(1, currentPageAjukan - 1))}
+                    onClick={() =>
+                      setCurrentPageAjukan(Math.max(1, currentPageAjukan - 1))
+                    }
                     disabled={currentPageAjukan === 1}
                     className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
                   >
                     Previous
                   </button>
-                  <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">{currentPageAjukan}</span>
+                  <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">
+                    {currentPageAjukan}
+                  </span>
                   <button
-                    onClick={() => setCurrentPageAjukan(Math.min(totalPagesAjukan, currentPageAjukan + 1))}
-                    disabled={currentPageAjukan === totalPagesAjukan || totalPagesAjukan === 0}
+                    onClick={() =>
+                      setCurrentPageAjukan(
+                        Math.min(totalPagesAjukan, currentPageAjukan + 1)
+                      )
+                    }
+                    disabled={
+                      currentPageAjukan === totalPagesAjukan ||
+                      totalPagesAjukan === 0
+                    }
                     className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
                   >
                     Next
@@ -417,7 +571,9 @@ export default function AdminPengajuanCutiPage() {
 
             {/* Riwayat */}
             <section className="bg-white rounded-[10px] shadow-md border border-black/20 p-4 w-full">
-              <h2 className="text-base font-normal font-['Poppins'] mb-4 text-black md:text-lg">Riwayat Ajuan</h2>
+              <h2 className="text-base font-normal font-['Poppins'] mb-4 text-black md:text-lg">
+                Riwayat Ajuan
+              </h2>
 
               {/* Controls */}
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-3 text-[10px] md:text-sm text-black">
@@ -451,13 +607,27 @@ export default function AdminPengajuanCutiPage() {
                 <table className="w-full text-[9px] md:text-sm border-collapse">
                   <thead className="bg-gray-100 border-b sticky top-0 z-10">
                     <tr>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tanggal Pengajuan</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Nama</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tipe Pengajuan</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Durasi</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Alasan Pendukung</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">File Pendukung</th>
-                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Status</th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        Tanggal Pengajuan
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                        Nama
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        Tipe Pengajuan
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                        Durasi
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        Alasan Pendukung
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        File Pendukung
+                      </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -469,22 +639,41 @@ export default function AdminPengajuanCutiPage() {
                       </tr>
                     ) : (
                       paginatedRiwayat.map((request) => (
-                        <tr key={request.id} className="border-b hover:bg-gray-50">
-                          <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">{formatDate(request.created_at)}</td>
-                          <td className="p-2 md:p-3 font-sans text-black">
-                            {request.user?.profile_pribadi?.nama_lengkap || request.user?.email || '-'}
-                          </td>
-                          <td className="p-2 md:p-3 font-sans capitalize text-black">{request.tipe_cuti}</td>
+                        <tr
+                          key={request.id}
+                          className="border-b hover:bg-gray-50"
+                        >
                           <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
-                            {calculateDays(request.tanggal_mulai, request.tanggal_selesai)} hari
+                            {formatDate(request.created_at)}
                           </td>
-                          <td className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate" title={request.alasan_pendukung}>
-                            {request.alasan_pendukung || '-'}
+                          <td className="p-2 md:p-3 font-sans text-black">
+                            {request.user?.profile_pribadi?.nama_lengkap ||
+                              request.user?.email ||
+                              "-"}
+                          </td>
+                          <td className="p-2 md:p-3 font-sans capitalize text-black">
+                            {request.tipe_cuti}
+                          </td>
+                          <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
+                            {calculateDays(
+                              request.tanggal_mulai,
+                              request.tanggal_selesai
+                            )}{" "}
+                            hari
+                          </td>
+                          <td
+                            className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate"
+                            title={request.alasan_pendukung}
+                          >
+                            {request.alasan_pendukung || "-"}
                           </td>
                           <td className="p-2 md:p-3 font-sans text-black text-center">
                             {request.file_pendukung ? (
                               <a
-                                href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/storage/${request.file_pendukung}`}
+                                href={`${
+                                  process.env.NEXT_PUBLIC_API_URL ||
+                                  "http://localhost:8000"
+                                }/storage/${request.file_pendukung}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sky-800 hover:text-sky-900 underline"
@@ -492,11 +681,15 @@ export default function AdminPengajuanCutiPage() {
                                 Lihat
                               </a>
                             ) : (
-                              '-'
+                              "-"
                             )}
                           </td>
                           <td className="p-2 md:p-3">
-                            <span className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(request.status_pengajuan)}`}>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(
+                                request.status_pengajuan
+                              )}`}
+                            >
                               {getStatusText(request.status_pengajuan)}
                             </span>
                           </td>
@@ -510,21 +703,40 @@ export default function AdminPengajuanCutiPage() {
               {/* Pagination */}
               <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center mt-3 text-[10px] md:text-sm text-black">
                 <span className="font-['Poppins']">
-                  Showing {filteredRiwayat.length === 0 ? 0 : (currentPageRiwayat - 1) * entriesRiwayat + 1} to{' '}
-                  {Math.min(currentPageRiwayat * entriesRiwayat, filteredRiwayat.length)} of {filteredRiwayat.length} entries
+                  Showing{" "}
+                  {filteredRiwayat.length === 0
+                    ? 0
+                    : (currentPageRiwayat - 1) * entriesRiwayat + 1}{" "}
+                  to{" "}
+                  {Math.min(
+                    currentPageRiwayat * entriesRiwayat,
+                    filteredRiwayat.length
+                  )}{" "}
+                  of {filteredRiwayat.length} entries
                 </span>
                 <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
                   <button
-                    onClick={() => setCurrentPageRiwayat(Math.max(1, currentPageRiwayat - 1))}
+                    onClick={() =>
+                      setCurrentPageRiwayat(Math.max(1, currentPageRiwayat - 1))
+                    }
                     disabled={currentPageRiwayat === 1}
                     className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
                   >
                     Previous
                   </button>
-                  <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">{currentPageRiwayat}</span>
+                  <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">
+                    {currentPageRiwayat}
+                  </span>
                   <button
-                    onClick={() => setCurrentPageRiwayat(Math.min(totalPagesRiwayat, currentPageRiwayat + 1))}
-                    disabled={currentPageRiwayat === totalPagesRiwayat || totalPagesRiwayat === 0}
+                    onClick={() =>
+                      setCurrentPageRiwayat(
+                        Math.min(totalPagesRiwayat, currentPageRiwayat + 1)
+                      )
+                    }
+                    disabled={
+                      currentPageRiwayat === totalPagesRiwayat ||
+                      totalPagesRiwayat === 0
+                    }
                     className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
                   >
                     Next
@@ -541,14 +753,26 @@ export default function AdminPengajuanCutiPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto md:max-w-xl">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
-              <h3 className="text-lg font-semibold font-['Poppins'] text-black">Form Pengajuan Cuti</h3>
+              <h3 className="text-lg font-semibold font-['Poppins'] text-black">
+                Form Pengajuan Cuti
+              </h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-400 hover:text-gray-600 transition"
                 aria-label="Tutup"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -571,7 +795,9 @@ export default function AdminPengajuanCutiPage() {
                   <option value="cuti nikah">Cuti Nikah</option>
                   <option value="cuti kematian">Cuti Kematian</option>
                   <option value="cuti bersama">Cuti Bersama</option>
-                  <option value="cuti pemotongan gaji">Cuti Pemotongan Gaji</option>
+                  <option value="cuti pemotongan gaji">
+                    Cuti Pemotongan Gaji
+                  </option>
                   <option value="cuti lainnya">Cuti Lainnya</option>
                 </select>
               </div>
@@ -602,7 +828,10 @@ export default function AdminPengajuanCutiPage() {
                   name="tanggal_selesai"
                   value={formData.tanggal_selesai}
                   onChange={handleInputChange}
-                  min={formData.tanggal_mulai || new Date().toISOString().split("T")[0]}
+                  min={
+                    formData.tanggal_mulai ||
+                    new Date().toISOString().split("T")[0]
+                  }
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-800 text-black"
                   required
                 />
@@ -616,7 +845,11 @@ export default function AdminPengajuanCutiPage() {
                       Durasi Cuti
                     </span>
                     <span className="text-2xl font-bold text-sky-800">
-                      {calculateDays(formData.tanggal_mulai, formData.tanggal_selesai)} hari
+                      {calculateDays(
+                        formData.tanggal_mulai,
+                        formData.tanggal_selesai
+                      )}{" "}
+                      hari
                     </span>
                   </div>
                 </div>
@@ -737,7 +970,11 @@ export default function AdminPengajuanCutiPage() {
                   aria-label="Tutup notifikasi"
                 >
                   <span className="sr-only">Close</span>
-                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -753,4 +990,3 @@ export default function AdminPengajuanCutiPage() {
     </div>
   );
 }
-

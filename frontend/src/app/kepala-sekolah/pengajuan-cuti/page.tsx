@@ -174,12 +174,17 @@ export default function KepalaSekolahPengajuanCuti() {
 
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower.includes("disetujui") || statusLower.includes("approved")) {
+    if (
+      statusLower.includes("disetujui") &&
+      !statusLower.includes("menunggu")
+    ) {
       return "bg-green-100 text-green-800";
     } else if (
-      statusLower.includes("ditolak") ||
-      statusLower.includes("rejected")
+      statusLower.includes("disetujui") &&
+      statusLower.includes("menunggu")
     ) {
+      return "bg-blue-100 text-blue-800";
+    } else if (statusLower.includes("ditolak")) {
       return "bg-red-100 text-red-800";
     } else {
       return "bg-yellow-100 text-yellow-800";
@@ -187,17 +192,37 @@ export default function KepalaSekolahPengajuanCuti() {
   };
 
   const getStatusText = (status: string) => {
-    // Simplify complex status text
     const statusLower = status.toLowerCase();
-    if (statusLower.includes("disetujui")) {
-      return "Disetujui";
-    } else if (statusLower.includes("ditolak")) {
-      return "Ditolak";
-    } else if (statusLower.includes("ditinjau")) {
-      return "Sedang Ditinjau";
-    } else {
-      return status;
+
+    // Mapping status enum ke teks yang lebih jelas
+    const statusMap: { [key: string]: string } = {
+      "ditinjau kepala sekolah": "Ditinjau Kepala Sekolah",
+      "disetujui kepala sekolah": "Disetujui Kepala Sekolah",
+      "disetujui kepala sekolah menunggu tinjauan dirpen":
+        "Disetujui Kepala Sekolah (Menunggu Dirpen)",
+      "ditolak kepala sekolah": "Ditolak Kepala Sekolah",
+      "ditinjau hrd": "Ditinjau Staff HRD",
+      "disetujui hrd": "Disetujui Staff HRD",
+      "disetujui hrd menunggu tinjauan dirpen":
+        "Disetujui Staff HRD (Menunggu Dirpen)",
+      "ditolak hrd": "Ditolak Staff HRD",
+      "ditinjau kepala hrd": "Ditinjau Kepala HRD",
+      "disetujui kepala hrd": "Disetujui Kepala HRD",
+      "disetujui kepala hrd menunggu tinjauan dirpen":
+        "Disetujui Kepala HRD (Menunggu Dirpen)",
+      "ditolak kepala hrd": "Ditolak Kepala HRD",
+      "ditinjau dirpen": "Ditinjau Direktur Pendidikan",
+      "disetujui dirpen": "Disetujui Direktur Pendidikan",
+      "ditolak dirpen": "Ditolak Direktur Pendidikan",
+    };
+
+    // Cek apakah status ada di mapping
+    if (statusMap[statusLower]) {
+      return statusMap[statusLower];
     }
+
+    // Fallback untuk status yang tidak terdaftar
+    return status;
   };
 
   const formatDate = (dateString: string) => {
@@ -234,12 +259,17 @@ export default function KepalaSekolahPengajuanCuti() {
       req.status_pengajuan.toLowerCase().includes("menunggu")
   );
 
-  // Filter data for "Riwayat" section (approved/rejected)
-  const historyRequests = leaveRequests.filter(
-    (req) =>
-      req.status_pengajuan.toLowerCase().includes("disetujui") ||
-      req.status_pengajuan.toLowerCase().includes("ditolak")
-  );
+  // Filter data for "Riwayat" section (final status only - approved/rejected without pending)
+  const historyRequests = leaveRequests.filter((req) => {
+    const statusLower = req.status_pengajuan.toLowerCase().trim();
+    // Only show final status: rejected or final approved (without "menunggu" or "ditinjau")
+    // Explicitly exclude any status with "menunggu" or "ditinjau"
+    if (statusLower.includes("menunggu") || statusLower.includes("ditinjau")) {
+      return false;
+    }
+    // Only include rejected or final approved status
+    return statusLower.includes("ditolak") || statusLower.includes("disetujui");
+  });
 
   // Search and filter for Ajukan Cuti
   const filteredAjukan = pendingRequests.filter(
