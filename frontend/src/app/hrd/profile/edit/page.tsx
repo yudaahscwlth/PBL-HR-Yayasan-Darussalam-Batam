@@ -12,11 +12,9 @@ import {
 } from "lucide-react";
 import AccessControl from "@/components/AccessControl";
 
-// --- Interface dengan Snake Case ---
 interface ProfileData {
   id: number;
   email: string;
-  // Diubah dari profilePribadi ke profile_pribadi
   profile_pribadi: {
     nama_lengkap: string;
     nomor_induk_kependudukan: string;
@@ -31,17 +29,16 @@ interface ProfileData {
     no_hp: string;
     foto: string | null;
   };
-  // Diubah dari profilePekerjaan ke profile_pekerjaan
+
   profile_pekerjaan: {
     nomor_induk_karyawan: string;
     tanggal_masuk: string;
     status: string;
     departemen: { nama_departemen: string };
-    // Diubah dari tempatKerja ke tempat_kerja
     tempat_kerja: { nama_tempat: string };
     jabatan: { nama_jabatan: string };
   };
-  // Diubah dari orangTua ke orang_tua
+
   orang_tua: {
     nama_ayah: string;
     pekerjaan_ayah: string;
@@ -56,7 +53,6 @@ interface ProfileData {
     tanggal_lahir: string;
     pekerjaan: string;
   }>;
-  // Diubah dari userSosialMedia ke user_sosial_media
   user_sosial_media: Array<{
     id: number;
     id_platform: number;
@@ -113,6 +109,7 @@ export default function HRDProfileEdit() {
     id_platform: number;
     username: string;
     link: string;
+    sosial_media: { nama_platform: string };
   }>>([]);
 
   const [passwordForm, setPasswordForm] = useState({
@@ -121,9 +118,27 @@ export default function HRDProfileEdit() {
     konf_password: "",
   });
 
-  useEffect(() => {
-    fetchProfileData();
-  }, []);
+  const [toastMessage, setToastMessage] = useState<{
+    type: "success" | "error" | "warning" | "info";
+    message: string;
+    show: boolean;
+  }>({
+    type: "success",
+    message: "",
+    show: false,
+  });
+
+  const [lastToastTime, setLastToastTime] = useState(0);
+
+  const showToast = (type: "success" | "error" | "warning" | "info", message: string) => {
+    const now = Date.now();
+    if (now - lastToastTime < 3000) return; // Prevent spamming
+    setLastToastTime(now);
+    setToastMessage({ type, message, show: true });
+    setTimeout(() => {
+      setToastMessage((prev) => ({ ...prev, show: false }));
+    }, 5000);
+  };
 
   const fetchProfileData = async () => {
     try {
@@ -161,6 +176,10 @@ export default function HRDProfileEdit() {
       console.error("Error fetching profile:", error);
     }
   };
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -209,11 +228,11 @@ export default function HRDProfileEdit() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Profile berhasil diperbarui!");
-      router.push("/hrd/profile");
+      showToast("success", "Profile berhasil diperbarui!");
+      fetchProfileData();
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      alert(error.response?.data?.message || "Gagal memperbarui profile");
+      showToast("error", error.response?.data?.message || "Gagal memperbarui profile");
     } finally {
       setIsLoading(false);
     }
@@ -221,14 +240,25 @@ export default function HRDProfileEdit() {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (passwordForm.password_baru !== passwordForm.konf_password) {
+      showToast("error", "Konfirmasi password tidak cocok!");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await api.put("/profile/password/update", passwordForm);
-      alert("Password berhasil diubah!");
+      await api.put("/profile/password/update", {
+        current_password: passwordForm.password_lama,
+        new_password: passwordForm.password_baru,
+        new_password_confirmation: passwordForm.konf_password,
+      });
+
+      showToast("success", "Password berhasil diubah!");
       setPasswordForm({ password_lama: "", password_baru: "", konf_password: "" });
+      setActiveTab("edit");
     } catch (error: any) {
       console.error("Error changing password:", error);
-      alert(error.response?.data?.message || "Gagal mengubah password");
+      showToast("error", error.response?.data?.message || "Gagal mengubah password");
     } finally {
       setIsLoading(false);
     }
@@ -242,7 +272,7 @@ export default function HRDProfileEdit() {
     setKeluargaList(updated);
   };
 
-  const addSosmed = () => setSosmedList([...sosmedList, { id_platform: 1, username: "", link: "" }]);
+  const addSosmed = () => setSosmedList([...sosmedList, { id_platform: 1, username: "", link: "", sosial_media: { nama_platform: "" } }]);
   const removeSosmed = (index: number) => setSosmedList(sosmedList.filter((_, i) => i !== index));
   const updateSosmed = (index: number, field: string, value: string | number) => {
     const updated = [...sosmedList];
@@ -250,7 +280,6 @@ export default function HRDProfileEdit() {
     setSosmedList(updated);
   };
 
-  // --- Helper Classes ---
   // --- Helper Classes ---
   const inputClass = "w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-800/20 focus:border-sky-800 transition-all duration-200 text-slate-700 bg-white placeholder-slate-400 text-sm font-medium hover:border-slate-300";
   const labelClass = "block text-sm font-semibold text-slate-700 mb-2";
@@ -406,19 +435,10 @@ export default function HRDProfileEdit() {
                                         <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
                                     </div>
                                 </div>
-                                <div className="md:col-span-2">
-                                    <label className={labelClass}>Lokasi Kerja</label>
-                                    <div className="relative">
-                                        <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
-                                        {/* Menggunakan snake_case: tempat_kerja */}
-                                        <input type="text" value={profileData.profile_pekerjaan?.tempat_kerja?.nama_tempat || "-"} className={`${readOnlyClass} pl-12`} disabled />
-                                        <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
-                                    </div>
-                                </div>
                             </div>
                         </section>
 
-                        {/* Data Pribadi */}
+                        {/* Informasi Pribadi */}
                         <section className={cardClass}>
                              <div className={sectionHeaderClass}>
                                 <div className="p-2 bg-sky-50 rounded-lg text-sky-800">
@@ -426,47 +446,29 @@ export default function HRDProfileEdit() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-slate-800 text-lg">Informasi Pribadi</h3>
-                                    <p className="text-slate-500 text-xs font-medium">Update data diri Anda secara berkala</p>
+                                    <p className="text-slate-500 text-xs font-medium">Data diri dan kontak yang dapat dihubungi</p>
                                 </div>
                             </div>
                             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="md:col-span-2">
-                                    <label className={labelClass}>Foto Profile Baru</label>
-                                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-3 bg-sky-50 text-sky-800 rounded-full">
-                                                <Camera className="w-6 h-6" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-semibold text-slate-700">Klik untuk upload foto baru</p>
-                                                <p className="text-xs text-slate-500">JPG, PNG atau GIF (Max. 2MB)</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className={labelClass}>Nama Lengkap</label>
-                                    <input type="text" name="nama_lengkap" value={formData.nama_lengkap} onChange={handleInputChange} className={inputClass} required />
-                                </div>
                                 <div>
                                     <label className={labelClass}>Email</label>
                                     <div className="relative">
-                                        <Mail className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
-                                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className={`${inputClass} pl-12`} required />
+                                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className={`${inputClass} pl-10`} />
+                                        <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className={labelClass}>Nomor HP</label>
+                                    <label className={labelClass}>No. Handphone</label>
                                     <div className="relative">
-                                        <Phone className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
-                                        <input type="text" name="no_hp" value={formData.no_hp} onChange={handleInputChange} className={`${inputClass} pl-12`} />
+                                        <input type="text" name="no_hp" value={formData.no_hp} onChange={handleInputChange} className={`${inputClass} pl-10`} />
+                                        <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                                     </div>
                                 </div>
                                 <div>
                                     <label className={labelClass}>NIK (KTP)</label>
                                     <div className="relative">
-                                        <CreditCard className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
-                                        <input type="text" name="nomor_induk_kependudukan" value={formData.nomor_induk_kependudukan} onChange={handleInputChange} className={`${inputClass} pl-12`} required />
+                                        <input type="text" name="nomor_induk_kependudukan" value={formData.nomor_induk_kependudukan} onChange={handleInputChange} className={`${inputClass} pl-10`} />
+                                        <CreditCard className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                                     </div>
                                 </div>
                                 <div>
@@ -474,8 +476,15 @@ export default function HRDProfileEdit() {
                                     <input type="text" name="npwp" value={formData.npwp} onChange={handleInputChange} className={inputClass} />
                                 </div>
                                 <div>
+                                    <label className={labelClass}>Nama Lengkap</label>
+                                    <input type="text" name="nama_lengkap" value={formData.nama_lengkap} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div>
                                     <label className={labelClass}>Tempat Lahir</label>
-                                    <input type="text" name="tempat_lahir" value={formData.tempat_lahir} onChange={handleInputChange} className={inputClass} />
+                                    <div className="relative">
+                                        <input type="text" name="tempat_lahir" value={formData.tempat_lahir} onChange={handleInputChange} className={`${inputClass} pl-10`} />
+                                        <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className={labelClass}>Tanggal Lahir</label>
@@ -484,29 +493,35 @@ export default function HRDProfileEdit() {
                                 <div>
                                     <label className={labelClass}>Jenis Kelamin</label>
                                     <select name="jenis_kelamin" value={formData.jenis_kelamin} onChange={handleInputChange} className={inputClass}>
+                                        <option value="">Pilih Jenis Kelamin</option>
                                         <option value="pria">Pria</option>
                                         <option value="wanita">Wanita</option>
                                     </select>
                                 </div>
                                 <div>
+                                    <label className={labelClass}>Kecamatan</label>
+                                    <input type="text" name="kecamatan" value={formData.kecamatan} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div>
                                     <label className={labelClass}>Status Pernikahan</label>
                                     <select name="status_pernikahan" value={formData.status_pernikahan} onChange={handleInputChange} className={inputClass}>
-                                        <option value="belum nikah">Belum Menikah</option>
-                                        <option value="sudah nikah">Sudah Menikah</option>
+                                        <option value="">Pilih Status</option>
+                                        <option value="TK">Belum Menikah</option>
+                                        <option value="K0">Menikah (0 Anak)</option>
+                                        <option value="K1">Menikah (1 Anak)</option>
+                                        <option value="K2">Menikah (2 Anak)</option>
+                                        <option value="K3">Menikah (3 Anak)</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label className={labelClass}>Golongan Darah</label>
                                     <select name="golongan_darah" value={formData.golongan_darah} onChange={handleInputChange} className={inputClass}>
-                                        <option value="a">A</option>
-                                        <option value="b">B</option>
-                                        <option value="ab">AB</option>
-                                        <option value="o">O</option>
+                                        <option value="">Pilih Golongan Darah</option>
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="AB">AB</option>
+                                        <option value="O">O</option>
                                     </select>
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Kecamatan</label>
-                                    <input type="text" name="kecamatan" value={formData.kecamatan} onChange={handleInputChange} className={inputClass} />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className={labelClass}>Alamat Lengkap</label>
@@ -678,7 +693,7 @@ export default function HRDProfileEdit() {
                         </div>
                     </form>
                 ) : (
-                    // Password Tab (Tetap sama)
+                    // Password Tab
                     <div className={cardClass}>
                          <div className={sectionHeaderClass}>
                             <Lock className="w-5 h-5 text-sky-800" />
@@ -718,6 +733,54 @@ export default function HRDProfileEdit() {
             </div>
         </div>
       </main>
+
+      {/* Toast Notification */}
+      {toastMessage.show && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm">
+          <div
+            className={`p-4 rounded-lg shadow-lg border-l-4 ${
+              toastMessage.type === "success"
+                ? "bg-green-50 border-green-500 text-green-800"
+                : toastMessage.type === "error"
+                ? "bg-red-50 border-red-500 text-red-800"
+                : toastMessage.type === "warning"
+                ? "bg-yellow-50 border-yellow-500 text-yellow-800"
+                : "bg-blue-50 border-blue-500 text-blue-800"
+            }`}
+          >
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                {toastMessage.type === "success" && <span className="text-green-500 text-xl">✅</span>}
+                {toastMessage.type === "error" && <span className="text-red-500 text-xl">❌</span>}
+                {toastMessage.type === "warning" && <span className="text-yellow-500 text-xl">⚠️</span>}
+                {toastMessage.type === "info" && <span className="text-blue-500 text-xl">ℹ️</span>}
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium whitespace-pre-line">{toastMessage.message}</p>
+              </div>
+              <div className="ml-4 flex-shrink-0">
+                <button
+                  onClick={() => setToastMessage((prev) => ({ ...prev, show: false }))}
+                  className={`inline-flex rounded-md p-1.5 ${
+                    toastMessage.type === "success"
+                      ? "text-green-500 hover:bg-green-100"
+                      : toastMessage.type === "error"
+                      ? "text-red-500 hover:bg-red-100"
+                      : toastMessage.type === "warning"
+                      ? "text-yellow-500 hover:bg-yellow-100"
+                      : "text-blue-500 hover:bg-blue-100"
+                  }`}
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </AccessControl>
   );
