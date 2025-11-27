@@ -8,6 +8,7 @@ use App\Models\ProfilePekerjaan;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -335,4 +336,41 @@ class ProfileController extends Controller
             'data' => $profile,
         ]);
     }
+
+    /**
+     * Update password
+     */
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password_lama' => 'required',
+            'password_baru' => 'required|min:8|different:password_lama',
+            'konf_password' => 'required|same:password_baru',
+        ], [
+            'password_lama.required' => 'Password lama wajib diisi.',
+            'password_baru.required' => 'Password baru wajib diisi.',
+            'password_baru.min' => 'Password baru minimal 8 karakter.',
+            'password_baru.different' => 'Password baru harus berbeda dengan password lama.',
+            'konf_password.required' => 'Konfirmasi password wajib diisi.',
+            'konf_password.same' => 'Konfirmasi password tidak cocok dengan password baru.',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->password_lama, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password lama tidak sesuai.',
+            ], 422);
+        }
+
+        $user->password = Hash::make($request->password_baru);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil diperbarui.',
+        ]);
+    }
 }
+

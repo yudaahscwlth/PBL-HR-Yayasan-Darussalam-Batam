@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/complete', [ProfileController::class, 'getCompleteProfile']);
         Route::get('/sosial-media-platforms', [ProfileController::class, 'getSosialMediaPlatforms']);
         Route::put('/update', [ProfileController::class, 'updateProfile']);
+        Route::put('/password/update', [ProfileController::class, 'updatePassword']);
         Route::get('/personal', [ProfileController::class, 'getPersonal']);
         Route::put('/personal', [ProfileController::class, 'updatePersonal']);
         Route::get('/work', [ProfileController::class, 'getWork']);
