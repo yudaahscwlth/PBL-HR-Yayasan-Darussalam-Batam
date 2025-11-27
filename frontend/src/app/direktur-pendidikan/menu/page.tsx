@@ -2,23 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { kepalaSekolahMenuConfig } from "@/config/menuConfig";
+import { direkturPendidikanMenuConfig } from "@/config/menuConfig";
 import AccessControl from "@/components/AccessControl";
 import BottomNavbar from "@/components/BottomNavbar";
 import MenuCard from "@/components/MenuCard";
 
-export default function KSMenu() {
+export default function DPMenu() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("menu");
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    if (tab === "dashboard") router.push("/kepala-sekolah/dashboard");
-    else if (tab === "notifikasi") router.push("/kepala-sekolah/announcements");
-    else if (tab === "profile") router.push("/kepala-sekolah/profile");
+    if (tab === "dashboard") router.push("/direktur-pendidikan/dashboard");
+    else if (tab === "notifikasi") router.push("/direktur-pendidikan/announcements");
+    else if (tab === "profile") router.push("/direktur-pendidikan/profile");
   };
 
-  const menuSectionsWithHandlers = kepalaSekolahMenuConfig.map((section) => ({
+  const menuSectionsWithHandlers = direkturPendidikanMenuConfig.map((section) => ({
     ...section,
     items: section.items.map((item) => ({
       ...item,
@@ -31,7 +31,7 @@ export default function KSMenu() {
   }));
 
   return (
-    <AccessControl allowedRoles={["kepala sekolah"]}>
+    <AccessControl allowedRoles={["direktur pendidikan"]}>
       <div className="min-h-screen bg-gray-100 pb-28">
         <div className="px-5 py-6">
           {menuSectionsWithHandlers.map((section, sectionIndex) => (
