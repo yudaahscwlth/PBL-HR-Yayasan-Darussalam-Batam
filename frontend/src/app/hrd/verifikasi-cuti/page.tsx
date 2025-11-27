@@ -33,8 +33,12 @@ export default function HRDVerifikasiCutiPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
-  const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(
+    null
+  );
+  const [actionType, setActionType] = useState<"approve" | "reject" | null>(
+    null
+  );
   const [komentar, setKomentar] = useState("");
 
   // Pagination and search state for Verifikasi Cuti
@@ -100,7 +104,10 @@ export default function HRDVerifikasiCutiPage() {
     }
   };
 
-  const showToast = (type: "success" | "error" | "warning" | "info", message: string) => {
+  const showToast = (
+    type: "success" | "error" | "warning" | "info",
+    message: string
+  ) => {
     setToastMessage({ type, message, show: true });
     setTimeout(() => {
       setToastMessage((prev) => ({ ...prev, show: false }));
@@ -122,14 +129,25 @@ export default function HRDVerifikasiCutiPage() {
       let response;
 
       if (actionType === "approve") {
-        response = await apiClient.leave.approve(selectedRequest.id, komentar.trim() || undefined);
+        response = await apiClient.leave.approve(
+          selectedRequest.id,
+          komentar.trim() || undefined
+        );
       } else {
         // Use reject endpoint with reason as komentar
-        response = await apiClient.leave.reject(selectedRequest.id, komentar.trim() || undefined);
+        response = await apiClient.leave.reject(
+          selectedRequest.id,
+          komentar.trim() || undefined
+        );
       }
 
       if (response.success) {
-        showToast("success", `✅ Cuti berhasil ${actionType === "approve" ? "disetujui" : "ditolak"}!`);
+        showToast(
+          "success",
+          `✅ Cuti berhasil ${
+            actionType === "approve" ? "disetujui" : "ditolak"
+          }!`
+        );
         setShowConfirmModal(false);
         setSelectedRequest(null);
         setActionType(null);
@@ -137,18 +155,31 @@ export default function HRDVerifikasiCutiPage() {
         // Reload leave requests to show updated status
         await loadLeaveRequests();
       } else {
-        showToast("error", response.message || `❌ Gagal ${actionType === "approve" ? "menyetujui" : "menolak"} cuti`);
+        showToast(
+          "error",
+          response.message ||
+            `❌ Gagal ${
+              actionType === "approve" ? "menyetujui" : "menolak"
+            } cuti`
+        );
       }
     } catch (error: any) {
       console.error("Error confirming leave request:", error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || `❌ Gagal ${actionType === "approve" ? "menyetujui" : "menolak"} cuti`;
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        `❌ Gagal ${actionType === "approve" ? "menyetujui" : "menolak"} cuti`;
       showToast("error", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const openConfirmModal = (request: LeaveRequest, type: "approve" | "reject") => {
+  const openConfirmModal = (
+    request: LeaveRequest,
+    type: "approve" | "reject"
+  ) => {
     setSelectedRequest(request);
     setActionType(type);
     setKomentar("");
@@ -157,9 +188,17 @@ export default function HRDVerifikasiCutiPage() {
 
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower.includes("disetujui") || statusLower.includes("approved")) {
+    if (
+      statusLower.includes("disetujui") &&
+      !statusLower.includes("menunggu")
+    ) {
       return "bg-green-100 text-green-800";
-    } else if (statusLower.includes("ditolak") || statusLower.includes("rejected")) {
+    } else if (
+      statusLower.includes("disetujui") &&
+      statusLower.includes("menunggu")
+    ) {
+      return "bg-blue-100 text-blue-800";
+    } else if (statusLower.includes("ditolak")) {
       return "bg-red-100 text-red-800";
     } else {
       return "bg-yellow-100 text-yellow-800";
@@ -168,20 +207,54 @@ export default function HRDVerifikasiCutiPage() {
 
   const getStatusText = (status: string) => {
     const statusLower = status.toLowerCase();
-    if (statusLower.includes("disetujui")) {
-      return "Disetujui";
-    } else if (statusLower.includes("ditolak")) {
-      return "Ditolak";
-    } else if (statusLower.includes("ditinjau")) {
-      return "Sedang Ditinjau";
-    } else {
-      return status;
+
+    // Mapping status enum ke teks yang lebih jelas
+    const statusMap: { [key: string]: string } = {
+      "ditinjau kepala sekolah": "Ditinjau Kepala Sekolah",
+      "disetujui kepala sekolah": "Disetujui Kepala Sekolah",
+      "disetujui kepala sekolah menunggu tinjauan dirpen":
+        "Disetujui Kepala Sekolah (Menunggu Dirpen)",
+      "ditolak kepala sekolah": "Ditolak Kepala Sekolah",
+      "ditinjau hrd": "Ditinjau Staff HRD",
+      "disetujui hrd": "Disetujui Staff HRD",
+      "disetujui hrd menunggu tinjauan dirpen":
+        "Disetujui Staff HRD (Menunggu Dirpen)",
+      "ditolak hrd": "Ditolak Staff HRD",
+      "ditinjau kepala hrd": "Ditinjau Kepala HRD",
+      "disetujui kepala hrd": "Disetujui Kepala HRD",
+      "disetujui kepala hrd menunggu tinjauan dirpen":
+        "Disetujui Kepala HRD (Menunggu Dirpen)",
+      "ditolak kepala hrd": "Ditolak Kepala HRD",
+      "ditinjau dirpen": "Ditinjau Direktur Pendidikan",
+      "disetujui dirpen": "Disetujui Direktur Pendidikan",
+      "ditolak dirpen": "Ditolak Direktur Pendidikan",
+    };
+
+    // Cek apakah status ada di mapping
+    if (statusMap[statusLower]) {
+      return statusMap[statusLower];
     }
+
+    // Fallback untuk status yang tidak terdaftar
+    return status;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Agu",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Des",
+    ];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
@@ -211,9 +284,20 @@ export default function HRDVerifikasiCutiPage() {
   const historyRequests = leaveRequests.filter((req) => {
     const status = req.status_pengajuan.toLowerCase();
     if (isKepalaHRD) {
-      return status.includes("disetujui kepala hrd") || status.includes("ditolak kepala hrd");
+      return (
+        status.includes("disetujui kepala hrd") ||
+        status.includes("ditolak kepala hrd") ||
+        status === "disetujui dirpen" ||
+        status === "ditolak dirpen"
+      );
     } else if (isStaffHRD) {
-      return status === "disetujui hrd" || status === "ditolak hrd" || status === "disetujui hrd menunggu tinjauan dirpen";
+      return (
+        status === "disetujui hrd" ||
+        status === "ditolak hrd" ||
+        status === "disetujui hrd menunggu tinjauan dirpen" ||
+        status === "disetujui dirpen" ||
+        status === "ditolak dirpen"
+      );
     }
     return false;
   });
@@ -221,23 +305,39 @@ export default function HRDVerifikasiCutiPage() {
   const filteredVerifikasi = pendingRequests.filter(
     (req) =>
       req.tipe_cuti.toLowerCase().includes(searchVerifikasi.toLowerCase()) ||
-      req.alasan_pendukung.toLowerCase().includes(searchVerifikasi.toLowerCase()) ||
-      req.user?.profile_pribadi?.nama_lengkap?.toLowerCase().includes(searchVerifikasi.toLowerCase()) ||
+      req.alasan_pendukung
+        .toLowerCase()
+        .includes(searchVerifikasi.toLowerCase()) ||
+      req.user?.profile_pribadi?.nama_lengkap
+        ?.toLowerCase()
+        .includes(searchVerifikasi.toLowerCase()) ||
       req.user?.email?.toLowerCase().includes(searchVerifikasi.toLowerCase())
   );
   const filteredRiwayat = historyRequests.filter(
     (req) =>
       req.tipe_cuti.toLowerCase().includes(searchRiwayat.toLowerCase()) ||
-      req.alasan_pendukung.toLowerCase().includes(searchRiwayat.toLowerCase()) ||
-      req.user?.profile_pribadi?.nama_lengkap?.toLowerCase().includes(searchRiwayat.toLowerCase()) ||
+      req.alasan_pendukung
+        .toLowerCase()
+        .includes(searchRiwayat.toLowerCase()) ||
+      req.user?.profile_pribadi?.nama_lengkap
+        ?.toLowerCase()
+        .includes(searchRiwayat.toLowerCase()) ||
       req.user?.email?.toLowerCase().includes(searchRiwayat.toLowerCase())
   );
 
   // Pagination
-  const totalPagesVerifikasi = Math.ceil(filteredVerifikasi.length / entriesVerifikasi);
-  const paginatedVerifikasi = filteredVerifikasi.slice((currentPageVerifikasi - 1) * entriesVerifikasi, currentPageVerifikasi * entriesVerifikasi);
+  const totalPagesVerifikasi = Math.ceil(
+    filteredVerifikasi.length / entriesVerifikasi
+  );
+  const paginatedVerifikasi = filteredVerifikasi.slice(
+    (currentPageVerifikasi - 1) * entriesVerifikasi,
+    currentPageVerifikasi * entriesVerifikasi
+  );
   const totalPagesRiwayat = Math.ceil(filteredRiwayat.length / entriesRiwayat);
-  const paginatedRiwayat = filteredRiwayat.slice((currentPageRiwayat - 1) * entriesRiwayat, currentPageRiwayat * entriesRiwayat);
+  const paginatedRiwayat = filteredRiwayat.slice(
+    (currentPageRiwayat - 1) * entriesRiwayat,
+    currentPageRiwayat * entriesRiwayat
+  );
 
   if (isLoading || !isAuthenticated || !user) {
     return (
@@ -257,14 +357,30 @@ export default function HRDVerifikasiCutiPage() {
           <div className="w-full max-w-md mx-auto md:max-w-7xl md:px-6">
             {/* Header */}
             <div className="px-6 pt-6 pb-4 flex items-center gap-4 md:px-0">
-              <button onClick={() => router.back()} className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded transition text-black md:w-9 md:h-9" aria-label="Kembali">
-                <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              <button
+                onClick={() => router.back()}
+                className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded transition text-black md:w-9 md:h-9"
+                aria-label="Kembali"
+              >
+                <svg
+                  className="w-4 h-4 md:w-5 md:h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
               <div className="flex-1">
-                <h1 className="text-xl font-medium font-['Poppins'] text-black md:text-2xl">Verifikasi Cuti</h1>
-                <p className="hidden md:block text-sm text-zinc-600">Verifikasi dan konfirmasi pengajuan cuti karyawan.</p>
+                <h1 className="text-xl font-medium font-['Poppins'] text-black md:text-2xl">
+                  Verifikasi Cuti
+                </h1>
+                <p className="hidden md:block text-sm text-zinc-600">
+                  Verifikasi dan konfirmasi pengajuan cuti karyawan.
+                </p>
               </div>
             </div>
 
@@ -272,14 +388,22 @@ export default function HRDVerifikasiCutiPage() {
             <div className="mx-4 md:mx-0 space-y-6">
               {/* Verifikasi Cuti */}
               <section className="bg-white rounded-[10px] shadow-md border border-black/20 p-4 w-full">
-                <h2 className="text-base font-normal font-['Poppins'] text-black mb-4 md:text-lg">Verifikasi Cuti</h2>
+                <h2 className="text-base font-normal font-['Poppins'] text-black mb-4 md:text-lg">
+                  Verifikasi Cuti
+                </h2>
 
                 {/* Controls */}
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:items-center md:gap-3 mb-3 text-[10px] md:text-sm text-black">
                   {/* Kiri: Show entries */}
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-['Poppins'] shrink-0">Show</span>
-                    <select value={entriesVerifikasi} onChange={(e) => setEntriesVerifikasi(Number(e.target.value))} className="h-7 md:h-8 w-16 md:w-24 px-2 bg-white rounded border border-black/30 font-['Poppins'] text-black">
+                    <select
+                      value={entriesVerifikasi}
+                      onChange={(e) =>
+                        setEntriesVerifikasi(Number(e.target.value))
+                      }
+                      className="h-7 md:h-8 w-16 md:w-24 px-2 bg-white rounded border border-black/30 font-['Poppins'] text-black"
+                    >
                       <option value={5}>5</option>
                       <option value={10}>10</option>
                       <option value={25}>25</option>
@@ -305,36 +429,83 @@ export default function HRDVerifikasiCutiPage() {
                   <table className="w-full text-[9px] md:text-sm border-collapse">
                     <thead className="bg-gray-100 border-b sticky top-0 z-10">
                       <tr>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tanggal Pengajuan</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Nama</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tipe Pengajuan</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Durasi</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Alasan Pendukung</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">File Pendukung</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Status</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Aksi</th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                          Tanggal Pengajuan
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                          Nama
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                          Tipe Pengajuan
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                          Durasi
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                          Alasan Pendukung
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                          File Pendukung
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                          Status
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                          Aksi
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedVerifikasi.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="p-4 text-center text-black">
+                          <td
+                            colSpan={8}
+                            className="p-4 text-center text-black"
+                          >
                             Tidak ada pengajuan cuti yang perlu diverifikasi
                           </td>
                         </tr>
                       ) : (
                         paginatedVerifikasi.map((request) => (
-                          <tr key={request.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">{formatDate(request.created_at)}</td>
-                            <td className="p-2 md:p-3 font-sans text-black">{request.user?.profile_pribadi?.nama_lengkap || request.user?.email || "-"}</td>
-                            <td className="p-2 md:p-3 font-sans capitalize text-black">{request.tipe_cuti}</td>
-                            <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">{calculateDays(request.tanggal_mulai, request.tanggal_selesai)} hari</td>
-                            <td className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate" title={request.alasan_pendukung}>
+                          <tr
+                            key={request.id}
+                            className="border-b hover:bg-gray-50"
+                          >
+                            <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
+                              {formatDate(request.created_at)}
+                            </td>
+                            <td className="p-2 md:p-3 font-sans text-black">
+                              {request.user?.profile_pribadi?.nama_lengkap ||
+                                request.user?.email ||
+                                "-"}
+                            </td>
+                            <td className="p-2 md:p-3 font-sans capitalize text-black">
+                              {request.tipe_cuti}
+                            </td>
+                            <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
+                              {calculateDays(
+                                request.tanggal_mulai,
+                                request.tanggal_selesai
+                              )}{" "}
+                              hari
+                            </td>
+                            <td
+                              className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate"
+                              title={request.alasan_pendukung}
+                            >
                               {request.alasan_pendukung || "-"}
                             </td>
                             <td className="p-2 md:p-3 font-sans text-black text-center">
                               {request.file_pendukung ? (
-                                <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/storage/${request.file_pendukung}`} target="_blank" rel="noopener noreferrer" className="text-sky-800 hover:text-sky-900 underline">
+                                <a
+                                  href={`${
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    "http://localhost:8000"
+                                  }/storage/${request.file_pendukung}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sky-800 hover:text-sky-900 underline"
+                                >
                                   Lihat
                                 </a>
                               ) : (
@@ -342,14 +513,30 @@ export default function HRDVerifikasiCutiPage() {
                               )}
                             </td>
                             <td className="p-2 md:p-3">
-                              <span className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(request.status_pengajuan)}`}>{getStatusText(request.status_pengajuan)}</span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(
+                                  request.status_pengajuan
+                                )}`}
+                              >
+                                {getStatusText(request.status_pengajuan)}
+                              </span>
                             </td>
                             <td className="p-2 md:p-3">
                               <div className="flex gap-1 md:gap-2">
-                                <button onClick={() => openConfirmModal(request, "approve")} className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[8px] md:text-xs rounded hover:bg-sky-600 transition whitespace-nowrap">
+                                <button
+                                  onClick={() =>
+                                    openConfirmModal(request, "approve")
+                                  }
+                                  className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[8px] md:text-xs rounded hover:bg-sky-600 transition whitespace-nowrap"
+                                >
                                   Setujui
                                 </button>
-                                <button onClick={() => openConfirmModal(request, "reject")} className="px-2 py-1 md:px-3 md:py-1.5 bg-red-600 text-white text-[8px] md:text-xs rounded hover:bg-red-700 transition whitespace-nowrap">
+                                <button
+                                  onClick={() =>
+                                    openConfirmModal(request, "reject")
+                                  }
+                                  className="px-2 py-1 md:px-3 md:py-1.5 bg-red-600 text-white text-[8px] md:text-xs rounded hover:bg-red-700 transition whitespace-nowrap"
+                                >
                                   Tolak
                                 </button>
                               </div>
@@ -364,21 +551,46 @@ export default function HRDVerifikasiCutiPage() {
                 {/* Pagination */}
                 <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center mt-3 text-[10px] md:text-sm text-black">
                   <span className="font-['Poppins']">
-                    Showing {filteredVerifikasi.length === 0 ? 0 : (currentPageVerifikasi - 1) * entriesVerifikasi + 1} to {Math.min(currentPageVerifikasi * entriesVerifikasi, filteredVerifikasi.length)} of {filteredVerifikasi.length}{" "}
-                    entries
+                    Showing{" "}
+                    {filteredVerifikasi.length === 0
+                      ? 0
+                      : (currentPageVerifikasi - 1) * entriesVerifikasi +
+                        1}{" "}
+                    to{" "}
+                    {Math.min(
+                      currentPageVerifikasi * entriesVerifikasi,
+                      filteredVerifikasi.length
+                    )}{" "}
+                    of {filteredVerifikasi.length} entries
                   </span>
                   <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
                     <button
-                      onClick={() => setCurrentPageVerifikasi(Math.max(1, currentPageVerifikasi - 1))}
+                      onClick={() =>
+                        setCurrentPageVerifikasi(
+                          Math.max(1, currentPageVerifikasi - 1)
+                        )
+                      }
                       disabled={currentPageVerifikasi === 1}
                       className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
                     >
                       Previous
                     </button>
-                    <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">{currentPageVerifikasi}</span>
+                    <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">
+                      {currentPageVerifikasi}
+                    </span>
                     <button
-                      onClick={() => setCurrentPageVerifikasi(Math.min(totalPagesVerifikasi, currentPageVerifikasi + 1))}
-                      disabled={currentPageVerifikasi === totalPagesVerifikasi || totalPagesVerifikasi === 0}
+                      onClick={() =>
+                        setCurrentPageVerifikasi(
+                          Math.min(
+                            totalPagesVerifikasi,
+                            currentPageVerifikasi + 1
+                          )
+                        )
+                      }
+                      disabled={
+                        currentPageVerifikasi === totalPagesVerifikasi ||
+                        totalPagesVerifikasi === 0
+                      }
                       className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
                     >
                       Next
@@ -389,7 +601,9 @@ export default function HRDVerifikasiCutiPage() {
 
               {/* Riwayat */}
               <section className="bg-white rounded-[10px] shadow-md border border-black/20 p-4 w-full">
-                <h2 className="text-base font-normal font-['Poppins'] mb-4 text-black md:text-lg">Riwayat Verifikasi</h2>
+                <h2 className="text-base font-normal font-['Poppins'] mb-4 text-black md:text-lg">
+                  Riwayat Verifikasi
+                </h2>
 
                 {/* Controls */}
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-3 text-[10px] md:text-sm text-black">
@@ -397,7 +611,9 @@ export default function HRDVerifikasiCutiPage() {
                     <span className="font-['Poppins']">Show</span>
                     <select
                       value={entriesRiwayat}
-                      onChange={(e) => setEntriesRiwayat(Number(e.target.value))}
+                      onChange={(e) =>
+                        setEntriesRiwayat(Number(e.target.value))
+                      }
                       className="w-10 h-4 px-1 bg-white rounded-sm border border-black/30 text-[10px] md:text-sm md:h-8 md:px-2 font-['Poppins'] text-black"
                     >
                       <option value={5}>5</option>
@@ -423,35 +639,80 @@ export default function HRDVerifikasiCutiPage() {
                   <table className="w-full text-[9px] md:text-sm border-collapse">
                     <thead className="bg-gray-100 border-b sticky top-0 z-10">
                       <tr>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tanggal Pengajuan</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Nama</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Tipe Pengajuan</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Durasi</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">Alasan Pendukung</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">File Pendukung</th>
-                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">Status</th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                          Tanggal Pengajuan
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                          Nama
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                          Tipe Pengajuan
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                          Durasi
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                          Alasan Pendukung
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                          File Pendukung
+                        </th>
+                        <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
+                          Status
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedRiwayat.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-4 text-center text-black">
+                          <td
+                            colSpan={7}
+                            className="p-4 text-center text-black"
+                          >
                             Belum ada riwayat verifikasi cuti
                           </td>
                         </tr>
                       ) : (
                         paginatedRiwayat.map((request) => (
-                          <tr key={request.id} className="border-b hover:bg-gray-50">
-                            <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">{formatDate(request.created_at)}</td>
-                            <td className="p-2 md:p-3 font-sans text-black">{request.user?.profile_pribadi?.nama_lengkap || request.user?.email || "-"}</td>
-                            <td className="p-2 md:p-3 font-sans capitalize text-black">{request.tipe_cuti}</td>
-                            <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">{calculateDays(request.tanggal_mulai, request.tanggal_selesai)} hari</td>
-                            <td className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate" title={request.alasan_pendukung}>
+                          <tr
+                            key={request.id}
+                            className="border-b hover:bg-gray-50"
+                          >
+                            <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
+                              {formatDate(request.created_at)}
+                            </td>
+                            <td className="p-2 md:p-3 font-sans text-black">
+                              {request.user?.profile_pribadi?.nama_lengkap ||
+                                request.user?.email ||
+                                "-"}
+                            </td>
+                            <td className="p-2 md:p-3 font-sans capitalize text-black">
+                              {request.tipe_cuti}
+                            </td>
+                            <td className="p-2 md:p-3 font-sans text-black whitespace-nowrap">
+                              {calculateDays(
+                                request.tanggal_mulai,
+                                request.tanggal_selesai
+                              )}{" "}
+                              hari
+                            </td>
+                            <td
+                              className="p-2 md:p-3 font-sans text-black max-w-[150px] md:max-w-none truncate"
+                              title={request.alasan_pendukung}
+                            >
                               {request.alasan_pendukung || "-"}
                             </td>
                             <td className="p-2 md:p-3 font-sans text-black text-center">
                               {request.file_pendukung ? (
-                                <a href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/storage/${request.file_pendukung}`} target="_blank" rel="noopener noreferrer" className="text-sky-800 hover:text-sky-900 underline">
+                                <a
+                                  href={`${
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    "http://localhost:8000"
+                                  }/storage/${request.file_pendukung}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sky-800 hover:text-sky-900 underline"
+                                >
                                   Lihat
                                 </a>
                               ) : (
@@ -459,7 +720,13 @@ export default function HRDVerifikasiCutiPage() {
                               )}
                             </td>
                             <td className="p-2 md:p-3">
-                              <span className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(request.status_pengajuan)}`}>{getStatusText(request.status_pengajuan)}</span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(
+                                  request.status_pengajuan
+                                )}`}
+                              >
+                                {getStatusText(request.status_pengajuan)}
+                              </span>
                             </td>
                           </tr>
                         ))
@@ -471,20 +738,42 @@ export default function HRDVerifikasiCutiPage() {
                 {/* Pagination */}
                 <div className="flex flex-col gap-2 md:flex-row md:justify-between md:items-center mt-3 text-[10px] md:text-sm text-black">
                   <span className="font-['Poppins']">
-                    Showing {filteredRiwayat.length === 0 ? 0 : (currentPageRiwayat - 1) * entriesRiwayat + 1} to {Math.min(currentPageRiwayat * entriesRiwayat, filteredRiwayat.length)} of {filteredRiwayat.length} entries
+                    Showing{" "}
+                    {filteredRiwayat.length === 0
+                      ? 0
+                      : (currentPageRiwayat - 1) * entriesRiwayat + 1}{" "}
+                    to{" "}
+                    {Math.min(
+                      currentPageRiwayat * entriesRiwayat,
+                      filteredRiwayat.length
+                    )}{" "}
+                    of {filteredRiwayat.length} entries
                   </span>
                   <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
                     <button
-                      onClick={() => setCurrentPageRiwayat(Math.max(1, currentPageRiwayat - 1))}
+                      onClick={() =>
+                        setCurrentPageRiwayat(
+                          Math.max(1, currentPageRiwayat - 1)
+                        )
+                      }
                       disabled={currentPageRiwayat === 1}
                       className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
                     >
                       Previous
                     </button>
-                    <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">{currentPageRiwayat}</span>
+                    <span className="px-2 py-1 md:px-3 md:py-1.5 bg-sky-800 text-white text-[10px] md:text-sm">
+                      {currentPageRiwayat}
+                    </span>
                     <button
-                      onClick={() => setCurrentPageRiwayat(Math.min(totalPagesRiwayat, currentPageRiwayat + 1))}
-                      disabled={currentPageRiwayat === totalPagesRiwayat || totalPagesRiwayat === 0}
+                      onClick={() =>
+                        setCurrentPageRiwayat(
+                          Math.min(totalPagesRiwayat, currentPageRiwayat + 1)
+                        )
+                      }
+                      disabled={
+                        currentPageRiwayat === totalPagesRiwayat ||
+                        totalPagesRiwayat === 0
+                      }
                       className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
                     >
                       Next
@@ -501,7 +790,11 @@ export default function HRDVerifikasiCutiPage() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto md:max-w-xl">
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
-                <h3 className="text-lg font-semibold font-['Poppins'] text-black">{actionType === "approve" ? "Setujui Pengajuan Cuti" : "Tolak Pengajuan Cuti"}</h3>
+                <h3 className="text-lg font-semibold font-['Poppins'] text-black">
+                  {actionType === "approve"
+                    ? "Setujui Pengajuan Cuti"
+                    : "Tolak Pengajuan Cuti"}
+                </h3>
                 <button
                   onClick={() => {
                     setShowConfirmModal(false);
@@ -512,8 +805,18 @@ export default function HRDVerifikasiCutiPage() {
                   className="text-gray-400 hover:text-gray-600 transition"
                   aria-label="Tutup"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -522,35 +825,69 @@ export default function HRDVerifikasiCutiPage() {
                 {/* Request Details */}
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">Nama:</span>
-                    <span className="text-sm text-black">{selectedRequest.user?.profile_pribadi?.nama_lengkap || selectedRequest.user?.email || "-"}</span>
+                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">
+                      Nama:
+                    </span>
+                    <span className="text-sm text-black">
+                      {selectedRequest.user?.profile_pribadi?.nama_lengkap ||
+                        selectedRequest.user?.email ||
+                        "-"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">Tipe Cuti:</span>
-                    <span className="text-sm text-black capitalize">{selectedRequest.tipe_cuti}</span>
+                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">
+                      Tipe Cuti:
+                    </span>
+                    <span className="text-sm text-black capitalize">
+                      {selectedRequest.tipe_cuti}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">Durasi:</span>
-                    <span className="text-sm text-black">{calculateDays(selectedRequest.tanggal_mulai, selectedRequest.tanggal_selesai)} hari</span>
+                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">
+                      Durasi:
+                    </span>
+                    <span className="text-sm text-black">
+                      {calculateDays(
+                        selectedRequest.tanggal_mulai,
+                        selectedRequest.tanggal_selesai
+                      )}{" "}
+                      hari
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">Tanggal Mulai:</span>
-                    <span className="text-sm text-black">{formatDate(selectedRequest.tanggal_mulai)}</span>
+                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">
+                      Tanggal Mulai:
+                    </span>
+                    <span className="text-sm text-black">
+                      {formatDate(selectedRequest.tanggal_mulai)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">Tanggal Selesai:</span>
-                    <span className="text-sm text-black">{formatDate(selectedRequest.tanggal_selesai)}</span>
+                    <span className="text-sm font-semibold text-gray-700 font-['Poppins']">
+                      Tanggal Selesai:
+                    </span>
+                    <span className="text-sm text-black">
+                      {formatDate(selectedRequest.tanggal_selesai)}
+                    </span>
                   </div>
                 </div>
 
                 {/* Komentar */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">{actionType === "approve" ? "Komentar (Opsional)" : "Alasan Penolakan"}</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">
+                    {actionType === "approve"
+                      ? "Komentar (Opsional)"
+                      : "Alasan Penolakan"}
+                  </label>
                   <textarea
                     value={komentar}
                     onChange={(e) => setKomentar(e.target.value)}
                     rows={4}
-                    placeholder={actionType === "approve" ? "Tambahkan komentar jika diperlukan..." : "Masukkan alasan penolakan..."}
+                    placeholder={
+                      actionType === "approve"
+                        ? "Tambahkan komentar jika diperlukan..."
+                        : "Masukkan alasan penolakan..."
+                    }
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-800 resize-none text-black"
                     required={actionType === "reject"}
                   />
@@ -573,16 +910,37 @@ export default function HRDVerifikasiCutiPage() {
                   <button
                     type="button"
                     onClick={handleConfirmAction}
-                    disabled={isSubmitting || (actionType === "reject" && !komentar.trim())}
+                    disabled={
+                      isSubmitting ||
+                      (actionType === "reject" && !komentar.trim())
+                    }
                     className={`flex-1 py-3 rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                      actionType === "approve" ? "bg-sky-800 text-white hover:bg-sky-600" : "bg-red-600 text-white hover:bg-red-700"
+                      actionType === "approve"
+                        ? "bg-sky-800 text-white hover:bg-sky-600"
+                        : "bg-red-600 text-white hover:bg-red-700"
                     }`}
                   >
                     {isSubmitting ? (
                       <div className="flex items-center justify-center">
-                        <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <svg
+                          className="animate-spin h-5 w-5 mr-2"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
                         </svg>
                         Memproses...
                       </div>
@@ -614,17 +972,29 @@ export default function HRDVerifikasiCutiPage() {
             >
               <div className="flex items-start">
                 <div className="flex-shrink-0">
-                  {toastMessage.type === "success" && <span className="text-green-500 text-xl">✅</span>}
-                  {toastMessage.type === "error" && <span className="text-red-500 text-xl">❌</span>}
-                  {toastMessage.type === "warning" && <span className="text-yellow-500 text-xl">⚠️</span>}
-                  {toastMessage.type === "info" && <span className="text-blue-500 text-xl">ℹ️</span>}
+                  {toastMessage.type === "success" && (
+                    <span className="text-green-500 text-xl">✅</span>
+                  )}
+                  {toastMessage.type === "error" && (
+                    <span className="text-red-500 text-xl">❌</span>
+                  )}
+                  {toastMessage.type === "warning" && (
+                    <span className="text-yellow-500 text-xl">⚠️</span>
+                  )}
+                  {toastMessage.type === "info" && (
+                    <span className="text-blue-500 text-xl">ℹ️</span>
+                  )}
                 </div>
                 <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium whitespace-pre-line">{toastMessage.message}</p>
+                  <p className="text-sm font-medium whitespace-pre-line">
+                    {toastMessage.message}
+                  </p>
                 </div>
                 <div className="ml-4 flex-shrink-0">
                   <button
-                    onClick={() => setToastMessage((prev) => ({ ...prev, show: false }))}
+                    onClick={() =>
+                      setToastMessage((prev) => ({ ...prev, show: false }))
+                    }
                     className={`inline-flex rounded-md p-1.5 ${
                       toastMessage.type === "success"
                         ? "text-green-500 hover:bg-green-100"
@@ -637,7 +1007,11 @@ export default function HRDVerifikasiCutiPage() {
                     aria-label="Tutup notifikasi"
                   >
                     <span className="sr-only">Close</span>
-                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="h-4 w-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"

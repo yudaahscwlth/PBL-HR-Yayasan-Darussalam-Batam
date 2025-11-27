@@ -16,7 +16,7 @@ class LeaveController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Check if user is HRD or admin
         if ($user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
             $leaves = PengajuanCuti::with(['user.profilePribadi'])
@@ -25,14 +25,14 @@ class LeaveController extends Controller
         } elseif ($user->hasRole('kepala sekolah')) {
             // Kepala sekolah hanya melihat pengajuan cuti dari tempat kerja yang sama
             $departemenId = $user->profilePekerjaan?->id_tempat_kerja;
-            
+
             if ($departemenId) {
                 $leaves = PengajuanCuti::whereHas('user.profilePekerjaan', function ($query) use ($departemenId) {
                     $query->where('id_tempat_kerja', $departemenId);
                 })
-                ->with(['user.profilePribadi'])
-                ->orderBy('created_at', 'desc')
-                ->get();
+                    ->with(['user.profilePribadi'])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
             } else {
                 $leaves = collect([]);
             }
@@ -56,7 +56,7 @@ class LeaveController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $request->validate([
             'tanggal_mulai' => 'required|date|after_or_equal:today',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
@@ -64,13 +64,28 @@ class LeaveController extends Controller
             'alasan' => 'required|string',
         ]);
 
+        // Determine initial status based on user role
+        // 1. Kepala sekolah & Kepala departemen → ditinjau hrd
+        // 2. Staff HRD → ditinjau kepala hrd
+        // 3. Kepala HRD → ditinjau dirpen
+        // 4. Others (tenaga pendidik) → ditinjau kepala sekolah
+        $initialStatus = 'ditinjau kepala sekolah'; // default for tenaga pendidik
+
+        if ($user->hasRole('kepala sekolah') || $user->hasRole('kepala departemen')) {
+            $initialStatus = 'ditinjau hrd';
+        } elseif ($user->hasRole('staff hrd')) {
+            $initialStatus = 'ditinjau kepala hrd';
+        } elseif ($user->hasRole('kepala hrd')) {
+            $initialStatus = 'ditinjau dirpen';
+        }
+
         $leave = PengajuanCuti::create([
             'id_user' => $user->id,
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
             'tipe_cuti' => strtolower($request->jenis_cuti),
             'alasan_pendukung' => $request->alasan,
-            'status_pengajuan' => 'ditinjau kepala sekolah',
+            'status_pengajuan' => $initialStatus,
         ]);
 
         return response()->json([
@@ -100,7 +115,7 @@ class LeaveController extends Controller
     public function update(Request $request, PengajuanCuti $leave): JsonResponse
     {
         $user = $request->user();
-        
+
         // Only allow user to update their own pending requests
         if ($leave->id_user !== $user->id) {
             return response()->json([
@@ -110,7 +125,12 @@ class LeaveController extends Controller
         }
 
         // Check if leave request can still be updated
-        $allowedStatuses = ['ditinjau kepala sekolah', 'ditinjau hrd', 'ditinjau kepala hrd'];
+        $allowedStatuses = [
+            'ditinjau kepala sekolah',
+            'ditinjau hrd',
+            'ditinjau kepala hrd',
+            'ditinjau dirpen'
+        ];
         if (!in_array($leave->status_pengajuan, $allowedStatuses)) {
             return response()->json([
                 'success' => false,
@@ -146,7 +166,7 @@ class LeaveController extends Controller
     public function destroy(Request $request, PengajuanCuti $leave): JsonResponse
     {
         $user = $request->user();
-        
+
         // Only allow user to delete their own pending requests
         if ($leave->id_user !== $user->id) {
             return response()->json([
@@ -156,7 +176,12 @@ class LeaveController extends Controller
         }
 
         // Check if leave request can still be deleted
-        $allowedStatuses = ['ditinjau kepala sekolah', 'ditinjau hrd', 'ditinjau kepala hrd'];
+        $allowedStatuses = [
+            'ditinjau kepala sekolah',
+            'ditinjau hrd',
+            'ditinjau kepala hrd',
+            'ditinjau dirpen'
+        ];
         if (!in_array($leave->status_pengajuan, $allowedStatuses)) {
             return response()->json([
                 'success' => false,
@@ -178,17 +203,17 @@ class LeaveController extends Controller
     public function approve(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        
+
         // Find the leave request by ID
         $leave = PengajuanCuti::find($id);
-        
+
         if (!$leave) {
             return response()->json([
                 'success' => false,
                 'message' => 'Leave request not found',
             ], 404);
         }
-        
+
         // Check if user has permission to approve
         if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
             return response()->json([
@@ -197,20 +222,39 @@ class LeaveController extends Controller
             ], 403);
         }
 
-        // Determine approval status based on user role and leave type
-        if ($user->hasRole('kepala hrd')) {
-            // For cuti tahunan, status should be "disetujui kepala hrd menunggu tinjauan dirpen"
-            if (strtolower($leave->tipe_cuti) === 'cuti tahunan') {
+        // Check if leave request is in correct status for the user role
+        if ($user->hasRole('staff hrd')) {
+            // Staff HRD can only approve requests with status "ditinjau hrd"
+            if ($leave->status_pengajuan !== 'ditinjau hrd') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave request is not in correct status for staff HRD approval',
+                ], 400);
+            }
+            // Staff HRD approves → always goes to direktur pendidikan
+            $newStatus = 'disetujui hrd menunggu tinjauan dirpen';
+        } elseif ($user->hasRole('kepala hrd')) {
+            // Kepala HRD can only approve requests with status "ditinjau kepala hrd"
+            if ($leave->status_pengajuan !== 'ditinjau kepala hrd') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave request is not in correct status for kepala HRD approval',
+                ], 400);
+            }
+            // Kepala HRD approves → always goes to direktur pendidikan
+            $newStatus = 'disetujui kepala hrd menunggu tinjauan dirpen';
+        } else {
+            // Superadmin can approve any status
+            // Determine status based on current status
+            if ($leave->status_pengajuan === 'ditinjau hrd') {
+                $newStatus = 'disetujui hrd menunggu tinjauan dirpen';
+            } elseif ($leave->status_pengajuan === 'ditinjau kepala hrd') {
                 $newStatus = 'disetujui kepala hrd menunggu tinjauan dirpen';
             } else {
-                $newStatus = 'disetujui kepala hrd';
-            }
-        } else {
-            // Staff HRD: For cuti tahunan, status should be "disetujui hrd menunggu tinjauan dirpen"
-            if (strtolower($leave->tipe_cuti) === 'cuti tahunan') {
-                $newStatus = 'disetujui hrd menunggu tinjauan dirpen';
-            } else {
-                $newStatus = 'disetujui hrd';
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave request is not in correct status for approval',
+                ], 400);
             }
         }
 
@@ -228,7 +272,7 @@ class LeaveController extends Controller
 
         // Update in database using update method to ensure it's an UPDATE query, not INSERT
         $updated = $leave->update($updateData);
-        
+
         if (!$updated) {
             return response()->json([
                 'success' => false,
@@ -253,17 +297,17 @@ class LeaveController extends Controller
     public function reject(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        
+
         // Find the leave request by ID
         $leave = PengajuanCuti::find($id);
-        
+
         if (!$leave) {
             return response()->json([
                 'success' => false,
                 'message' => 'Leave request not found',
             ], 404);
         }
-        
+
         // Check if user has permission to reject
         if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
             return response()->json([
@@ -276,10 +320,37 @@ class LeaveController extends Controller
             'reason' => 'sometimes|string',
         ]);
 
-        // Determine rejection status based on user role
-        $newStatus = 'ditolak hrd';
-        if ($user->hasRole('kepala hrd')) {
+        // Check if leave request is in correct status for the user role
+        if ($user->hasRole('staff hrd')) {
+            // Staff HRD can only reject requests with status "ditinjau hrd"
+            if ($leave->status_pengajuan !== 'ditinjau hrd') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave request is not in correct status for staff HRD rejection',
+                ], 400);
+            }
+            $newStatus = 'ditolak hrd';
+        } elseif ($user->hasRole('kepala hrd')) {
+            // Kepala HRD can only reject requests with status "ditinjau kepala hrd"
+            if ($leave->status_pengajuan !== 'ditinjau kepala hrd') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave request is not in correct status for kepala HRD rejection',
+                ], 400);
+            }
             $newStatus = 'ditolak kepala hrd';
+        } else {
+            // Superadmin can reject any status
+            if ($leave->status_pengajuan === 'ditinjau hrd') {
+                $newStatus = 'ditolak hrd';
+            } elseif ($leave->status_pengajuan === 'ditinjau kepala hrd') {
+                $newStatus = 'ditolak kepala hrd';
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Leave request is not in correct status for rejection',
+                ], 400);
+            }
         }
 
         // Prepare update data
@@ -290,7 +361,7 @@ class LeaveController extends Controller
 
         // Update in database using update method to ensure it's an UPDATE query, not INSERT
         $updated = $leave->update($updateData);
-        
+
         if (!$updated) {
             return response()->json([
                 'success' => false,
@@ -315,17 +386,17 @@ class LeaveController extends Controller
     public function approveKepsek(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        
+
         // Find the leave request by ID
         $leave = PengajuanCuti::find($id);
-        
+
         if (!$leave) {
             return response()->json([
                 'success' => false,
                 'message' => 'Leave request not found',
             ], 404);
         }
-        
+
         // Check if user has permission to approve (kepala sekolah)
         if (!$user->hasAnyRole(['kepala sekolah', 'superadmin'])) {
             return response()->json([
@@ -365,7 +436,7 @@ class LeaveController extends Controller
 
         // Update in database
         $updated = $leave->update($updateData);
-        
+
         if (!$updated) {
             return response()->json([
                 'success' => false,
@@ -390,17 +461,17 @@ class LeaveController extends Controller
     public function rejectKepsek(Request $request, $id): JsonResponse
     {
         $user = $request->user();
-        
+
         // Find the leave request by ID
         $leave = PengajuanCuti::find($id);
-        
+
         if (!$leave) {
             return response()->json([
                 'success' => false,
                 'message' => 'Leave request not found',
             ], 404);
         }
-        
+
         // Check if user has permission to reject (kepala sekolah)
         if (!$user->hasAnyRole(['kepala sekolah', 'superadmin'])) {
             return response()->json([
@@ -431,7 +502,151 @@ class LeaveController extends Controller
 
         // Update in database
         $updated = $leave->update($updateData);
-        
+
+        if (!$updated) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update leave request status',
+            ], 500);
+        }
+
+        // Refresh model and reload relationships
+        $leave->refresh();
+        $leave->load(['user.profilePribadi']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leave request rejected successfully',
+            'data' => $leave,
+        ]);
+    }
+
+    /**
+     * Approve leave request by direktur pendidikan
+     */
+    public function approveDirpen(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        // Find the leave request by ID
+        $leave = PengajuanCuti::find($id);
+
+        if (!$leave) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request not found',
+            ], 404);
+        }
+
+        // Check if user has permission to approve (direktur pendidikan)
+        if (!$user->hasAnyRole(['direktur pendidikan', 'superadmin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to approve leave requests',
+            ], 403);
+        }
+
+        // Check if leave request is in correct status for direktur pendidikan approval
+        $allowedStatuses = [
+            'disetujui hrd menunggu tinjauan dirpen',
+            'disetujui kepala hrd menunggu tinjauan dirpen',
+            'ditinjau dirpen'
+        ];
+
+        if (!in_array($leave->status_pengajuan, $allowedStatuses)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request is not in correct status for direktur pendidikan approval',
+            ], 400);
+        }
+
+        // Get komentar from request if provided
+        $komentar = $request->input('komentar', null);
+
+        // Prepare update data
+        $updateData = [
+            'status_pengajuan' => 'disetujui dirpen',
+        ];
+
+        if ($komentar !== null && $komentar !== '') {
+            $updateData['komentar'] = $komentar;
+        }
+
+        // Update in database
+        $updated = $leave->update($updateData);
+
+        if (!$updated) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update leave request status',
+            ], 500);
+        }
+
+        // Refresh model and reload relationships
+        $leave->refresh();
+        $leave->load(['user.profilePribadi']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Leave request approved successfully',
+            'data' => $leave,
+        ]);
+    }
+
+    /**
+     * Reject leave request by direktur pendidikan
+     */
+    public function rejectDirpen(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+
+        // Find the leave request by ID
+        $leave = PengajuanCuti::find($id);
+
+        if (!$leave) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request not found',
+            ], 404);
+        }
+
+        // Check if user has permission to reject (direktur pendidikan)
+        if (!$user->hasAnyRole(['direktur pendidikan', 'superadmin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to reject leave requests',
+            ], 403);
+        }
+
+        // Check if leave request is in correct status for direktur pendidikan rejection
+        $allowedStatuses = [
+            'disetujui hrd menunggu tinjauan dirpen',
+            'disetujui kepala hrd menunggu tinjauan dirpen',
+            'ditinjau dirpen'
+        ];
+
+        if (!in_array($leave->status_pengajuan, $allowedStatuses)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Leave request is not in correct status for direktur pendidikan rejection',
+            ], 400);
+        }
+
+        $request->validate([
+            'reason' => 'required|string',
+        ], [
+            'reason.required' => 'Alasan penolakan wajib diisi',
+        ]);
+
+        // Prepare update data
+        $updateData = [
+            'status_pengajuan' => 'ditolak dirpen',
+            'komentar' => $request->reason,
+        ];
+
+        // Update in database
+        $updated = $leave->update($updateData);
+
         if (!$updated) {
             return response()->json([
                 'success' => false,

@@ -72,6 +72,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/leave/{id}/reject', [LeaveController::class, 'reject']);
     Route::post('/leave/{id}/approve-kepsek', [LeaveController::class, 'approveKepsek']);
     Route::post('/leave/{id}/reject-kepsek', [LeaveController::class, 'rejectKepsek']);
+    Route::post('/leave/{id}/approve-dirpen', [LeaveController::class, 'approveDirpen']);
+    Route::post('/leave/{id}/reject-dirpen', [LeaveController::class, 'rejectDirpen']);
 
     // Evaluation routes
     Route::get('/evaluation/personal', [EvaluationController::class, 'getPersonal']);

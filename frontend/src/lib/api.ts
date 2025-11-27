@@ -478,6 +478,19 @@ export const apiClient = {
       const response = await api.post(`/leave/${id}/reject-kepsek`, { reason });
       return response.data;
     },
+
+    approveDirpen: async (id: number, komentar?: string): Promise<ApiResponse> => {
+      const response = await api.post(
+        `/leave/${id}/approve-dirpen`,
+        komentar ? { komentar } : {}
+      );
+      return response.data;
+    },
+
+    rejectDirpen: async (id: number, reason?: string): Promise<ApiResponse> => {
+      const response = await api.post(`/leave/${id}/reject-dirpen`, { reason });
+      return response.data;
+    },
   },
 
   // Evaluation endpoints
