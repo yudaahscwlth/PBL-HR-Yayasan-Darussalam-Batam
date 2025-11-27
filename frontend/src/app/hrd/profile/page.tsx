@@ -29,6 +29,7 @@ export default function HRDProfile() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
+      path: "/hrd/profile/edit",
     },
   ];
 
@@ -104,7 +105,11 @@ export default function HRDProfile() {
             <h2 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider">ACCOUNT</h2>
             <div className="bg-white rounded-xl overflow-hidden">
               {accountMenu.map((item, index) => (
-                <button key={index} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100" onClick={() => console.log(`Clicked: ${item.title}`)}>
+                <button 
+                  key={index} 
+                  className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100" 
+                  onClick={() => router.push(item.path)}
+                >
                   <div className="flex items-center gap-4">
                     {item.icon}
                     <span className="text-base text-gray-800">{item.title}</span>

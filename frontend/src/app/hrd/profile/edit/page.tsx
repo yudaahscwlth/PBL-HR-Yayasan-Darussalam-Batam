@@ -1,68 +1,724 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api";
+import { API_CONFIG } from "@/config/api";
+import { 
+  User, Briefcase, Users, Share2, Lock, 
+  Save, Plus, Trash2, Camera, ChevronRight,
+  MapPin, Mail, Phone, CreditCard, ArrowLeft
+} from "lucide-react";
+import AccessControl from "@/components/AccessControl";
+
+// --- Interface dengan Snake Case ---
+interface ProfileData {
+  id: number;
+  email: string;
+  // Diubah dari profilePribadi ke profile_pribadi
+  profile_pribadi: {
+    nama_lengkap: string;
+    nomor_induk_kependudukan: string;
+    npwp: string;
+    tempat_lahir: string;
+    tanggal_lahir: string;
+    jenis_kelamin: string;
+    status_pernikahan: string;
+    golongan_darah: string;
+    kecamatan: string;
+    alamat_lengkap: string;
+    no_hp: string;
+    foto: string | null;
+  };
+  // Diubah dari profilePekerjaan ke profile_pekerjaan
+  profile_pekerjaan: {
+    nomor_induk_karyawan: string;
+    tanggal_masuk: string;
+    status: string;
+    departemen: { nama_departemen: string };
+    // Diubah dari tempatKerja ke tempat_kerja
+    tempat_kerja: { nama_tempat: string };
+    jabatan: { nama_jabatan: string };
+  };
+  // Diubah dari orangTua ke orang_tua
+  orang_tua: {
+    nama_ayah: string;
+    pekerjaan_ayah: string;
+    nama_ibu: string;
+    pekerjaan_ibu: string;
+    alamat_orang_tua: string;
+  } | null;
+  keluarga: Array<{
+    id: number;
+    nama: string;
+    hubungan: string;
+    tanggal_lahir: string;
+    pekerjaan: string;
+  }>;
+  // Diubah dari userSosialMedia ke user_sosial_media
+  user_sosial_media: Array<{
+    id: number;
+    id_platform: number;
+    username: string;
+    link: string;
+    // Diubah dari sosialMedia ke sosial_media
+    sosial_media: { nama_platform: string };
+  }>;
+}
 
 export default function HRDProfileEdit() {
   const { user } = useAuthStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [activeTab, setActiveTab] = useState<"edit" | "password">("edit");
+  
+  // Form states (Keys sudah snake_case, tetap dipertahankan)
+  const [formData, setFormData] = useState({
+    // Data Diri
+    email: "",
+    nomor_induk_kependudukan: "",
+    nama_lengkap: "",
+    npwp: "",
+    tempat_lahir: "",
+    tanggal_lahir: "",
+    jenis_kelamin: "",
+    status_pernikahan: "",
+    golongan_darah: "",
+    kecamatan: "",
+    alamat_lengkap: "",
+    no_hp: "",
+    foto: null as File | null,
+    
+    // Data Orang Tua
+    nama_ayah: "",
+    pekerjaan_ayah: "",
+    nama_ibu: "",
+    pekerjaan_ibu: "",
+    alamat_orang_tua: "",
+  });
 
-  const handleSave = async () => {
-    setIsLoading(true);
-    // TODO: Implement save functionality
-    setTimeout(() => {
-      setIsLoading(false);
-      router.back();
-    }, 1000);
+  const [keluargaList, setKeluargaList] = useState<Array<{
+    id?: number;
+    nama: string;
+    hubungan: string;
+    tanggal_lahir: string;
+    pekerjaan: string;
+  }>>([]);
+
+  const [sosmedList, setSosmedList] = useState<Array<{
+    id?: number;
+    id_platform: number;
+    username: string;
+    link: string;
+  }>>([]);
+
+  const [passwordForm, setPasswordForm] = useState({
+    password_lama: "",
+    password_baru: "",
+    konf_password: "",
+  });
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  const fetchProfileData = async () => {
+    try {
+      const response = await api.get("/profile/complete");
+      const responseData = response.data.data;
+      const userData: ProfileData = responseData.user; // Asumsi response API sudah snake_case
+      
+      setProfileData(userData);
+      
+      // Update akses property menggunakan snake_case
+      setFormData({
+        email: userData.email || "",
+        nomor_induk_kependudukan: userData.profile_pribadi?.nomor_induk_kependudukan || "",
+        nama_lengkap: userData.profile_pribadi?.nama_lengkap || "",
+        npwp: userData.profile_pribadi?.npwp || "",
+        tempat_lahir: userData.profile_pribadi?.tempat_lahir || "",
+        tanggal_lahir: userData.profile_pribadi?.tanggal_lahir || "",
+        jenis_kelamin: userData.profile_pribadi?.jenis_kelamin || "",
+        status_pernikahan: userData.profile_pribadi?.status_pernikahan || "",
+        golongan_darah: userData.profile_pribadi?.golongan_darah || "",
+        kecamatan: userData.profile_pribadi?.kecamatan || "",
+        alamat_lengkap: userData.profile_pribadi?.alamat_lengkap || "",
+        no_hp: userData.profile_pribadi?.no_hp || "",
+        foto: null,
+        nama_ayah: userData.orang_tua?.nama_ayah || "",
+        pekerjaan_ayah: userData.orang_tua?.pekerjaan_ayah || "",
+        nama_ibu: userData.orang_tua?.nama_ibu || "",
+        pekerjaan_ibu: userData.orang_tua?.pekerjaan_ibu || "",
+        alamat_orang_tua: userData.orang_tua?.alamat_orang_tua || "",
+      });
+
+      setKeluargaList(userData.keluarga || []);
+      setSosmedList(userData.user_sosial_media || []); // snake_case
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData({ ...formData, foto: e.target.files[0] });
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const submitData = new FormData();
+      submitData.append("_method", "PUT");
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== "") {
+          if (key === "foto" && value instanceof File) {
+            submitData.append(key, value);
+          } else {
+            submitData.append(key, value as string);
+          }
+        }
+      });
+
+      keluargaList.forEach((item, index) => {
+        submitData.append(`id_keluarga[${index}]`, item.id?.toString() || "");
+        submitData.append(`nama[${index}]`, item.nama);
+        submitData.append(`hubungan[${index}]`, item.hubungan);
+        submitData.append(`tanggal_lahir_keluarga[${index}]`, item.tanggal_lahir);
+        submitData.append(`pekerjaan[${index}]`, item.pekerjaan);
+      });
+
+      sosmedList.forEach((item, index) => {
+        submitData.append(`id_user_sosmed[${index}]`, item.id?.toString() || "");
+        submitData.append(`id_platform[${index}]`, item.id_platform.toString());
+        submitData.append(`username[${index}]`, item.username);
+        submitData.append(`link[${index}]`, item.link);
+      });
+
+      await api.post("/profile/update", submitData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      alert("Profile berhasil diperbarui!");
+      router.push("/hrd/profile");
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      alert(error.response?.data?.message || "Gagal memperbarui profile");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await api.put("/profile/password/update", passwordForm);
+      alert("Password berhasil diubah!");
+      setPasswordForm({ password_lama: "", password_baru: "", konf_password: "" });
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      alert(error.response?.data?.message || "Gagal mengubah password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addKeluarga = () => setKeluargaList([...keluargaList, { nama: "", hubungan: "suami", tanggal_lahir: "", pekerjaan: "" }]);
+  const removeKeluarga = (index: number) => setKeluargaList(keluargaList.filter((_, i) => i !== index));
+  const updateKeluarga = (index: number, field: string, value: string) => {
+    const updated = [...keluargaList];
+    updated[index] = { ...updated[index], [field]: value };
+    setKeluargaList(updated);
+  };
+
+  const addSosmed = () => setSosmedList([...sosmedList, { id_platform: 1, username: "", link: "" }]);
+  const removeSosmed = (index: number) => setSosmedList(sosmedList.filter((_, i) => i !== index));
+  const updateSosmed = (index: number, field: string, value: string | number) => {
+    const updated = [...sosmedList];
+    updated[index] = { ...updated[index], [field]: value };
+    setSosmedList(updated);
+  };
+
+  // --- Helper Classes ---
+  // --- Helper Classes ---
+  const inputClass = "w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-800/20 focus:border-sky-800 transition-all duration-200 text-slate-700 bg-white placeholder-slate-400 text-sm font-medium hover:border-slate-300";
+  const labelClass = "block text-sm font-semibold text-slate-700 mb-2";
+  const readOnlyClass = "w-full px-4 py-3 border border-slate-100 rounded-xl bg-slate-50/50 text-slate-500 text-sm cursor-not-allowed font-medium flex items-center gap-2";
+  const cardClass = "bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-300";
+  const sectionHeaderClass = "px-6 py-5 border-b border-slate-50 flex items-center gap-3 bg-white";
+
+  if (!profileData) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-sky-800 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-slate-500 font-medium">Memuat data...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
+      <div className="min-h-screen bg-gray-100 font-sans pb-10">
       {/* Header */}
-      <div className="bg-white px-4 py-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-lg font-semibold text-gray-800">Edit Profile</h1>
-          <button onClick={handleSave} disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-            {isLoading ? "Saving..." : "Save"}
-          </button>
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <button 
+                onClick={() => router.back()} 
+                className="flex items-center gap-2 text-slate-600 hover:text-sky-800 transition-colors font-medium"
+            >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Kembali</span>
+            </button>
+            <h1 className="text-lg font-bold text-slate-800">Ubah Profile</h1>
+            <div className="w-20"></div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 py-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Profile Information</h2>
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* Sidebar / Profile Summary */}
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24 h-fit">
+                <div className={`${cardClass} flex flex-col items-center text-center relative`}>
+                    <div className="h-32 w-full absolute top-0 left-0"></div>
+                    <div className="px-6 pb-8 pt-16 w-full flex flex-col items-center relative z-10">
+                        <div 
+                            className="relative group cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <div className="p-1 bg-white rounded-full shadow-lg">
+                                <img
+                                    src={
+                                        formData.foto instanceof File 
+                                        ? URL.createObjectURL(formData.foto)
+                                        : (profileData.profile_pribadi?.foto ? `${API_CONFIG.BASE_URL}/storage/${profileData.profile_pribadi.foto}` : "/assets/img/profile-img.jpg")
+                                    }
+                                    alt="Profile"
+                                    className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-sm transition-opacity group-hover:opacity-90"
+                                />
+                            </div>
+                            <div className="absolute bottom-2 right-2 bg-sky-800 p-2.5 rounded-full shadow-lg border-2 border-white transition-transform group-hover:scale-110 hover:bg-sky-900">
+                                 <Camera className="w-4 h-4 text-white" />
+                            </div>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                onChange={handleFileChange} 
+                                accept="image/*" 
+                                className="hidden" 
+                            />
+                        </div>
+                        {/* Menggunakan snake_case di sini */}
+                        <h2 className="mt-4 text-xl font-bold text-slate-800">{profileData.profile_pribadi?.nama_lengkap}</h2>
+                        <p className="text-slate-500 font-medium">{profileData.profile_pekerjaan?.jabatan?.nama_jabatan}</p>
+                        <div className="mt-3 inline-flex items-center px-4 py-1.5 rounded-full bg-sky-50 text-sky-900 text-xs font-semibold uppercase tracking-wide">
+                            {profileData.profile_pekerjaan?.status}
+                        </div>
+                    </div>
+                </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nama Lengkap</label>
-              <input type="text" defaultValue={user?.profile_pribadi?.nama_lengkap || ""} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {/* Tab Navigation */}
+                <div className={`${cardClass} p-3`}>
+                    <div className="flex flex-col gap-2">
+                        <button
+                            onClick={() => setActiveTab("edit")}
+                            className={`flex items-center gap-3 px-5 py-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                                activeTab === "edit" 
+                                ? "bg-sky-50 text-sky-800 shadow-sm border border-sky-100" 
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                            }`}
+                        >
+                            <User className={`w-5 h-5 ${activeTab === "edit" ? "text-sky-800" : "text-slate-400"}`} /> 
+                            Ubah Profile
+                            {activeTab === "edit" && <ChevronRight className="w-4 h-4 ml-auto text-sky-400" />}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("password")}
+                            className={`flex items-center gap-3 px-5 py-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                                activeTab === "password" 
+                                ? "bg-sky-50 text-sky-800 shadow-sm border border-sky-100" 
+                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                            }`}
+                        >
+                            <Lock className={`w-5 h-5 ${activeTab === "password" ? "text-sky-800" : "text-slate-400"}`} /> 
+                            Ubah Kata Sandi
+                            {activeTab === "password" && <ChevronRight className="w-4 h-4 ml-auto text-sky-400" />}
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input type="email" defaultValue={user?.email || ""} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
+            {/* Main Content Form */}
+            <div className="lg:col-span-8">
+                {activeTab === "edit" ? (
+                    <form onSubmit={handleSave} encType="multipart/form-data" className="space-y-6">
+                        
+                        {/* Data Pekerjaan (Read Only) */}
+                        <section className={cardClass}>
+                            <div className={sectionHeaderClass}>
+                                <div className="p-2 bg-sky-50 rounded-lg text-sky-800">
+                                    <Briefcase className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-800 text-lg">Data Pekerjaan</h3>
+                                    <p className="text-slate-500 text-xs font-medium">Informasi terkait posisi dan departemen Anda</p>
+                                </div>
+                            </div>
+                            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className={labelClass}>Departemen</label>
+                                    <div className="relative">
+                                        <input type="text" value={profileData.profile_pekerjaan?.departemen?.nama_departemen || "-"} className={readOnlyClass} disabled />
+                                        <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Jabatan</label>
+                                    <div className="relative">
+                                        <input type="text" value={profileData.profile_pekerjaan?.jabatan?.nama_jabatan || "-"} className={readOnlyClass} disabled />
+                                        <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>NIK Karyawan</label>
+                                    <div className="relative">
+                                        <input type="text" value={profileData.profile_pekerjaan?.nomor_induk_karyawan || "-"} className={readOnlyClass} disabled />
+                                        <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Tanggal Masuk</label>
+                                    <div className="relative">
+                                        <input type="text" value={profileData.profile_pekerjaan?.tanggal_masuk || "-"} className={readOnlyClass} disabled />
+                                        <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
+                                    </div>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className={labelClass}>Lokasi Kerja</label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
+                                        {/* Menggunakan snake_case: tempat_kerja */}
+                                        <input type="text" value={profileData.profile_pekerjaan?.tempat_kerja?.nama_tempat || "-"} className={`${readOnlyClass} pl-12`} disabled />
+                                        <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nomor Telepon</label>
-              <input type="tel" defaultValue={user?.profile_pribadi?.no_telepon || ""} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
+                        {/* Data Pribadi */}
+                        <section className={cardClass}>
+                             <div className={sectionHeaderClass}>
+                                <div className="p-2 bg-sky-50 rounded-lg text-sky-800">
+                                    <User className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-800 text-lg">Informasi Pribadi</h3>
+                                    <p className="text-slate-500 text-xs font-medium">Update data diri Anda secara berkala</p>
+                                </div>
+                            </div>
+                            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="md:col-span-2">
+                                    <label className={labelClass}>Foto Profile Baru</label>
+                                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-3 bg-sky-50 text-sky-800 rounded-full">
+                                                <Camera className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-700">Klik untuk upload foto baru</p>
+                                                <p className="text-xs text-slate-500">JPG, PNG atau GIF (Max. 2MB)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className={labelClass}>Nama Lengkap</label>
+                                    <input type="text" name="nama_lengkap" value={formData.nama_lengkap} onChange={handleInputChange} className={inputClass} required />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Email</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
+                                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} className={`${inputClass} pl-12`} required />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Nomor HP</label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
+                                        <input type="text" name="no_hp" value={formData.no_hp} onChange={handleInputChange} className={`${inputClass} pl-12`} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>NIK (KTP)</label>
+                                    <div className="relative">
+                                        <CreditCard className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
+                                        <input type="text" name="nomor_induk_kependudukan" value={formData.nomor_induk_kependudukan} onChange={handleInputChange} className={`${inputClass} pl-12`} required />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>NPWP</label>
+                                    <input type="text" name="npwp" value={formData.npwp} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Tempat Lahir</label>
+                                    <input type="text" name="tempat_lahir" value={formData.tempat_lahir} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Tanggal Lahir</label>
+                                    <input type="date" name="tanggal_lahir" value={formData.tanggal_lahir} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Jenis Kelamin</label>
+                                    <select name="jenis_kelamin" value={formData.jenis_kelamin} onChange={handleInputChange} className={inputClass}>
+                                        <option value="pria">Pria</option>
+                                        <option value="wanita">Wanita</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Status Pernikahan</label>
+                                    <select name="status_pernikahan" value={formData.status_pernikahan} onChange={handleInputChange} className={inputClass}>
+                                        <option value="belum nikah">Belum Menikah</option>
+                                        <option value="sudah nikah">Sudah Menikah</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Golongan Darah</label>
+                                    <select name="golongan_darah" value={formData.golongan_darah} onChange={handleInputChange} className={inputClass}>
+                                        <option value="a">A</option>
+                                        <option value="b">B</option>
+                                        <option value="ab">AB</option>
+                                        <option value="o">O</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Kecamatan</label>
+                                    <input type="text" name="kecamatan" value={formData.kecamatan} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className={labelClass}>Alamat Lengkap</label>
+                                    <textarea name="alamat_lengkap" value={formData.alamat_lengkap} onChange={handleInputChange} className={inputClass} rows={3} />
+                                </div>
+                            </div>
+                        </section>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Alamat</label>
-              <textarea defaultValue={user?.profile_pribadi?.alamat || ""} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        {/* Data Orang Tua */}
+                        <section className={cardClass}>
+                             <div className={sectionHeaderClass}>
+                                <div className="p-2 bg-sky-50 rounded-lg text-sky-800">
+                                    <Users className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-slate-800 text-lg">Data Orang Tua</h3>
+                                    <p className="text-slate-500 text-xs font-medium">Informasi mengenai orang tua Anda</p>
+                                </div>
+                            </div>
+                            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className={labelClass}>Nama Ayah</label>
+                                    <input type="text" name="nama_ayah" value={formData.nama_ayah} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Pekerjaan Ayah</label>
+                                    <input type="text" name="pekerjaan_ayah" value={formData.pekerjaan_ayah} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Nama Ibu</label>
+                                    <input type="text" name="nama_ibu" value={formData.nama_ibu} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Pekerjaan Ibu</label>
+                                    <input type="text" name="pekerjaan_ibu" value={formData.pekerjaan_ibu} onChange={handleInputChange} className={inputClass} />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className={labelClass}>Alamat Orang Tua</label>
+                                    <textarea name="alamat_orang_tua" value={formData.alamat_orang_tua} onChange={handleInputChange} className={inputClass} rows={2} />
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Data Keluarga */}
+                        <section className={cardClass}>
+                             <div className={`${sectionHeaderClass} justify-between`}>
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-sky-50 rounded-lg text-sky-800">
+                                        <Users className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-800 text-lg">Data Keluarga</h3>
+                                        <p className="text-slate-500 text-xs font-medium">Daftar anggota keluarga inti</p>
+                                    </div>
+                                </div>
+                                <button type="button" onClick={addKeluarga} className="px-4 py-2 bg-sky-50 text-sky-800 hover:bg-sky-100 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                                    <Plus className="w-4 h-4" /> Tambah
+                                </button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                                {keluargaList.length === 0 ? (
+                                    <div className="text-center py-8 text-slate-400 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200">
+                                        <p className="font-medium">Belum ada data keluarga</p>
+                                        <p className="text-xs mt-1">Klik tombol tambah untuk memasukkan data</p>
+                                    </div>
+                                ) : (
+                                    keluargaList.map((keluarga, index) => (
+                                        <div key={index} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 relative group hover:border-sky-200 transition-colors">
+                                            <button type="button" onClick={() => removeKeluarga(index)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-all">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-2">
+                                                <div>
+                                                    <label className="text-xs font-semibold text-slate-500 block mb-2">Nama</label>
+                                                    <input type="text" value={keluarga.nama} onChange={(e) => updateKeluarga(index, "nama", e.target.value)} className={inputClass} required placeholder="Nama Anggota" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-slate-500 block mb-2">Hubungan</label>
+                                                    <select value={keluarga.hubungan} onChange={(e) => updateKeluarga(index, "hubungan", e.target.value)} className={inputClass}>
+                                                        <option value="suami">Suami</option>
+                                                        <option value="istri">Istri</option>
+                                                        <option value="anak">Anak</option>
+                                                        <option value="lainnya">Lainnya</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-slate-500 block mb-2">Tgl Lahir</label>
+                                                    <input type="date" value={keluarga.tanggal_lahir} onChange={(e) => updateKeluarga(index, "tanggal_lahir", e.target.value)} className={inputClass} required />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-slate-500 block mb-2">Pekerjaan</label>
+                                                    <input type="text" value={keluarga.pekerjaan} onChange={(e) => updateKeluarga(index, "pekerjaan", e.target.value)} className={inputClass} required placeholder="Pekerjaan" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </section>
+
+                        {/* Social Media */}
+                        <section className={cardClass}>
+                             <div className={`${sectionHeaderClass} justify-between`}>
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-sky-50 rounded-lg text-sky-800">
+                                        <Share2 className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-800 text-lg">Sosial Media</h3>
+                                        <p className="text-slate-500 text-xs font-medium">Tautkan akun sosial media Anda</p>
+                                    </div>
+                                </div>
+                                <button type="button" onClick={addSosmed} className="px-4 py-2 bg-sky-50 text-sky-800 hover:bg-sky-100 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                                    <Plus className="w-4 h-4" /> Tambah
+                                </button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                                {sosmedList.length === 0 ? (
+                                    <div className="text-center py-8 text-slate-400 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-200">
+                                        <p className="font-medium">Belum ada sosial media</p>
+                                        <p className="text-xs mt-1">Klik tombol tambah untuk memasukkan data</p>
+                                    </div>
+                                ) : (
+                                    sosmedList.map((sosmed, index) => (
+                                        <div key={index} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 relative group hover:border-sky-200 transition-colors">
+                                            <button type="button" onClick={() => removeSosmed(index)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg transition-all">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
+                                                <div>
+                                                    <label className="text-xs font-semibold text-slate-500 block mb-2">Platform</label>
+                                                    <select value={sosmed.id_platform} onChange={(e) => updateSosmed(index, "id_platform", parseInt(e.target.value))} className={inputClass}>
+                                                        <option value="1">Facebook</option>
+                                                        <option value="2">Instagram</option>
+                                                        <option value="3">Twitter</option>
+                                                        <option value="4">LinkedIn</option>
+                                                        <option value="5">TikTok</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-slate-500 block mb-2">Username</label>
+                                                    <input type="text" value={sosmed.username} onChange={(e) => updateSosmed(index, "username", e.target.value)} className={inputClass} placeholder="@username" required />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-slate-500 block mb-2">Link URL</label>
+                                                    <input type="text" value={sosmed.link} onChange={(e) => updateSosmed(index, "link", e.target.value)} className={inputClass} placeholder="https://..." required />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </section>
+
+                        {/* Sticky Action Button for Mobile */}
+                        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-slate-200 lg:static lg:bg-transparent lg:border-none lg:p-0 z-40">
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full lg:w-auto px-8 py-3.5 bg-sky-800 text-white rounded-xl hover:bg-sky-900 disabled:opacity-70 disabled:cursor-not-allowed font-semibold flex items-center justify-center gap-2 transition-all transform active:scale-95"
+                            >
+                                {isLoading ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <Save className="w-5 h-5" />
+                                )}
+                                {isLoading ? "Menyimpan..." : "Simpan Perubahan"}
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    // Password Tab (Tetap sama)
+                    <div className={cardClass}>
+                         <div className={sectionHeaderClass}>
+                            <Lock className="w-5 h-5 text-sky-800" />
+                            <h3 className="font-semibold text-slate-800">Keamanan Akun</h3>
+                        </div>
+                        <form onSubmit={handlePasswordChange} className="p-6">
+                            <div className="max-w-xl mx-auto space-y-6">
+                                <div className="p-4 bg-sky-50 text-sky-900 text-sm rounded-lg flex items-start gap-3">
+                                    <div className="mt-0.5"><Lock className="w-4 h-4"/></div>
+                                    <p>Pastikan password baru Anda menggunakan kombinasi huruf besar, kecil, dan angka untuk keamanan maksimal.</p>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Kata Sandi Sekarang</label>
+                                    <input type="password" name="password_lama" value={passwordForm.password_lama} onChange={(e) => setPasswordForm({ ...passwordForm, password_lama: e.target.value })} className={inputClass} required />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Kata Sandi Baru</label>
+                                    <input type="password" name="password_baru" value={passwordForm.password_baru} onChange={(e) => setPasswordForm({ ...passwordForm, password_baru: e.target.value })} className={inputClass} required />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Ulangi Kata Sandi Baru</label>
+                                    <input type="password" name="konf_password" value={passwordForm.konf_password} onChange={(e) => setPasswordForm({ ...passwordForm, konf_password: e.target.value })} className={inputClass} required />
+                                </div>
+                                <div className="pt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full px-6 py-3 bg-sky-800 text-white rounded-lg hover:bg-sky-900 disabled:opacity-50 font-semibold shadow-md transition-all flex justify-center items-center gap-2"
+                                    >
+                                        {isLoading ? "Memproses..." : "Update Password"}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                )}
             </div>
-          </div>
         </div>
+      </main>
       </div>
-    </div>
+    </AccessControl>
   );
 }
