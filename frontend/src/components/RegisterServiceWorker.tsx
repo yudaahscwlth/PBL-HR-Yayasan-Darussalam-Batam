@@ -6,6 +6,10 @@ import { useEffect } from "react";
 export default function RegisterServiceWorker() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
+      const handleControllerChange = () => {
+        window.location.reload();
+      };
+
       const registerSW = async () => {
         try {
           const registration = await navigator.serviceWorker.register("/sw.js");
@@ -24,15 +28,13 @@ export default function RegisterServiceWorker() {
             }
           });
 
-          // Listen for controller change (page refresh after update)
-          navigator.serviceWorker.addEventListener("controllerchange", () => {
-            window.location.reload();
-          });
-
         } catch (error) {
           console.error("SW registration failed: ", error);
         }
       };
+
+      // Listen for controller change (page refresh after update)
+      navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
 
       // Wait for page load to register SW
       if (document.readyState === "complete") {
@@ -40,6 +42,11 @@ export default function RegisterServiceWorker() {
       } else {
         window.addEventListener("load", registerSW);
       }
+
+      return () => {
+        navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
+        window.removeEventListener("load", registerSW);
+      };
     }
   }, []);
 

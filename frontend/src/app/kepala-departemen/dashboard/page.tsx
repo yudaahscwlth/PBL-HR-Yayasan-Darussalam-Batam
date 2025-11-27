@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
@@ -157,6 +157,19 @@ export default function KepalaDepartemenDashboard() {
     loadAttendanceStatus();
   }, [isAuthenticated, user]);
 
+  const isMounted = useRef(true);
+  const gpsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      if (gpsTimeoutRef.current) {
+        clearTimeout(gpsTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -169,11 +182,13 @@ export default function KepalaDepartemenDashboard() {
       const maxAttempts = 3;
 
       const tryGetLocation = (options: PositionOptions) => {
+        if (!isMounted.current) return;
         attempts++;
         console.log(`GPS Attempt ${attempts}/${maxAttempts}`);
 
         navigator.geolocation.getCurrentPosition(
           (position) => {
+            if (!isMounted.current) return;
             const location = {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
@@ -192,7 +207,7 @@ export default function KepalaDepartemenDashboard() {
                 timeout: 25000, // Increase timeout for better accuracy
                 maximumAge: 0,
               };
-              setTimeout(() => tryGetLocation(newOptions), 3000); // Wait longer between attempts
+              gpsTimeoutRef.current = setTimeout(() => tryGetLocation(newOptions), 3000); // Wait longer between attempts
               return;
             }
 
@@ -202,6 +217,7 @@ export default function KepalaDepartemenDashboard() {
             resolve(location);
           },
           (error) => {
+            if (!isMounted.current) return;
             console.log(`GPS Error on attempt ${attempts}:`, error);
 
             // If timeout and we have attempts left, try again
@@ -212,7 +228,7 @@ export default function KepalaDepartemenDashboard() {
                 timeout: 20000,
                 maximumAge: 0,
               };
-              setTimeout(() => tryGetLocation(newOptions), 2000);
+              gpsTimeoutRef.current = setTimeout(() => tryGetLocation(newOptions), 2000);
               return;
             }
 
@@ -248,6 +264,7 @@ export default function KepalaDepartemenDashboard() {
   };
 
   const showToast = (type: "success" | "error" | "warning" | "info", message: string) => {
+    if (!isMounted.current) return;
     const now = Date.now();
     // Prevent duplicate messages within 2 seconds
     if (now - lastToastTime < 2000) {
@@ -257,7 +274,9 @@ export default function KepalaDepartemenDashboard() {
     setLastToastTime(now);
     setToastMessage({ type, message, show: true });
     setTimeout(() => {
-      setToastMessage((prev) => ({ ...prev, show: false }));
+      if (isMounted.current) {
+        setToastMessage((prev) => ({ ...prev, show: false }));
+      }
     }, 5000); // Auto hide after 5 seconds
   };
 
@@ -267,10 +286,10 @@ export default function KepalaDepartemenDashboard() {
     setCurrentLocation(null); // Clear previous location
     try {
       await getCurrentLocation();
-      showToast("success", "GPS berhasil di-refresh!");
+      if (isMounted.current) showToast("success", "GPS berhasil di-refresh!");
     } catch (error) {
       console.error("GPS refresh failed:", error);
-      showToast("error", "Gagal refresh GPS. Coba lagi.");
+      if (isMounted.current) showToast("error", "Gagal refresh GPS. Coba lagi.");
     }
   };
 
@@ -282,12 +301,13 @@ export default function KepalaDepartemenDashboard() {
 
     // Wait a bit before getting new location
     setTimeout(async () => {
+      if (!isMounted.current) return;
       try {
         await getCurrentLocation();
-        showToast("success", "✅ GPS berhasil di-reset!");
+        if (isMounted.current) showToast("success", "✅ GPS berhasil di-reset!");
       } catch (error) {
         console.error("GPS reset failed:", error);
-        showToast("error", "❌ Gagal reset GPS. Coba lagi.");
+        if (isMounted.current) showToast("error", "❌ Gagal reset GPS. Coba lagi.");
       }
     }, 2000);
   };
