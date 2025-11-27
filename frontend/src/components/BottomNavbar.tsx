@@ -32,21 +32,21 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
       return {
         dashboard: "/admin/dashboard",
         menu: "/admin/menu",
-        profile: "/admin/dashboard", // Profile page tidak ada, redirect ke dashboard
+        profile: "/admin/profile",
         notifikasi: "/admin/announcements",
       };
     } else if (isKepalaYayasan) {
       return {
         dashboard: "/kepala-yayasan/dashboard",
         menu: "/kepala-yayasan/menu",
-        profile: "/kepala-yayasan/dashboard", // Profile page tidak ada, redirect ke dashboard
+        profile: "/kepala-yayasan/profile",
         notifikasi: "/kepala-yayasan/announcements",
       };
     } else if (isDirekturPendidikan) {
       return {
         dashboard: "/direktur-pendidikan/dashboard",
         menu: "/direktur-pendidikan/menu",
-        profile: "/direktur-pendidikan/dashboard", // Profile page tidak ada, redirect ke dashboard
+        profile: "/direktur-pendidikan/profile",
         notifikasi: "/direktur-pendidikan/announcements",
       };
     } else if (isHRD) {
@@ -60,21 +60,21 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
       return {
         dashboard: "/kepala-departemen/dashboard",
         menu: "/kepala-departemen/menu",
-        profile: "/kepala-departemen/dashboard", // Profile page tidak ada, redirect ke dashboard
+        profile: "/kepala-departemen/profile",
         notifikasi: "/kepala-departemen/announcements",
       };
     } else if (isKepalaSekolah) {
       return {
         dashboard: "/kepala-sekolah/dashboard",
         menu: "/kepala-sekolah/menu",
-        profile: "/kepala-sekolah/dashboard", // Profile page tidak ada, redirect ke dashboard
+        profile: "/kepala-sekolah/profile",
         notifikasi: "/kepala-sekolah/announcements",
       };
     } else if (isTenagaPendidik) {
       return {
         dashboard: "/tenaga-pendidik/dashboard",
         menu: "/tenaga-pendidik/menu",
-        profile: "/tenaga-pendidik/dashboard", // Profile page tidak ada, redirect ke dashboard
+        profile: "/tenaga-pendidik/profile",
         notifikasi: "/tenaga-pendidik/announcements",
       };
     }

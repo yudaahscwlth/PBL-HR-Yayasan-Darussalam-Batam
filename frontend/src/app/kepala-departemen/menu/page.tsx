@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import MenuPage from "@/components/MenuPage";
 import { kepalaDepartemenMenuConfig } from "@/config/menuConfig";
+import AccessControl from "@/components/AccessControl";
+import BottomNavbar from "@/components/BottomNavbar";
+import MenuCard from "@/components/MenuCard";
 
-export default function KepalaDepartemenMenu() {
+export default function KDMenu() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("menu");
 
@@ -13,7 +15,7 @@ export default function KepalaDepartemenMenu() {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/kepala-departemen/dashboard");
     else if (tab === "notifikasi") router.push("/kepala-departemen/announcements");
-    else if (tab === "profile") router.push("/kepala-departemen/dashboard"); // Profile page tidak ada, redirect ke dashboard
+    else if (tab === "profile") router.push("/kepala-departemen/profile");
   };
 
   const menuSectionsWithHandlers = kepalaDepartemenMenuConfig.map((section) => ({
@@ -28,5 +30,23 @@ export default function KepalaDepartemenMenu() {
     })),
   }));
 
-  return <MenuPage menuSections={menuSectionsWithHandlers} activeTab={activeTab} onTabChange={handleTabChange} />;
+  return (
+    <AccessControl allowedRoles={["kepala departemen"]}>
+      <div className="min-h-screen bg-gray-100 pb-28">
+        <div className="px-5 py-6">
+          {menuSectionsWithHandlers.map((section, sectionIndex) => (
+            <div key={sectionIndex} className="mb-8">
+              <h2 className="text-sm font-semibold text-gray-400 uppercase mb-4">{section.category}</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {section.items.map((item, itemIndex) => (
+                  <MenuCard key={itemIndex} title={item.title} icon={item.icon} onClick={item.onClick} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <BottomNavbar activeTab={activeTab} onTabChange={handleTabChange} />
+      </div>
+    </AccessControl>
+  );
 }
