@@ -20,10 +20,16 @@ export default function RegisterServiceWorker() {
           console.log("Service Worker registration failed:", error);
         });
 
-      // Listen for updates
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
+      const handleControllerChange = () => {
         console.log("Service Worker updated");
-      });
+      };
+
+      // Listen for updates
+      navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+
+      return () => {
+        navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
+      };
     }
   }, []);
 

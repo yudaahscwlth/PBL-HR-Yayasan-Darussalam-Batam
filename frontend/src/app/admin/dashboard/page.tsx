@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -15,6 +15,15 @@ export default function AdminDashboard() {
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number; accuracy?: number } | null>(null);
   const [gpsStatus, setGpsStatus] = useState<string>("");
   const [lastToastTime, setLastToastTime] = useState<number>(0);
+
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     checkAttendanceStatus();
@@ -33,12 +42,12 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        setAttendanceStatus(data.status);
+        if (isMounted.current) setAttendanceStatus(data.status);
       }
     } catch (error) {
       console.error("Error checking attendance status:", error);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) setIsLoading(false);
     }
   };
 
@@ -57,6 +66,7 @@ export default function AdminDashboard() {
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          if (!isMounted.current) return;
           const location = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
@@ -67,6 +77,7 @@ export default function AdminDashboard() {
           resolve(location);
         },
         (error) => {
+          if (!isMounted.current) return;
           console.error("GPS Error:", error);
           setGpsStatus("GPS Error");
           reject(error);
@@ -132,9 +143,11 @@ export default function AdminDashboard() {
       const data = await response.json();
 
       if (response.ok) {
-        setAttendanceStatus("checked_in");
-        showToast("Check-in berhasil!", "success");
-        setGpsStatus("");
+        if (isMounted.current) {
+          setAttendanceStatus("checked_in");
+          showToast("Check-in berhasil!", "success");
+          setGpsStatus("");
+        }
       } else {
         if (data.message?.includes("luar area kerja")) {
           showToast("Anda berada di luar area kerja. Silakan pindah ke lokasi yang tepat.", "error");
@@ -150,8 +163,10 @@ export default function AdminDashboard() {
         showToast("Gagal melakukan check-in. Silakan coba lagi.", "error");
       }
     } finally {
-      setAttendanceLoading(false);
-      setGpsStatus("");
+      if (isMounted.current) {
+        setAttendanceLoading(false);
+        setGpsStatus("");
+      }
     }
   };
 
@@ -192,9 +207,11 @@ export default function AdminDashboard() {
       const data = await response.json();
 
       if (response.ok) {
-        setAttendanceStatus("checked_out");
-        showToast("Check-out berhasil!", "success");
-        setGpsStatus("");
+        if (isMounted.current) {
+          setAttendanceStatus("checked_out");
+          showToast("Check-out berhasil!", "success");
+          setGpsStatus("");
+        }
       } else {
         if (data.message?.includes("luar area kerja")) {
           showToast("Anda berada di luar area kerja. Silakan pindah ke lokasi yang tepat.", "error");
@@ -210,8 +227,10 @@ export default function AdminDashboard() {
         showToast("Gagal melakukan check-out. Silakan coba lagi.", "error");
       }
     } finally {
-      setAttendanceLoading(false);
-      setGpsStatus("");
+      if (isMounted.current) {
+        setAttendanceLoading(false);
+        setGpsStatus("");
+      }
     }
   };
 
