@@ -67,6 +67,24 @@ interface ProfileEditProps {
   allowedRoles: string[];
 }
 
+const calculateDuration = (startDate: string | undefined) => {
+  if (!startDate) return "-";
+  const start = new Date(startDate);
+  const now = new Date();
+  let years = now.getFullYear() - start.getFullYear();
+  let months = now.getMonth() - start.getMonth();
+
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  if (years > 0) {
+    return `${years} Tahun ${months} Bulan`;
+  }
+  return `${months} Bulan`;
+};
+
 export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
   const { user } = useAuthStore();
   const router = useRouter();
@@ -436,6 +454,20 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
                                     <label className={labelClass}>Tanggal Masuk</label>
                                     <div className="relative">
                                         <input type="text" value={profileData.profile_pekerjaan?.tanggal_masuk || "-"} className={readOnlyClass} disabled />
+                                        <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Tempat Bekerja</label>
+                                    <div className="relative">
+                                        <input type="text" value={profileData.profile_pekerjaan?.tempat_kerja?.nama_tempat || "-"} className={readOnlyClass} disabled />
+                                        <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Lama Pengabdian</label>
+                                    <div className="relative">
+                                        <input type="text" value={calculateDuration(profileData.profile_pekerjaan?.tanggal_masuk)} className={readOnlyClass} disabled />
                                         <Lock className="w-4 h-4 text-slate-400 absolute right-4 top-3.5" />
                                     </div>
                                 </div>
