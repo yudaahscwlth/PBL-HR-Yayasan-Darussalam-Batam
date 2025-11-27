@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import BottomNavbar from "@/components/BottomNavbar";
 import AccessControl from "@/components/AccessControl";
@@ -61,7 +62,7 @@ export default function HRDProfile() {
       title: "Kantor",
       icon: (
         <svg className="w-6 h-6 text-[#1e4d8b]" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M3 3h18v18H3V3m2 2v14h14V5H5m2 2h10v2H7V7m0 4h10v2H7v-2m0 4h10v2H7v-2z" />
+          <path d="M3 3h18v18H3V3m2 2v14h14V5H5m2 2h10v2H7V7m0 4h10v2H7v-2m0 4h10v2H7v-2m0 4h10v2H7v-2z" />
         </svg>
       ),
       path: "/hrd/kantor",
@@ -105,10 +106,10 @@ export default function HRDProfile() {
             <h2 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider">ACCOUNT</h2>
             <div className="bg-white rounded-xl overflow-hidden">
               {accountMenu.map((item, index) => (
-                <button 
+                <Link 
                   key={index} 
+                  href={item.path}
                   className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100" 
-                  onClick={() => router.push(item.path)}
                 >
                   <div className="flex items-center gap-4">
                     {item.icon}
@@ -117,7 +118,7 @@ export default function HRDProfile() {
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -127,10 +128,10 @@ export default function HRDProfile() {
             <h2 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider">Other</h2>
             <div className="bg-white rounded-xl overflow-hidden">
               {otherMenu.map((item, index) => (
-                <button
+                <Link
                   key={index}
+                  href={item.path}
                   className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 border-gray-100"
-                  onClick={() => (item.path ? router.push(item.path) : console.log(`Clicked: ${item.title}`))}
                 >
                   <div className="flex items-center gap-4">
                     {item.icon}
@@ -139,7 +140,7 @@ export default function HRDProfile() {
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                </button>
+                </Link>
               ))}
             </div>
           </div>
