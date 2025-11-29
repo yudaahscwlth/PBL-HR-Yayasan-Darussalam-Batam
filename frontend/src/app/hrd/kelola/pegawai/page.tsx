@@ -15,10 +15,11 @@ import {
   FileText,
   Calendar,
   ClipboardList,
-  ArrowLeft
+  ArrowLeft,
+  X
 } from "lucide-react";
 import Link from "next/link";
-import { User } from "@/types/auth";
+import { User, Jabatan, Departemen, TempatKerja } from "@/types/auth";
 import { useRouter } from "next/navigation";
 
 export default function HrdKelolaPegawaiPage() {
@@ -30,6 +31,88 @@ export default function HrdKelolaPegawaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    nama_lengkap: '',
+    nik: '',
+    nik_karyawan: '',
+    tanggal_masuk: '',
+    id_jabatan: '',
+    id_departemen: '',
+    id_tempat_kerja: '',
+    status: '',
+    role: ''
+  });
+  const [jabatanList, setJabatanList] = useState<Jabatan[]>([]);
+  const [departemenList, setDepartemenList] = useState<Departemen[]>([]);
+  const [tempatKerjaList, setTempatKerjaList] = useState<TempatKerja[]>([]);
+  const [rolesList] = useState(['superadmin', 'kepala yayasan', 'direktur pendidikan', 'kepala hrd', 'staff hrd', 'kepala departemen', 'kepala sekolah', 'tenaga pendidik']);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("auth_token");
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        const [jabatanRes, departemenRes, tempatKerjaRes] = await Promise.all([
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/jabatan`, { headers }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/departemen`, { headers }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/tempat-kerja`, { headers })
+        ]);
+
+        setJabatanList(jabatanRes.data.data || []);
+        // Handle DepartemenController response structure which returns { departemen: [...], users: [...] }
+        const departemenData = departemenRes.data.data;
+        setDepartemenList(Array.isArray(departemenData) ? departemenData : departemenData?.departemen || []);
+        setTempatKerjaList(tempatKerjaRes.data.data || []);
+      } catch (error) {
+        console.error("Error fetching dropdown data:", error);
+      }
+    };
+
+    if (isModalOpen) {
+      fetchData();
+    }
+  }, [isModalOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("auth_token");
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsModalOpen(false);
+      // Refresh users
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const fetchedData = response.data.data;
+      setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
+      
+      // Reset form
+      setFormData({
+        email: '',
+        password: '',
+        nama_lengkap: '',
+        nik: '',
+        nik_karyawan: '',
+        tanggal_masuk: '',
+        id_jabatan: '',
+        id_departemen: '',
+        id_tempat_kerja: '',
+        status: '',
+        role: ''
+      });
+      alert("Pegawai berhasil ditambahkan");
+    } catch (error) {
+      console.error("Error creating user:", error);
+      alert("Gagal menambahkan pegawai");
+    }
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -39,8 +122,8 @@ export default function HrdKelolaPegawaiPage() {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        console.log("API Response:", response.data);
-        setUsers(response.data.data);
+        const fetchedData = response.data.data;
+        setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
@@ -136,7 +219,10 @@ export default function HrdKelolaPegawaiPage() {
             {/* Actions Bar */}
             <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
               <div className="flex gap-2">
-                <button className="bg-sky-800 hover:bg-sky-900 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors">
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-sky-800 hover:bg-sky-900 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors"
+                >
                   <Plus className="w-4 h-4" />
                   Tambah Baru
                 </button>
@@ -344,6 +430,190 @@ export default function HrdKelolaPegawaiPage() {
 
           </div>
         </div>
+
+        {/* Add Employee Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white">
+                <h3 className="text-lg font-semibold text-gray-800">Tambah Pegawai</h3>
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Masukkan email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Masukkan password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Masukkan nama lengkap"
+                    value={formData.nama_lengkap}
+                    onChange={(e) => setFormData({...formData, nama_lengkap: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Induk Kependudukan</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Masukkan NIK"
+                    value={formData.nik}
+                    onChange={(e) => setFormData({...formData, nik: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Induk Karyawan</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Masukkan NIK Karyawan"
+                    value={formData.nik_karyawan}
+                    onChange={(e) => setFormData({...formData, nik_karyawan: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Bergabung</label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.tanggal_masuk}
+                    onChange={(e) => setFormData({...formData, tanggal_masuk: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Jabatan</label>
+                  <select
+                    required
+                    value={formData.id_jabatan}
+                    onChange={(e) => setFormData({...formData, id_jabatan: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  >
+                    <option value="">Pilih Jabatan</option>
+                    {jabatanList.map(j => (
+                      <option key={j.id} value={j.id}>{j.nama_jabatan}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Departemen</label>
+                  <select
+                    required
+                    value={formData.id_departemen}
+                    onChange={(e) => setFormData({...formData, id_departemen: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  >
+                    <option value="">Pilih Departemen</option>
+                    {departemenList.map(d => (
+                      <option key={d.id} value={d.id}>{d.nama_departemen}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tempat Bekerja</label>
+                  <select
+                    required
+                    value={formData.id_tempat_kerja}
+                    onChange={(e) => setFormData({...formData, id_tempat_kerja: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  >
+                    <option value="">Pilih Tempat Kerja</option>
+                    {tempatKerjaList.map(t => (
+                      <option key={t.id} value={t.id}>{t.nama_tempat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    required
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  >
+                    <option value="">Pilih Status Karyawan</option>
+                    <option value="aktif">Aktif</option>
+                    <option value="nonaktif">Nonaktif</option>
+                    <option value="tetap">Tetap</option>
+                    <option value="kontrak">Kontrak</option>
+                    <option value="magang">Magang</option>
+                    <option value="honorer">Honorer</option>
+                    <option value="pensiun">Pensiun</option>
+                    <option value="cuti">Cuti</option>
+                    <option value="skorsing">Skorsing</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <select
+                    required
+                    value={formData.role}
+                    onChange={(e) => setFormData({...formData, role: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
+                  >
+                    <option value="">Pilih Role</option>
+                    {rolesList.map(role => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-sky-800 text-white rounded hover:bg-sky-700 transition-colors"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </AccessControl>
   );

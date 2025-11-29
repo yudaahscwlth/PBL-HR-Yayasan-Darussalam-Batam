@@ -68,7 +68,7 @@ export interface Departemen {
 
 export interface TempatKerja {
   id: number;
-  nama_tempat_kerja: string;
+  nama_tempat: string;
   alamat?: string;
   created_at: string;
   updated_at: string;

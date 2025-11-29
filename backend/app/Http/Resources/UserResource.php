@@ -20,8 +20,6 @@ class UserResource extends JsonResource
             'email_verified_at' => $this->email_verified_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'debug_is_loaded' => $this->relationLoaded('profilePribadi'),
-            'debug_is_null' => is_null($this->profilePribadi),
             'profile_pribadi' => $this->profilePribadi ? [
                 'id' => $this->profilePribadi->id,
                 'id_user' => $this->profilePribadi->id_user,

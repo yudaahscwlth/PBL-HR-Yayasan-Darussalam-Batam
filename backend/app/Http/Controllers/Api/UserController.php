@@ -27,25 +27,68 @@ class UserController extends Controller
     /**
      * Store a newly created user
      */
+    /**
+     * Store a newly created user
+     */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:6',
+            'nama_lengkap' => 'required|string',
+            'nik' => 'required|string',
+            'nik_karyawan' => 'required|string',
+            'tanggal_masuk' => 'required|date',
+            'id_jabatan' => 'required|exists:jabatans,id',
+            'id_departemen' => 'required|exists:departemens,id',
+            'id_tempat_kerja' => 'required|exists:tempat_kerjas,id',
+            'status' => 'required|string',
+            'role' => 'required|string|exists:roles,name',
         ]);
 
-        $user = User::create([
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-        ]);
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $user = User::create([
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+            ]);
 
-        $user->load(['roles', 'permissions', 'profilePribadi', 'profilePekerjaan.jabatan', 'profilePekerjaan.departemen', 'profilePekerjaan.tempatKerja']);
+            $user->assignRole($request->role);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User created successfully',
-            'data' => new UserResource($user),
-        ], 201);
+            \App\Models\ProfilePribadi::create([
+                'id_user' => $user->id,
+                'nama_lengkap' => $request->nama_lengkap,
+                'nomor_induk_kependudukan' => $request->nik,
+            ]);
+
+            \App\Models\ProfilePekerjaan::create([
+                'id_user' => $user->id,
+                'nomor_induk_karyawan' => $request->nik_karyawan,
+                'tanggal_masuk' => $request->tanggal_masuk,
+                'id_jabatan' => $request->id_jabatan,
+                'id_departemen' => $request->id_departemen,
+                'id_tempat_kerja' => $request->id_tempat_kerja,
+                'status' => $request->status,
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            $user->load(['roles', 'permissions', 'profilePribadi', 'profilePekerjaan.jabatan', 'profilePekerjaan.departemen', 'profilePekerjaan.tempatKerja']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User created successfully',
+                'data' => new UserResource($user),
+            ], 201);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create user',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
