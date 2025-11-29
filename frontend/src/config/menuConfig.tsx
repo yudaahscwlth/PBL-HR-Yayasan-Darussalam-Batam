@@ -105,7 +105,7 @@ export const hrdMenuConfig: MenuSection[] = [
             />
           </svg>
         ),
-        path: "/hrd/pegawai",
+        path: "/hrd/kelola/pegawai",
       },
       {
         title: "Evaluasi",
