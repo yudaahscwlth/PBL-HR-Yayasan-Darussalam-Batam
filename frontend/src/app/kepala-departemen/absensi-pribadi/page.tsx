@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/api";
+import { API_CONFIG } from "@/config/api";
 import BottomNavbar from "@/components/BottomNavbar";
 
 interface AttendanceRecord {
@@ -22,13 +22,89 @@ interface AttendanceRecord {
 }
 
 export default function KepalaDepartemenAbsensiPribadi() {
-  const { user } = useAuthStore();
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
+
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    tanggal_mulai: new Date().toISOString().split("T")[0],
+    durasi_hari: "",
+    status_absensi: "Sakit",
+    file_pendukung: null as File | null,
+    keterangan_pendukung: "",
+  });
+  const [selectedFileName, setSelectedFileName] = useState("Tidak ada file yang dipilih");
+
+  // File preview modal state
+  const [showFilePreview, setShowFilePreview] = useState(false);
+  const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
+  const [previewFileType, setPreviewFileType] = useState<"image" | "pdf" | "other" | null>(null);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const [lastToastTime, setLastToastTime] = useState<number>(0);
+
+  // Toast function
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "warning" | "info" = "info"
+  ) => {
+    const now = Date.now();
+    if (now - lastToastTime < 2000) return; // Debounce
+
+    setLastToastTime(now);
+
+    const toast = document.createElement("div");
+    toast.className = `fixed top-4 right-4 z-[60] px-6 py-3 rounded-lg shadow-lg text-white font-medium max-w-sm transform transition-all duration-300 ease-in-out ${
+      type === "success"
+        ? "bg-green-500"
+        : type === "error"
+        ? "bg-red-500"
+        : type === "warning"
+        ? "bg-yellow-500"
+        : "bg-blue-500"
+    }`;
+
+    const icon =
+      type === "success" ? "✅" : type === "error" ? "❌" : type === "warning" ? "⚠️" : "ℹ️";
+
+    // Create toast content safely
+    const toastContent = document.createElement("div");
+    toastContent.className = "flex items-center gap-2";
+    const iconSpan = document.createElement("span");
+    iconSpan.textContent = icon;
+    const messageSpan = document.createElement("span");
+    messageSpan.textContent = message;
+    toastContent.appendChild(iconSpan);
+    toastContent.appendChild(messageSpan);
+    toast.appendChild(toastContent);
+
+    // Add animation
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(100%)";
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => {
+      toast.style.opacity = "1";
+      toast.style.transform = "translateX(0)";
+    }, 10);
+
+    // Auto remove
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateX(100%)";
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.remove();
+        }
+      }, 300);
+    }, 5000);
+  };
 
   // Fetch attendance data
   useEffect(() => {
@@ -44,6 +120,7 @@ export default function KepalaDepartemenAbsensiPribadi() {
         }
       } catch (error) {
         console.error("Error loading attendance data:", error);
+        showToast("Gagal memuat data absensi", "error");
       } finally {
         setIsLoading(false);
       }
@@ -52,19 +129,29 @@ export default function KepalaDepartemenAbsensiPribadi() {
     loadAttendanceData();
   }, []);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, itemsPerPage]);
+
   // Filter data based on search term
-  const filteredData = attendanceData.filter(
-    (record) => record.tanggal.toLowerCase().includes(searchTerm.toLowerCase()) || record.status.toLowerCase().includes(searchTerm.toLowerCase()) || (record.keterangan && record.keterangan.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredData = attendanceData.filter((record) => {
+    const tanggal = (record.tanggal || "").toLowerCase();
+    const status = (record.status || "").toLowerCase();
+    const ket = (record.keterangan || "").toLowerCase();
+    const q = searchTerm.toLowerCase();
+    return tanggal.includes(q) || status.includes(q) || ket.includes(q);
+  });
 
   // Pagination
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentData = filteredData.slice(startIndex, endIndex);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
     return date.toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "2-digit",
@@ -75,6 +162,7 @@ export default function KepalaDepartemenAbsensiPribadi() {
   const formatTime = (timeString: string | null) => {
     if (!timeString) return "-";
     const time = new Date(timeString);
+    if (isNaN(time.getTime())) return "-";
     return time.toLocaleTimeString("id-ID", {
       hour: "2-digit",
       minute: "2-digit",
@@ -82,15 +170,133 @@ export default function KepalaDepartemenAbsensiPribadi() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch ((status || "").toLowerCase()) {
       case "hadir":
         return "bg-green-100 text-green-800";
       case "terlambat":
         return "bg-blue-100 text-blue-800";
       case "tidak hadir":
         return "bg-red-100 text-red-800";
+      case "sakit":
+        return "bg-yellow-100 text-yellow-800";
+      case "cuti":
+        return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleOpenModal = () => {
+    setFormData({
+      tanggal_mulai: new Date().toISOString().split("T")[0],
+      durasi_hari: "",
+      status_absensi: "Sakit",
+      file_pendukung: null,
+      keterangan_pendukung: "",
+    });
+    setSelectedFileName("Tidak ada file yang dipilih");
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setIsSubmitting(false);
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setFormData((prev) => ({ ...prev, file_pendukung: file }));
+    setSelectedFileName(file ? file.name : "Tidak ada file yang dipilih");
+  };
+
+  const handleOpenFilePreview = (fileUrl: string) => {
+    if (!fileUrl) return;
+    const clean = fileUrl.split("?")[0].toLowerCase();
+    const extension = clean.split(".").pop() || "";
+
+    let fileType: "image" | "pdf" | "other" = "other";
+    if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(extension)) {
+      fileType = "image";
+    } else if (extension === "pdf") {
+      fileType = "pdf";
+    }
+
+    // Construct full URL if it's not already absolute
+    let fullUrl = fileUrl;
+    if (!fileUrl.startsWith("http")) {
+      const baseUrl = API_CONFIG.BASE_URL;
+      const path = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
+      fullUrl = `${baseUrl}${path}`;
+    }
+
+    setPreviewFileType(fileType);
+    setPreviewFileUrl(fullUrl);
+    setImageLoadError(false);
+    setShowFilePreview(true);
+  };
+
+  const handleCloseFilePreview = () => {
+    setShowFilePreview(false);
+    setPreviewFileUrl(null);
+    setPreviewFileType(null);
+    setImageLoadError(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Validate durasi_hari
+      const durasiHari = parseInt(formData.durasi_hari) || 0;
+      if (durasiHari < 0) {
+        showToast("Durasi hari tidak boleh negatif", "error");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const payload: any = {
+        tanggal_mulai: formData.tanggal_mulai,
+        durasi_hari: durasiHari,
+        status_absensi: formData.status_absensi,
+      };
+
+      if (formData.keterangan_pendukung) payload.keterangan_pendukung = formData.keterangan_pendukung;
+      if (formData.file_pendukung) payload.file_pendukung = formData.file_pendukung;
+
+      // Call API to create manual attendance
+      const response = await apiClient.attendance.createManual(payload);
+
+      if (response.success) {
+        // Reload attendance data
+        const historyResponse = await apiClient.attendance.getHistory();
+        if (historyResponse.success && historyResponse.data) {
+          setAttendanceData(historyResponse.data as AttendanceRecord[]);
+          setTotalRecords((historyResponse.data as AttendanceRecord[]).length);
+        }
+
+        handleCloseModal();
+        showToast(response.message || "Absensi berhasil ditambahkan!", "success");
+      } else {
+        showToast(
+          response.message || "Gagal menambahkan absensi. Silakan coba lagi.",
+          "error"
+        );
+      }
+    } catch (error: any) {
+      console.error("Error submitting attendance:", error);
+      const errorMessage =
+        error?.response?.data?.message || error?.message || "Gagal menambahkan absensi. Silakan coba lagi.";
+      showToast(errorMessage, "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,7 +305,10 @@ export default function KepalaDepartemenAbsensiPribadi() {
       {/* Header Section */}
       <div className="px-5 pt-3 pb-4">
         <div className="flex items-center gap-4">
-          <button onClick={() => window.history.back()} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center gap-2">
+          <button
+            onClick={() => window.history.back()}
+            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center gap-2"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -114,7 +323,12 @@ export default function KepalaDepartemenAbsensiPribadi() {
         <div className="bg-white rounded-2xl shadow-md p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-800">Absensi Pribadi</h2>
-            <button className="bg-[#1e4d8b] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">Add New</button>
+            <button
+              onClick={handleOpenModal}
+              className="bg-[#1e4d8b] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              Tambah Baru
+            </button>
           </div>
 
           {/* Search and Filter */}
@@ -130,7 +344,11 @@ export default function KepalaDepartemenAbsensiPribadi() {
             </div>
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600">Show:</label>
-              <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
                 <option value={50}>50</option>
@@ -176,22 +394,35 @@ export default function KepalaDepartemenAbsensiPribadi() {
                       <td className="py-3 px-4 text-gray-700">{formatTime(record.check_in)}</td>
                       <td className="py-3 px-4 text-gray-700">{formatTime(record.check_out)}</td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>{record.status}</span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(record.status)}`}>
+                          {record.status}
+                        </span>
                       </td>
                       <td className="py-3 px-4 text-gray-700">{record.keterangan || "-"}</td>
                       <td className="py-3 px-4">
                         {record.file_pendukung ? (
-                          <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                            <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                          <button
+                            onClick={() => handleOpenFilePreview(record.file_pendukung!)}
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded hover:bg-blue-50"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
                             </svg>
-                          </div>
+                          </button>
                         ) : (
                           "-"
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <button className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 transition-colors">Log Absensi</button>
+                        <button className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 transition-colors">
+                          Log Absensi
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -244,13 +475,241 @@ export default function KepalaDepartemenAbsensiPribadi() {
                 <span className="w-3 h-3 bg-red-100 rounded-full"></span>
                 <span className="text-red-800">Tidak Hadir</span>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-yellow-100 rounded-full"></span>
+                <span className="text-yellow-800">Sakit</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-purple-100 rounded-full"></span>
+                <span className="text-purple-800">Cuti</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Navigation */}
-      <BottomNavbar />
+      {/* Modal Tambah Absensi */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+              <h3 className="text-lg font-semibold text-gray-800">Tambah Absensi</h3>
+              <button onClick={handleCloseModal} className="text-gray-400 hover:text-gray-600 transition">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Tanggal Mulai */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Tanggal Mulai</label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    name="tanggal_mulai"
+                    value={formData.tanggal_mulai}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                    required
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Durasi Hari */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Durasi Hari</label>
+                <input
+                  type="number"
+                  name="durasi_hari"
+                  value={formData.durasi_hari}
+                  onChange={handleInputChange}
+                  placeholder="Jumlah hari absen (0 = hari ini saja)"
+                  min="0"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                  required
+                />
+              </div>
+
+              {/* Status Absensi */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Status Absensi</label>
+                <div className="relative">
+                  <select
+                    name="status_absensi"
+                    value={formData.status_absensi}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-gray-800"
+                    required
+                  >
+                    <option value="Sakit">Sakit</option>
+                    <option value="Cuti">Cuti</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* File Pendukung */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">File Pendukung</label>
+                <div className="flex items-center gap-3">
+                  <label className="bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors text-sm font-medium">
+                    Pilih File
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                    />
+                  </label>
+                  <span className="text-sm text-gray-600 flex-1">{selectedFileName}</span>
+                </div>
+              </div>
+
+              {/* Keterangan Pendukung */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Keterangan Pendukung</label>
+                <textarea
+                  name="keterangan_pendukung"
+                  value={formData.keterangan_pendukung}
+                  onChange={handleInputChange}
+                  placeholder="Dapat dikosongkan jika tidak ada"
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-gray-800"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-2 bg-[#1e4d8b] text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Menyimpan...
+                    </div>
+                  ) : (
+                    "Simpan"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* File Preview Modal */}
+      {showFilePreview && previewFileUrl && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800">Preview File</h3>
+              <button onClick={handleCloseFilePreview} className="text-gray-400 hover:text-gray-600 transition">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body - File Preview */}
+            <div className="flex-1 overflow-auto p-6 flex items-center justify-center">
+              {previewFileType === "image" ? (
+                imageLoadError ? (
+                  <div className="text-center">
+                    <div className="mb-4">
+                      <svg className="w-16 h-16 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-600 mb-4">Gagal memuat gambar. Silakan coba buka di tab baru.</p>
+                    <a
+                      href={previewFileUrl || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-[#1e4d8b] text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      Buka di Tab Baru
+                    </a>
+                  </div>
+                ) : (
+                  <img
+                    src={previewFileUrl || ""}
+                    alt="File Preview"
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                    onError={() => setImageLoadError(true)}
+                  />
+                )
+              ) : previewFileType === "pdf" ? (
+                <iframe
+                  src={previewFileUrl || ""}
+                  className="w-full h-full min-h-[500px] border border-gray-300 rounded-lg"
+                  title="PDF Preview"
+                />
+              ) : (
+                <div className="text-center">
+                  <div className="mb-4">
+                    <svg className="w-16 h-16 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600 mb-4">Preview tidak tersedia untuk tipe file ini</p>
+                  <a
+                    href={previewFileUrl || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block bg-[#1e4d8b] text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Buka di Tab Baru
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+              <a
+                href={previewFileUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#1e4d8b] text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Buka di Tab Baru
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
