@@ -37,6 +37,11 @@ class Evaluasi extends Model
         return $this->belongsTo(KategoriEvaluasi::class, 'id_kategori');
     }
 
+    public function kategori()
+    {
+        return $this->belongsTo(KategoriEvaluasi::class, 'id_kategori');
+    }
+
     public function tahunAjaran()
     {
         return $this->belongsTo(TahunAjaran::class, 'id_tahun_ajaran');

@@ -16,8 +16,25 @@ class KategoriEvaluasiController extends Controller
     {
         $user = $request->user();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated',
+            ], 401);
+        }
+
         if (!$this->userCanManage($user)) {
-            return $this->unauthorizedResponse();
+            $userRoles = $user->roles->pluck('name')->toArray();
+            \Log::warning('Unauthorized access attempt to kategori evaluasi', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'user_roles' => $userRoles,
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to manage kategori evaluasi. Required roles: kepala hrd, staff hrd, or superadmin',
+                'user_roles' => $userRoles,
+            ], 403);
         }
 
         $kategoriEvaluasi = KategoriEvaluasi::orderBy('nama', 'asc')->get();
@@ -98,7 +115,16 @@ class KategoriEvaluasiController extends Controller
 
     private function userCanManage($user): bool
     {
-        return $user && $user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin']);
+        if (!$user) {
+            return false;
+        }
+
+        // Ensure roles are loaded
+        if (!$user->relationLoaded('roles')) {
+            $user->load('roles');
+        }
+
+        return $user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin']);
     }
 
     private function unauthorizedResponse(): JsonResponse

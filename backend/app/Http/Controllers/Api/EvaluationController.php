@@ -171,7 +171,7 @@ class EvaluationController extends Controller
         $user = $request->user();
         
         $evaluations = Evaluasi::where('id_user', $user->id)
-            ->with(['kategoriEvaluasi'])
+            ->with(['kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
             ->orderBy('created_at', 'desc')
             ->get();
 
