@@ -134,6 +134,37 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
     sosial_media: { nama_platform: string };
   }>>([]);
 
+  const [kecamatanList, setKecamatanList] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    const fetchKecamatan = async () => {
+      try {
+        const response = await fetch("/kecamatan-indonesia.json");
+        const data = await response.json();
+        setKecamatanList(data);
+      } catch (error) {
+        console.error("Error fetching kecamatan data:", error);
+      }
+    };
+    fetchKecamatan();
+
+  }, []);
+
+  const [kotaList, setKotaList] = useState<Array<{ provinsi: string; kota: string[] }>>([]);
+
+  useEffect(() => {
+    const fetchKota = async () => {
+      try {
+        const response = await fetch("/kota-indonesia.json");
+        const data = await response.json();
+        setKotaList(data);
+      } catch (error) {
+        console.error("Error fetching kota data:", error);
+      }
+    };
+    fetchKota();
+  }, []);
+
   const [passwordForm, setPasswordForm] = useState({
     password_lama: "",
     password_baru: "",
@@ -518,8 +549,24 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
                                 <div>
                                     <label className={labelClass}>Tempat Lahir</label>
                                     <div className="relative">
-                                        <input type="text" name="tempat_lahir" value={formData.tempat_lahir} onChange={handleInputChange} className={`${inputClass} pl-10`} />
-                                        <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                                        <select 
+                                            name="tempat_lahir" 
+                                            value={formData.tempat_lahir} 
+                                            onChange={handleInputChange} 
+                                            className={`${inputClass} pl-10 appearance-none`}
+                                        >
+                                            <option value="">Pilih Tempat Lahir</option>
+                                            {kotaList.map((prov, index) => (
+                                                <optgroup key={index} label={prov.provinsi}>
+                                                    {prov.kota.map((kota, kIndex) => (
+                                                        <option key={`${index}-${kIndex}`} value={kota}>
+                                                            {kota}
+                                                        </option>
+                                                    ))}
+                                                </optgroup>
+                                            ))}
+                                        </select>
+                                        <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                                     </div>
                                 </div>
                                 <div>
@@ -536,7 +583,19 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
                                 </div>
                                 <div>
                                     <label className={labelClass}>Kecamatan</label>
-                                    <input type="text" name="kecamatan" value={formData.kecamatan} onChange={handleInputChange} className={inputClass} />
+                                    <select 
+                                        name="kecamatan" 
+                                        value={formData.kecamatan} 
+                                        onChange={handleInputChange} 
+                                        className={inputClass}
+                                    >
+                                        <option value="">Pilih Kecamatan</option>
+                                        {kecamatanList.map((kec) => (
+                                            <option key={kec.id} value={kec.name}>
+                                                {kec.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className={labelClass}>Status Pernikahan</label>
