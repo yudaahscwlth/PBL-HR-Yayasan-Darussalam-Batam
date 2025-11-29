@@ -601,11 +601,8 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
                                     <label className={labelClass}>Status Pernikahan</label>
                                     <select name="status_pernikahan" value={formData.status_pernikahan} onChange={handleInputChange} className={inputClass}>
                                         <option value="">Pilih Status</option>
-                                        <option value="TK">Belum Menikah</option>
-                                        <option value="K0">Menikah (0 Anak)</option>
-                                        <option value="K1">Menikah (1 Anak)</option>
-                                        <option value="K2">Menikah (2 Anak)</option>
-                                        <option value="K3">Menikah (3 Anak)</option>
+                                        <option value="belum nikah">Belum Menikah</option>
+                                        <option value="sudah nikah">Sudah Menikah</option>
                                     </select>
                                 </div>
                                 <div>

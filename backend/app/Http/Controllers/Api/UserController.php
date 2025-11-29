@@ -113,26 +113,159 @@ class UserController extends Controller
         $request->validate([
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:6',
+            // Profile Pribadi
+            'nama_lengkap' => 'sometimes|string',
+            'nik' => 'sometimes|string',
+            'npwp' => 'nullable|string',
+            'tempat_lahir' => 'nullable|string',
+            'tanggal_lahir' => 'nullable|date',
+            'jenis_kelamin' => 'nullable|string',
+            'status_pernikahan' => 'nullable|string',
+            'golongan_darah' => 'nullable|string',
+            'kecamatan' => 'nullable|string',
+            'alamat_lengkap' => 'nullable|string',
+            'no_hp' => 'nullable|string',
+            // Profile Pekerjaan
+            'nik_karyawan' => 'sometimes|string',
+            'tanggal_masuk' => 'sometimes|date',
+            'id_jabatan' => 'sometimes|exists:jabatans,id',
+            'id_departemen' => 'sometimes|exists:departemens,id',
+            'id_tempat_kerja' => 'sometimes|exists:tempat_kerjas,id',
+            'status' => 'sometimes|string',
+            'role' => 'sometimes|string|exists:roles,name',
         ]);
 
-        $updateData = [];
-        
-        if ($request->has('email')) {
-            $updateData['email'] = $request->email;
-        }
-        
-        if ($request->has('password')) {
-            $updateData['password'] = bcrypt($request->password);
-        }
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            // Update User
+            $userData = [];
+            if ($request->has('email')) $userData['email'] = $request->email;
+            if ($request->has('password')) $userData['password'] = bcrypt($request->password);
+            if (!empty($userData)) $user->update($userData);
 
-        $user->update($updateData);
-        $user->load(['roles', 'permissions', 'profilePribadi', 'profilePekerjaan.jabatan', 'profilePekerjaan.departemen', 'profilePekerjaan.tempatKerja']);
+            // Update Role
+            if ($request->has('role')) {
+                $user->syncRoles([$request->role]);
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User updated successfully',
-            'data' => new UserResource($user),
-        ]);
+            // Update Profile Pribadi
+            $profilePribadiData = [];
+            $pribadiFields = ['nama_lengkap', 'nik', 'npwp', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'status_pernikahan', 'golongan_darah', 'kecamatan', 'alamat_lengkap', 'no_hp'];
+            foreach ($pribadiFields as $field) {
+                if ($request->has($field)) {
+                    // Map 'nik' to 'nomor_induk_kependudukan'
+                    $dbField = $field === 'nik' ? 'nomor_induk_kependudukan' : $field;
+                    $profilePribadiData[$dbField] = $request->$field;
+                }
+            }
+            
+            if (!empty($profilePribadiData)) {
+                $user->profilePribadi()->updateOrCreate(['id_user' => $user->id], $profilePribadiData);
+            }
+
+            // Update Profile Pekerjaan
+            $profilePekerjaanData = [];
+            $pekerjaanFields = ['nik_karyawan', 'tanggal_masuk', 'id_jabatan', 'id_departemen', 'id_tempat_kerja', 'status'];
+            foreach ($pekerjaanFields as $field) {
+                if ($request->has($field)) {
+                    // Map 'nik_karyawan' to 'nomor_induk_karyawan'
+                    $dbField = $field === 'nik_karyawan' ? 'nomor_induk_karyawan' : $field;
+                    $profilePekerjaanData[$dbField] = $request->$field;
+                }
+            }
+
+            if (!empty($profilePekerjaanData)) {
+                $user->profilePekerjaan()->updateOrCreate(['id_user' => $user->id], $profilePekerjaanData);
+            }
+
+            // Update Orang Tua
+            $orangTuaData = [];
+            $orangTuaFields = ['nama_ayah', 'pekerjaan_ayah', 'nama_ibu', 'pekerjaan_ibu', 'alamat_orang_tua'];
+            foreach ($orangTuaFields as $field) {
+                if ($request->has($field)) {
+                    $orangTuaData[$field] = $request->$field;
+                }
+            }
+            if (!empty($orangTuaData)) {
+                $user->orangTua()->updateOrCreate(['id_user' => $user->id], $orangTuaData);
+            }
+
+            // Update Keluarga
+            if ($request->has('keluarga')) {
+                // Expecting 'keluarga' to be an array of objects
+                $keluargaData = $request->keluarga;
+                if (is_array($keluargaData)) {
+                    // Get existing IDs to determine what to delete
+                    $existingIds = $user->keluarga()->pluck('id')->toArray();
+                    $updatedIds = [];
+
+                    foreach ($keluargaData as $item) {
+                        $dataToSave = \Illuminate\Support\Arr::except($item, ['id']);
+                        if (isset($item['id']) && in_array($item['id'], $existingIds)) {
+                            // Update existing
+                            $user->keluarga()->where('id', $item['id'])->update($dataToSave);
+                            $updatedIds[] = $item['id'];
+                        } else {
+                            // Create new
+                            $user->keluarga()->create($dataToSave);
+                        }
+                    }
+
+                    // Delete removed items
+                    $idsToDelete = array_diff($existingIds, $updatedIds);
+                    if (!empty($idsToDelete)) {
+                        $user->keluarga()->whereIn('id', $idsToDelete)->delete();
+                    }
+                }
+            }
+
+            // Update User Sosial Media
+            if ($request->has('user_sosial_media')) {
+                $sosmedData = $request->user_sosial_media;
+                if (is_array($sosmedData)) {
+                    $existingIds = $user->userSosialMedia()->pluck('id')->toArray();
+                    $updatedIds = [];
+
+                    foreach ($sosmedData as $item) {
+                        $dataToSave = \Illuminate\Support\Arr::except($item, ['id']);
+                        if (isset($item['id']) && in_array($item['id'], $existingIds)) {
+                            $user->userSosialMedia()->where('id', $item['id'])->update($dataToSave);
+                            $updatedIds[] = $item['id'];
+                        } else {
+                            $user->userSosialMedia()->create($dataToSave);
+                        }
+                    }
+
+                    $idsToDelete = array_diff($existingIds, $updatedIds);
+                    if (!empty($idsToDelete)) {
+                        $user->userSosialMedia()->whereIn('id', $idsToDelete)->delete();
+                    }
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            $user->load(['roles', 'permissions', 'profilePribadi', 'profilePekerjaan.jabatan', 'profilePekerjaan.departemen', 'profilePekerjaan.tempatKerja', 'orangTua', 'keluarga', 'userSosialMedia.sosialMedia']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User updated successfully',
+                'data' => new UserResource($user),
+            ]);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Illuminate\Support\Facades\Log::build([
+              'driver' => 'single',
+              'path' => storage_path('logs/debug_user_update.log'),
+            ])->error('Update failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update user',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

@@ -1,15 +1,15 @@
 "use client";
 
 import AccessControl from "@/components/AccessControl";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { 
-  Search, 
-  Filter, 
-  Trash2, 
-  Plus, 
-  MoreHorizontal, 
-  ChevronLeft, 
+import {
+  Search,
+  Filter,
+  Trash2,
+  Plus,
+  MoreHorizontal,
+  ChevronLeft,
   ChevronRight,
   User as UserIcon,
   FileText,
@@ -22,6 +22,90 @@ import Link from "next/link";
 import { User, Jabatan, Departemen, TempatKerja } from "@/types/auth";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { createPortal } from "react-dom";
+
+/* ============================ */
+/* Action Menu rendered via Portal */
+/* ============================ */
+function ActionMenuPortal({
+  open,
+  x,
+  y,
+  onClose,
+  userId,
+}: {
+  open: boolean;
+  x: number;
+  y: number;
+  onClose: () => void;
+  userId: number;
+}) {
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Tutup saat klik di luar
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open, onClose]);
+
+  // Tutup saat scroll/resize (opsional: bisa dihitung ulang posisinya)
+  useEffect(() => {
+    if (!open) return;
+    const onScrollOrResize = () => onClose();
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const menu = (
+    <div
+      ref={menuRef}
+      className="fixed z-[1000] w-56 bg-white rounded-md shadow-lg border border-gray-100 py-1 text-left"
+      style={{ top: y, left: x }}
+    >
+      <Link
+        href={`/hrd/profile/${userId}`}
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
+      >
+        <UserIcon className="w-4 h-4" />
+        Detail Profil
+      </Link>
+      <Link
+        href={`/hrd/absensi/${userId}`}
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
+      >
+        <Calendar className="w-4 h-4" />
+        Rekap Absensi
+      </Link>
+      <Link
+        href={`/hrd/cuti/${userId}`}
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
+      >
+        <FileText className="w-4 h-4" />
+        Rekap Cuti
+      </Link>
+      <Link
+        href={`/hrd/evaluasi/${userId}`}
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
+      >
+        <ClipboardList className="w-4 h-4" />
+        Rekap Evaluasi
+      </Link>
+    </div>
+  );
+
+  return createPortal(menu, document.body);
+}
 
 export default function HrdKelolaPegawaiPage() {
   const router = useRouter();
@@ -31,7 +115,6 @@ export default function HrdKelolaPegawaiPage() {
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
-  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -52,12 +135,51 @@ export default function HrdKelolaPegawaiPage() {
   const [tempatKerjaList, setTempatKerjaList] = useState<TempatKerja[]>([]);
   const [rolesList] = useState(['superadmin', 'kepala yayasan', 'direktur pendidikan', 'kepala hrd', 'staff hrd', 'kepala departemen', 'kepala sekolah', 'tenaga pendidik']);
 
+  // State untuk portal dropdown
+  const [menuState, setMenuState] = useState<{
+    open: boolean;
+    x: number;
+    y: number;
+    userId: number | null;
+  }>({ open: false, x: 0, y: 0, userId: null });
+
+  const openActionMenu = (e: React.MouseEvent, userId: number) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const menuWidth = 224; // w-56
+    const padding = 8;
+    const approxMenuHeight = 200;
+
+    // Default: rata kanan tombol, muncul di bawah
+    let x = rect.right - menuWidth;
+    let y = rect.bottom + padding;
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (x < padding) x = padding;
+    if (rect.right + padding + menuWidth <= vw) {
+      x = rect.right - menuWidth;
+    }
+    if (y + approxMenuHeight > vh) {
+      y = rect.top - padding - approxMenuHeight; // tampil di atas jika kebawah tidak cukup
+    }
+    // Pastikan tidak keluar layar kiri/atas
+    if (y < padding) y = padding;
+    if (x + menuWidth > vw - padding) x = vw - padding - menuWidth;
+
+    setMenuState({ open: true, x, y, userId });
+  };
+
+  const closeActionMenu = () => {
+    setMenuState(prev => ({ ...prev, open: false }));
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("auth_token");
         const headers = { Authorization: `Bearer ${token}` };
-        
+
         const [jabatanRes, departemenRes, tempatKerjaRes] = await Promise.all([
           axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/jabatan`, { headers }),
           axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/departemen`, { headers }),
@@ -93,7 +215,7 @@ export default function HrdKelolaPegawaiPage() {
       });
       const fetchedData = response.data.data;
       setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
-      
+
       // Reset form
       setFormData({
         email: '',
@@ -124,7 +246,17 @@ export default function HrdKelolaPegawaiPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         const fetchedData = response.data.data;
-        setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
+        const allUsers = Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || [];
+
+        // Filter out superadmin dan kepala yayasan
+        const filteredUsers = allUsers.filter((user: any) => {
+          const firstRole = user.roles?.[0];
+          const roleName = typeof firstRole === 'string' ? firstRole : firstRole?.name;
+          const userRole = roleName?.toLowerCase()?.trim() || '';
+          return userRole !== 'superadmin' && userRole !== 'kepala yayasan';
+        });
+
+        setUsers(filteredUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
@@ -135,33 +267,19 @@ export default function HrdKelolaPegawaiPage() {
     fetchUsers();
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (activeDropdown !== null && !(event.target as Element).closest('.action-dropdown')) {
-        setActiveDropdown(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [activeDropdown]);
-
   const calculateTenure = (startDate?: string) => {
     if (!startDate) return "-";
     const start = new Date(startDate);
     const now = new Date();
-    
+
     let years = now.getFullYear() - start.getFullYear();
     let months = now.getMonth() - start.getMonth();
-    
+
     if (months < 0) {
       years--;
       months += 12;
     }
-    
+
     return `${years} tahun ${months} bulan`;
   };
 
@@ -170,7 +288,7 @@ export default function HrdKelolaPegawaiPage() {
     const name = user.profile_pribadi?.nama_lengkap?.toLowerCase() || "";
     const email = user.email.toLowerCase();
     const jabatan = user.profile_pekerjaan?.jabatan?.nama_jabatan?.toLowerCase() || "";
-    
+
     return name.includes(searchLower) || email.includes(searchLower) || jabatan.includes(searchLower);
   });
 
@@ -187,7 +305,7 @@ export default function HrdKelolaPegawaiPage() {
   };
 
   const handleSelectUser = (id: number) => {
-    setSelectedUsers(prev => 
+    setSelectedUsers(prev =>
       prev.includes(id) ? prev.filter(userId => userId !== id) : [...prev, id]
     );
   };
@@ -199,14 +317,14 @@ export default function HrdKelolaPegawaiPage() {
 
     try {
       const token = localStorage.getItem("auth_token");
-      
+
       if (deleteTarget.type === 'single' && deleteTarget.id) {
         await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users/${deleteTarget.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success("Pegawai berhasil dihapus");
       } else if (deleteTarget.type === 'bulk') {
-        await Promise.all(selectedUsers.map(id => 
+        await Promise.all(selectedUsers.map(id =>
           axios.delete(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           })
@@ -221,7 +339,7 @@ export default function HrdKelolaPegawaiPage() {
       });
       const fetchedData = response.data.data;
       setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
-      
+
     } catch (error) {
       console.error("Error deleting user(s):", error);
       toast.error("Gagal menghapus pegawai");
@@ -238,16 +356,11 @@ export default function HrdKelolaPegawaiPage() {
     setDeleteTarget({ type: 'bulk' });
   };
 
-  const toggleDropdown = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveDropdown(activeDropdown === id ? null : id);
-  };
-
   return (
     <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
       <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
         <div className="max-w-7xl mx-auto space-y-6">
-          
+
           {/* Header */}
           <div className="flex items-center gap-4">
             <button
@@ -266,7 +379,7 @@ export default function HrdKelolaPegawaiPage() {
             {/* Actions Bar */}
             <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => setIsModalOpen(true)}
                   className="bg-sky-800 hover:bg-sky-900 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors"
                 >
@@ -274,7 +387,7 @@ export default function HrdKelolaPegawaiPage() {
                   Tambah Baru
                 </button>
                 {selectedUsers.length > 0 && (
-                  <button 
+                  <button
                     onClick={handleDeleteSelectedClick}
                     className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors"
                   >
@@ -283,7 +396,7 @@ export default function HrdKelolaPegawaiPage() {
                   </button>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
                 <button className="bg-sky-800 hover:bg-sky-900 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors">
                   Filter
@@ -295,7 +408,7 @@ export default function HrdKelolaPegawaiPage() {
             {/* Search and Pagination Controls */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <select 
+                <select
                   value={entriesPerPage}
                   onChange={(e) => {
                     setEntriesPerPage(Number(e.target.value));
@@ -312,7 +425,7 @@ export default function HrdKelolaPegawaiPage() {
 
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Search:</span>
-                <input 
+                <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => {
@@ -325,13 +438,13 @@ export default function HrdKelolaPegawaiPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
                   <tr>
                     <th className="p-3 w-10">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         onChange={handleSelectAll}
                         checked={paginatedUsers.length > 0 && selectedUsers.length === paginatedUsers.length}
                         className="rounded border-gray-300 text-sky-800 focus:ring-sky-800"
@@ -363,7 +476,7 @@ export default function HrdKelolaPegawaiPage() {
                     paginatedUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                         <td className="p-3">
-                          <input 
+                          <input
                             type="checkbox"
                             checked={selectedUsers.includes(user.id)}
                             onChange={() => handleSelectUser(user.id)}
@@ -387,60 +500,27 @@ export default function HrdKelolaPegawaiPage() {
                         </td>
                         <td className="p-3">
                           <span className={`px-2 py-1 rounded text-xs font-medium capitalize
-                            ${user.profile_pekerjaan?.status_pegawai === 'tetap' ? 'bg-green-100 text-green-700' : 
-                              user.profile_pekerjaan?.status_pegawai === 'kontrak' ? 'bg-blue-100 text-blue-700' : 
-                              user.profile_pekerjaan?.status_pegawai === 'honorer' ? 'bg-yellow-100 text-yellow-700' : 
-                              'bg-gray-100 text-gray-700'}`}>
+                            ${user.profile_pekerjaan?.status_pegawai === 'aktif' ? 'bg-emerald-100 text-emerald-700' :
+                              user.profile_pekerjaan?.status_pegawai === 'tetap' ? 'bg-green-100 text-green-700' :
+                              user.profile_pekerjaan?.status_pegawai === 'kontrak' ? 'bg-blue-100 text-blue-700' :
+                              user.profile_pekerjaan?.status_pegawai === 'honorer' ? 'bg-yellow-100 text-yellow-700' :
+                              user.profile_pekerjaan?.status_pegawai === 'magang' ? 'bg-purple-100 text-purple-700' :
+                              user.profile_pekerjaan?.status_pegawai === 'nonaktif' ? 'bg-red-100 text-red-700' :
+                              user.profile_pekerjaan?.status_pegawai === 'pensiun' ? 'bg-gray-100 text-gray-700' :
+                              user.profile_pekerjaan?.status_pegawai === 'cuti' ? 'bg-orange-100 text-orange-700' :
+                              user.profile_pekerjaan?.status_pegawai === 'skorsing' ? 'bg-rose-100 text-rose-700' :
+                              'bg-slate-100 text-slate-700'}`}>
                             {user.profile_pekerjaan?.status_pegawai || "Belum Set"}
                           </span>
                         </td>
-                        <td className="p-3 text-center relative action-dropdown">
-                          <button 
-                            onClick={(e) => toggleDropdown(user.id, e)}
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={(e) => openActionMenu(e, user.id)}
                             className="p-1 hover:bg-gray-200 rounded transition-colors"
+                            aria-label="Buka menu aksi"
                           >
                             <MoreHorizontal className="w-5 h-5 text-gray-500" />
                           </button>
-                          
-                          {activeDropdown === user.id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-100 py-1 text-left">
-                              <Link 
-                                href={`/hrd/profile/${user.id}`}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
-                              >
-                                <UserIcon className="w-4 h-4" />
-                                Detail Profil
-                              </Link>
-                              <Link 
-                                href={`/hrd/absensi/${user.id}`}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
-                              >
-                                <Calendar className="w-4 h-4" />
-                                Rekap Absensi
-                              </Link>
-                              <Link 
-                                href={`/hrd/cuti/${user.id}`}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
-                              >
-                                <FileText className="w-4 h-4" />
-                                Rekap Cuti
-                              </Link>
-                              <Link 
-                                href={`/hrd/evaluasi/${user.id}`}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
-                              >
-                                <ClipboardList className="w-4 h-4" />
-                                Rekap Evaluasi
-                              </Link>
-                              <button
-                                onClick={() => handleDeleteUserClick(user.id)}
-                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Hapus
-                              </button>
-                            </div>
-                          )}
                         </td>
                       </tr>
                     ))
@@ -455,7 +535,7 @@ export default function HrdKelolaPegawaiPage() {
                 Showing {startIndex + 1} to {Math.min(startIndex + entriesPerPage, filteredUsers.length)} of {filteredUsers.length} entries
               </div>
               <div className="flex items-center gap-1">
-                <button 
+                <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                   className="p-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -466,16 +546,15 @@ export default function HrdKelolaPegawaiPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 border rounded ${
-                      currentPage === page 
-                        ? 'bg-sky-800 text-white border-sky-800' 
-                        : 'border-gray-300 hover:bg-gray-50'
-                    }`}
+                    className={`px-3 py-1 border rounded ${currentPage === page
+                      ? 'bg-sky-800 text-white border-sky-800'
+                      : 'border-gray-300 hover:bg-gray-50'
+                      }`}
                   >
                     {page}
                   </button>
                 ))}
-                <button 
+                <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className="p-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -498,7 +577,7 @@ export default function HrdKelolaPegawaiPage() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <form onSubmit={handleSubmit} className="p-4 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -507,11 +586,11 @@ export default function HrdKelolaPegawaiPage() {
                     required
                     placeholder="Masukkan email"
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                   <input
@@ -519,7 +598,7 @@ export default function HrdKelolaPegawaiPage() {
                     required
                     placeholder="Masukkan password"
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   />
                 </div>
@@ -531,7 +610,7 @@ export default function HrdKelolaPegawaiPage() {
                     required
                     placeholder="Masukkan nama lengkap"
                     value={formData.nama_lengkap}
-                    onChange={(e) => setFormData({...formData, nama_lengkap: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, nama_lengkap: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   />
                 </div>
@@ -543,7 +622,7 @@ export default function HrdKelolaPegawaiPage() {
                     required
                     placeholder="Masukkan NIK"
                     value={formData.nik}
-                    onChange={(e) => setFormData({...formData, nik: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   />
                 </div>
@@ -555,7 +634,7 @@ export default function HrdKelolaPegawaiPage() {
                     required
                     placeholder="Masukkan NIK Karyawan"
                     value={formData.nik_karyawan}
-                    onChange={(e) => setFormData({...formData, nik_karyawan: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, nik_karyawan: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   />
                 </div>
@@ -566,7 +645,7 @@ export default function HrdKelolaPegawaiPage() {
                     type="date"
                     required
                     value={formData.tanggal_masuk}
-                    onChange={(e) => setFormData({...formData, tanggal_masuk: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, tanggal_masuk: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   />
                 </div>
@@ -576,7 +655,7 @@ export default function HrdKelolaPegawaiPage() {
                   <select
                     required
                     value={formData.id_jabatan}
-                    onChange={(e) => setFormData({...formData, id_jabatan: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, id_jabatan: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   >
                     <option value="">Pilih Jabatan</option>
@@ -591,7 +670,7 @@ export default function HrdKelolaPegawaiPage() {
                   <select
                     required
                     value={formData.id_departemen}
-                    onChange={(e) => setFormData({...formData, id_departemen: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, id_departemen: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   >
                     <option value="">Pilih Departemen</option>
@@ -606,7 +685,7 @@ export default function HrdKelolaPegawaiPage() {
                   <select
                     required
                     value={formData.id_tempat_kerja}
-                    onChange={(e) => setFormData({...formData, id_tempat_kerja: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, id_tempat_kerja: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   >
                     <option value="">Pilih Tempat Kerja</option>
@@ -621,7 +700,7 @@ export default function HrdKelolaPegawaiPage() {
                   <select
                     required
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   >
                     <option value="">Pilih Status Karyawan</option>
@@ -642,7 +721,7 @@ export default function HrdKelolaPegawaiPage() {
                   <select
                     required
                     value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                     className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800"
                   >
                     <option value="">Pilih Role</option>
@@ -671,6 +750,7 @@ export default function HrdKelolaPegawaiPage() {
             </div>
           </div>
         )}
+
         {/* Delete Confirmation Modal */}
         {deleteTarget && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -681,8 +761,8 @@ export default function HrdKelolaPegawaiPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Hapus</h3>
                 <p className="text-gray-500 mb-6">
-                  {deleteTarget.type === 'bulk' 
-                    ? `Apakah Anda yakin ingin menghapus ${selectedUsers.length} pegawai terpilih?` 
+                  {deleteTarget.type === 'bulk'
+                    ? `Apakah Anda yakin ingin menghapus ${selectedUsers.length} pegawai terpilih?`
                     : "Apakah Anda yakin ingin menghapus pegawai ini?"}
                   <br />
                   Tindakan ini tidak dapat dibatalkan.
@@ -706,6 +786,15 @@ export default function HrdKelolaPegawaiPage() {
           </div>
         )}
       </div>
+
+      {/* Render menu aksi via portal di luar layout tabel */}
+      <ActionMenuPortal
+        open={menuState.open && !!menuState.userId}
+        x={menuState.x}
+        y={menuState.y}
+        userId={menuState.userId ?? 0}
+        onClose={closeActionMenu}
+      />
     </AccessControl>
   );
 }
