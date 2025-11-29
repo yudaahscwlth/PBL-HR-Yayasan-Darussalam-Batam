@@ -65,10 +65,18 @@ export default function HRDKategoriEvaluasiPage() {
     setAlert(null);
     try {
       const res = await apiClient.kategoriEvaluasi.getAll();
-      if (res?.success) setCategories((res.data as KategoriEvaluasi[]) || []);
-      else setAlert({ type: "error", message: res?.message || "Gagal memuat kategori." });
+      console.log("API Response:", res);
+      console.log("Response success:", res?.success);
+      console.log("Response data:", res?.data);
+      if (res?.success) {
+        const data = (res.data as KategoriEvaluasi[]) || [];
+        console.log("Categories to set:", data);
+        setCategories(data);
+      } else {
+        setAlert({ type: "error", message: res?.message || "Gagal memuat kategori." });
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Error loading categories:", err);
       setAlert({ type: "error", message: "Terjadi kesalahan saat memuat data." });
     } finally {
       setIsLoading(false);
