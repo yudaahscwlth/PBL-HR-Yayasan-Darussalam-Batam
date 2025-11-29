@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { User, Jabatan, Departemen, TempatKerja } from "@/types/auth";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function HrdKelolaPegawaiPage() {
   const router = useRouter();
@@ -107,10 +108,10 @@ export default function HrdKelolaPegawaiPage() {
         status: '',
         role: ''
       });
-      alert("Pegawai berhasil ditambahkan");
+      toast.success("Pegawai berhasil ditambahkan");
     } catch (error) {
       console.error("Error creating user:", error);
-      alert("Gagal menambahkan pegawai");
+      toast.error("Gagal menambahkan pegawai");
     }
   };
 
@@ -191,6 +192,52 @@ export default function HrdKelolaPegawaiPage() {
     );
   };
 
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'single' | 'bulk'; id?: number } | null>(null);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      const token = localStorage.getItem("auth_token");
+      
+      if (deleteTarget.type === 'single' && deleteTarget.id) {
+        await axios.delete(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users/${deleteTarget.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.success("Pegawai berhasil dihapus");
+      } else if (deleteTarget.type === 'bulk') {
+        await Promise.all(selectedUsers.map(id => 
+          axios.delete(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ));
+        setSelectedUsers([]);
+        toast.success("Pegawai terpilih berhasil dihapus");
+      }
+
+      // Refresh users
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const fetchedData = response.data.data;
+      setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
+      
+    } catch (error) {
+      console.error("Error deleting user(s):", error);
+      toast.error("Gagal menghapus pegawai");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleDeleteUserClick = (id: number) => {
+    setDeleteTarget({ type: 'single', id });
+  };
+
+  const handleDeleteSelectedClick = () => {
+    setDeleteTarget({ type: 'bulk' });
+  };
+
   const toggleDropdown = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setActiveDropdown(activeDropdown === id ? null : id);
@@ -227,7 +274,10 @@ export default function HrdKelolaPegawaiPage() {
                   Tambah Baru
                 </button>
                 {selectedUsers.length > 0 && (
-                  <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors">
+                  <button 
+                    onClick={handleDeleteSelectedClick}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors"
+                  >
                     <Trash2 className="w-4 h-4" />
                     Hapus Pilihan
                   </button>
@@ -382,6 +432,13 @@ export default function HrdKelolaPegawaiPage() {
                                 <ClipboardList className="w-4 h-4" />
                                 Rekap Evaluasi
                               </Link>
+                              <button
+                                onClick={() => handleDeleteUserClick(user.id)}
+                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Hapus
+                              </button>
                             </div>
                           )}
                         </td>
@@ -611,6 +668,40 @@ export default function HrdKelolaPegawaiPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {/* Delete Confirmation Modal */}
+        {deleteTarget && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Hapus</h3>
+                <p className="text-gray-500 mb-6">
+                  {deleteTarget.type === 'bulk' 
+                    ? `Apakah Anda yakin ingin menghapus ${selectedUsers.length} pegawai terpilih?` 
+                    : "Apakah Anda yakin ingin menghapus pegawai ini?"}
+                  <br />
+                  Tindakan ini tidak dapat dibatalkan.
+                </p>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setDeleteTarget(null)}
+                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
