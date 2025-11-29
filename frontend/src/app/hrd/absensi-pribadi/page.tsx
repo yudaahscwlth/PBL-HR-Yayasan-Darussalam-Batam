@@ -424,7 +424,7 @@ export default function HRDAbsensiPribadi() {
 
         {/* Modal Tambah Absensi */}
         {showModal && (
-          <div className="fixed inset-0 backdrop-blur-md bg-white/10 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               {/* Modal Header */}
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-2xl">
@@ -546,7 +546,7 @@ export default function HRDAbsensiPribadi() {
 
         {/* File Preview Modal */}
         {showFilePreview && previewFileUrl && (
-          <div className="fixed inset-0 backdrop-blur-md bg-white/10 bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
               {/* Modal Header */}
               <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
