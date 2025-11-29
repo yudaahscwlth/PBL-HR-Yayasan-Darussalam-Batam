@@ -246,7 +246,7 @@ export default function HRDEvaluasiPage() {
                     <select
                       value={selectedUser}
                       onChange={(e) => setSelectedUser(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-800 focus:border-sky-800 outline-none transition-all"
+                      className="w-full px-3 text-gray-700 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-800 focus:border-sky-800 outline-none transition-all"
                       required
                     >
                       <option value="">Pilih Pegawai</option>
@@ -265,7 +265,7 @@ export default function HRDEvaluasiPage() {
                     <select
                       value={selectedTahun}
                       onChange={(e) => setSelectedTahun(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-800 focus:border-sky-800 outline-none transition-all"
+                      className="w-full text-gray-700 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-800 focus:border-sky-800 outline-none transition-all"
                       required
                     >
                       <option value="">Pilih Tahun Ajaran</option>
