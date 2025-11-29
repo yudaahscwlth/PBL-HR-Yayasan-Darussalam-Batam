@@ -383,7 +383,7 @@ export const kepalaDepartemenMenuConfig: MenuSection[] = [
     category: "Kepala Departemen",
     items: [
       {
-        title: "Pegawai",
+        title: "Tenaga Pendidik",
         icon: (
           <svg
             className="w-8 h-8 text-[#1e4d8b]"
