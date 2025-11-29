@@ -108,6 +108,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [DepartemenController::class, 'update']);
         Route::delete('/{id}', [DepartemenController::class, 'destroy']);
         Route::get('/users/list', [DepartemenController::class, 'getUsers']);
+        Route::get('/{id}/members', [DepartemenController::class, 'getMembers']);
     });
 
     // Kategori Evaluasi routes

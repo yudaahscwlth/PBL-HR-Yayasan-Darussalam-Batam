@@ -214,4 +214,31 @@ class DepartemenController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get members of a specific department
+     * 
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getMembers($id)
+    {
+        try {
+            $users = User::whereHas('profilePekerjaan', function($q) use ($id) {
+                $q->where('id_departemen', $id);
+            })->with('profilePribadi')->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data anggota departemen berhasil diambil',
+                'data' => $users
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data anggota',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

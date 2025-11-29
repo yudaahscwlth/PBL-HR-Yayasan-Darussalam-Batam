@@ -23,19 +23,7 @@ class KategoriEvaluasiController extends Controller
             ], 401);
         }
 
-        if (!$this->userCanManage($user)) {
-            $userRoles = $user->roles->pluck('name')->toArray();
-            \Log::warning('Unauthorized access attempt to kategori evaluasi', [
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'user_roles' => $userRoles,
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized to manage kategori evaluasi. Required roles: kepala hrd, staff hrd, or superadmin',
-                'user_roles' => $userRoles,
-            ], 403);
-        }
+
 
         $kategoriEvaluasi = KategoriEvaluasi::orderBy('nama', 'asc')->get();
 
