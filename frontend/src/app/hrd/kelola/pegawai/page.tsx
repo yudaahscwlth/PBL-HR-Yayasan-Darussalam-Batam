@@ -116,6 +116,13 @@ export default function HrdKelolaPegawaiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Filter states
+  const [showFilter, setShowFilter] = useState(false);
+  const [selectedKecamatan, setSelectedKecamatan] = useState("");
+  const [selectedGolonganDarah, setSelectedGolonganDarah] = useState("");
+  const [selectedRentangUsia, setSelectedRentangUsia] = useState("");
+  const [kecamatanList, setKecamatanList] = useState<Array<{id: string; name: string}>>([]);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -267,6 +274,20 @@ export default function HrdKelolaPegawaiPage() {
     fetchUsers();
   }, []);
 
+  // Load kecamatan data from JSON
+  useEffect(() => {
+    const loadKecamatan = async () => {
+      try {
+        const response = await fetch('/kecamatan-indonesia.json');
+        const data = await response.json();
+        setKecamatanList(data);
+      } catch (error) {
+        console.error("Error loading kecamatan data:", error);
+      }
+    };
+    loadKecamatan();
+  }, []);
+
   const calculateTenure = (startDate?: string) => {
     if (!startDate) return "-";
     const start = new Date(startDate);
@@ -283,13 +304,65 @@ export default function HrdKelolaPegawaiPage() {
     return `${years} tahun ${months} bulan`;
   };
 
+  const calculateAge = (birthDate?: string) => {
+    if (!birthDate) return null;
+    const birth = new Date(birthDate);
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    const monthDiff = now.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const filteredUsers = users.filter(user => {
+    // Search filter
     const searchLower = searchQuery.toLowerCase();
     const name = user.profile_pribadi?.nama_lengkap?.toLowerCase() || "";
     const email = user.email.toLowerCase();
     const jabatan = user.profile_pekerjaan?.jabatan?.nama_jabatan?.toLowerCase() || "";
+    const matchesSearch = name.includes(searchLower) || email.includes(searchLower) || jabatan.includes(searchLower);
 
-    return name.includes(searchLower) || email.includes(searchLower) || jabatan.includes(searchLower);
+    // Kecamatan filter
+    const kecamatan = user.profile_pribadi?.kecamatan || "";
+    const matchesKecamatan = !selectedKecamatan || kecamatan === selectedKecamatan;
+
+    // Golongan darah filter
+    const golonganDarah = user.profile_pribadi?.golongan_darah?.trim().toUpperCase() || "";
+    const matchesGolonganDarah = !selectedGolonganDarah || golonganDarah === selectedGolonganDarah.toUpperCase();
+
+    // Age range filter
+    let matchesAgeRange = true;
+    if (selectedRentangUsia) {
+      const age = calculateAge(user.profile_pribadi?.tanggal_lahir);
+      if (age !== null) {
+        switch (selectedRentangUsia) {
+          case "18-25":
+            matchesAgeRange = age >= 18 && age <= 25;
+            break;
+          case "26-35":
+            matchesAgeRange = age >= 26 && age <= 35;
+            break;
+          case "36-45":
+            matchesAgeRange = age >= 36 && age <= 45;
+            break;
+          case "46-55":
+            matchesAgeRange = age >= 46 && age <= 55;
+            break;
+          case "56+":
+            matchesAgeRange = age >= 56;
+            break;
+          default:
+            matchesAgeRange = true;
+        }
+      } else {
+        // If no birth date, don't filter them out - they just won't match age filters
+        matchesAgeRange = false;
+      }
+    }
+
+    return matchesSearch && matchesKecamatan && matchesGolonganDarah && matchesAgeRange;
   });
 
   const totalPages = Math.ceil(filteredUsers.length / entriesPerPage);
@@ -381,7 +454,7 @@ export default function HrdKelolaPegawaiPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="bg-sky-800 hover:bg-sky-900 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors"
+                  className="bg-sky-800 hover:bg-sky-700 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Tambah Baru
@@ -398,12 +471,99 @@ export default function HrdKelolaPegawaiPage() {
               </div>
 
               <div className="flex gap-2">
-                <button className="bg-sky-800 hover:bg-sky-900 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors">
+                <button 
+                  onClick={() => setShowFilter(!showFilter)}
+                  className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+                    showFilter 
+                      ? 'bg-sky-800 text-white hover:bg-sky-700' 
+                      : 'bg-sky-800 hover:bg-sky-700 text-white'
+                  }`}
+                >
                   Filter
                   <Filter className="w-4 h-4" />
                 </button>
               </div>
             </div>
+
+            {/* Filter Panel */}
+            {showFilter && (
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Kecamatan
+                    </label>
+                    <select
+                      value={selectedKecamatan}
+                      onChange={(e) => {
+                        setSelectedKecamatan(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800 text-sm"
+                    >
+                      <option value="">Semua Kecamatan</option>
+                      {kecamatanList.map(kec => (
+                        <option key={kec.id} value={kec.name}>{kec.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Golongan Darah
+                    </label>
+                    <select
+                      value={selectedGolonganDarah}
+                      onChange={(e) => {
+                        setSelectedGolonganDarah(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800 text-sm"
+                    >
+                      <option value="">Semua Golongan Darah</option>
+                      {['A', 'B', 'AB', 'O'].map(gol => (
+                        <option key={gol} value={gol}>{gol}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Rentang Usia
+                    </label>
+                    <select
+                      value={selectedRentangUsia}
+                      onChange={(e) => {
+                        setSelectedRentangUsia(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-sky-800 text-sm"
+                    >
+                      <option value="">Semua Usia</option>
+                      <option value="18-25">18-25 tahun</option>
+                      <option value="26-35">26-35 tahun</option>
+                      <option value="36-45">36-45 tahun</option>
+                      <option value="46-55">46-55 tahun</option>
+                      <option value="56+">56 tahun keatas</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-end">
+                    <button
+                      onClick={() => {
+                        setSelectedKecamatan("");
+                        setSelectedGolonganDarah("");
+                        setSelectedRentangUsia("");
+                        setCurrentPage(1);
+                      }}
+                      className="w-full bg-sky-800 hover:bg-sky-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                    >
+                      Reset Filter
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Search and Pagination Controls */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
