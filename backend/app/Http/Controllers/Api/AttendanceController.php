@@ -436,6 +436,50 @@ class AttendanceController extends Controller
     }
 
     /**
+     * Get attendance history for a specific user (for HRD/Admin)
+     */
+    public function getUserHistory(Request $request, $userId): JsonResponse
+    {
+        $authUser = $request->user();
+        
+        // Check if user has permission to view other users' attendance
+        $isAdmin = $authUser->hasAnyRole(['superadmin']);
+        $isHRD = $authUser->hasAnyRole(['kepala hrd', 'staff hrd']);
+        
+        if (!$isAdmin && !$isHRD && $authUser->id != $userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to view this user\'s attendance',
+            ], 403);
+        }
+
+        // Build query
+        $query = Absensi::where('id_user', $userId);
+        
+        // Apply date filter only if provided
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+            $query->whereBetween('tanggal', [$startDate, $endDate]);
+        }
+        
+        $attendance = $query->with([
+                'user.profilePekerjaan.departemen',
+                'user.profilePekerjaan.tempatKerja',
+                'user.profilePekerjaan.jabatan',
+                'user.profilePribadi'
+            ])
+            ->orderBy('tanggal', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User attendance history retrieved successfully',
+            'data' => $attendance,
+        ]);
+    }
+
+    /**
      * Get all attendance records for today (for HRD/Admin)
      */
     public function getTodayAll(Request $request): JsonResponse

@@ -64,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/today', [AttendanceController::class, 'getToday']);
         Route::get('/today-all', [AttendanceController::class, 'getTodayAll']);
         Route::get('/history', [AttendanceController::class, 'getHistory']);
+        Route::get('/user/{userId}', [AttendanceController::class, 'getUserHistory']);
         Route::get('/{id}/log', [AttendanceController::class, 'getLog']);
     });
 

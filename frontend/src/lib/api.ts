@@ -369,6 +369,14 @@ export const apiClient = {
       return response.data;
     },
 
+    getUserHistory: async (
+      userId: number,
+      params?: Record<string, unknown>
+    ): Promise<ApiResponse> => {
+      const response = await api.get(`/attendance/user/${userId}`, { params });
+      return response.data;
+    },
+
     getLog: async (id: number): Promise<ApiResponse> => {
       const response = await api.get(`/attendance/${id}/log`);
       return response.data;
