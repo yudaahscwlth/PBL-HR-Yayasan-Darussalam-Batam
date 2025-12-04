@@ -397,7 +397,10 @@ export default function KelolaJabatan() {
                         </svg>
                         <span className="text-sm font-medium">Hapus</span>
                       </button>
-                      <button className="flex-1 flex items-center justify-center gap-2 bg-gray-50 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                      <button
+                        onClick={() => router.push(`/hrd/jabatan/${item.id}/jam-kerja`)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-gray-50 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
                         <svg
                           className="w-4 h-4"
                           fill="none"
