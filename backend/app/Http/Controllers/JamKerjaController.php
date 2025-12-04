@@ -63,13 +63,18 @@ class JamKerjaController extends Controller
                     continue;
                 }
 
+                $isSunday = $hari === 'minggu';
+                $isLibur = $isSunday ? true : (bool) $request->is_libur;
+
                 JamKerja::create([
                     'id_jabatan' => $request->id_jabatan,
                     'hari'       => $hari,
-                    'jam_masuk'  => $request->jam_masuk,
-                    'jam_pulang' => $request->jam_pulang,
-                    'is_libur'   => $request->is_libur,
-                    'keterangan' => $request->keterangan,
+                    'jam_masuk'  => $isLibur ? null : $request->jam_masuk,
+                    'jam_pulang' => $isLibur ? null : $request->jam_pulang,
+                    'is_libur'   => $isLibur,
+                    'keterangan' => $isLibur
+                        ? ($request->keterangan ?? 'Libur')
+                        : ($request->keterangan ?? null),
                 ]);
             }
 
@@ -128,11 +133,16 @@ class JamKerjaController extends Controller
         try {
             $jamKerja = JamKerja::where('id_jabatan',$id_jabatan)->where('id',$id_jam_kerja)->firstOrFail();
 
+            $isSunday = $jamKerja->hari === 'minggu';
+            $isLibur = $isSunday ? true : (bool) $request->is_libur;
+
             $jamKerja->update([
-                'jam_masuk'  => $request->jam_masuk,
-                'jam_pulang' => $request->jam_pulang,
-                'is_libur'   => $request->is_libur,
-                'keterangan' => $request->keterangan,
+                'jam_masuk'  => $isLibur ? null : $request->jam_masuk,
+                'jam_pulang' => $isLibur ? null : $request->jam_pulang,
+                'is_libur'   => $isLibur,
+                'keterangan' => $isLibur
+                    ? ($request->keterangan ?? 'Libur')
+                    : ($request->keterangan ?? null),
             ]);
 
             return redirect()->back()->with([

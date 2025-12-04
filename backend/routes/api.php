@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\TempatKerjaController;
 use App\Http\Controllers\Api\SosialMediaController;
 use App\Http\Controllers\Api\JabatanController;
+use App\Http\Controllers\Api\JamKerjaController;
 use App\Http\Controllers\Api\DepartemenController;
 use App\Http\Controllers\Api\KategoriEvaluasiController as KategoriEvaluasiController;
 use App\Http\Controllers\Api\TahunAjaranController;
@@ -100,6 +101,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Jabatan routes
     Route::apiResource('jabatan', JabatanController::class);
+
+    // Jam Kerja routes per jabatan
+    Route::prefix('jabatan/{jabatanId}/jam-kerja')->group(function () {
+        Route::get('/', [JamKerjaController::class, 'index']);
+        Route::post('/', [JamKerjaController::class, 'store']);
+        Route::put('/{jamKerjaId}', [JamKerjaController::class, 'update']);
+        Route::delete('/{jamKerjaId}', [JamKerjaController::class, 'destroy']);
+    });
 
     // Departemen routes
     Route::prefix('departemen')->group(function () {
