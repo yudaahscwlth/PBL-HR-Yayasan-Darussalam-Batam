@@ -27,6 +27,7 @@ interface ProfileData {
     kecamatan: string;
     alamat_lengkap: string;
     no_hp: string;
+    nomor_rekening: string | null;
     foto: string | null;
   };
 
@@ -183,6 +184,15 @@ export default function ProfileView({ allowedRoles, editPath }: ProfileViewProps
                                 <div className="flex items-center gap-2 text-slate-800">
                                     <Phone className="w-4 h-4 text-slate-400" />
                                     <span className={valueClass}>{profileData.profile_pribadi?.no_hp || "-"}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <p className={labelClass}>Nomor Rekening</p>
+                                <div className="flex items-center gap-2 text-slate-800">
+                                    <CreditCard className="w-4 h-4 text-slate-400" />
+                                    <span className={valueClass}>
+                                        {profileData.profile_pribadi?.nomor_rekening || "-"}
+                                    </span>
                                 </div>
                             </div>
                             <div>

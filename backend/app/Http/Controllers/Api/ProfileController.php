@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ProfilePribadi;
 use App\Models\ProfilePekerjaan;
+use App\Models\SlipGaji;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -68,7 +69,7 @@ class ProfileController extends Controller
         $user = $request->user();
         
         $request->validate([
-            'email' => 'required|unique:users,email,' . $user->email . ',email|email:dns',
+            'email' => 'required|unique:users,email,' . $user->id . ',id|email:dns',
             'nomor_induk_kependudukan' => 'required',
             'nama_lengkap' => 'required|string|max:255',
             'tempat_lahir' => 'nullable|string',
@@ -89,18 +90,27 @@ class ProfileController extends Controller
             'pekerjaan_ibu' => 'nullable|string',
             'alamat_orang_tua' => 'nullable|string',
 
-            // Validasi untuk keluarga (array)
+            // Validasi untuk keluarga (array) - hanya validasi jika ada data
+            'id_keluarga' => 'nullable|array',
             'id_keluarga.*' => 'nullable|exists:keluargas,id',
-            'nama.*' => 'required|string',
-            'hubungan.*' => 'required|string',
-            'tanggal_lahir_keluarga.*' => 'required|date',
-            'pekerjaan.*' => 'required|string',
+            'nama' => 'nullable|array',
+            'nama.*' => 'nullable|string',
+            'hubungan' => 'nullable|array',
+            'hubungan.*' => 'nullable|string',
+            'tanggal_lahir_keluarga' => 'nullable|array',
+            'tanggal_lahir_keluarga.*' => 'nullable|date',
+            'pekerjaan' => 'nullable|array',
+            'pekerjaan.*' => 'nullable|string',
 
-            // validasi user sosmed
+            // validasi user sosmed - hanya validasi jika ada data
+            'id_user_sosmed' => 'nullable|array',
             'id_user_sosmed.*' => 'nullable|exists:user_sosial_media,id',
-            'id_platform.*' => 'required|exists:sosial_media,id',
-            'username.*' => 'required|string|max:255',
-            'link.*' => 'required|url|max:255',
+            'id_platform' => 'nullable|array',
+            'id_platform.*' => 'nullable|exists:sosial_media,id',
+            'username' => 'nullable|array',
+            'username.*' => 'nullable|string|max:255',
+            'link' => 'nullable|array',
+            'link.*' => 'nullable|url|max:255',
         ], [
             // Pesan error kustom
             'email.required' => 'Email wajib diisi.',
@@ -157,6 +167,7 @@ class ProfileController extends Controller
                 'kecamatan',
                 'alamat_lengkap',
                 'no_hp',
+                'nomor_rekening',
             ]);
 
             if ($foto) {
@@ -184,7 +195,21 @@ class ProfileController extends Controller
             $tanggal_lahir_keluarga = $request->input('tanggal_lahir_keluarga', []);
             $pekerjaan = $request->input('pekerjaan', []);
 
-            for ($i = 0; $i < count($nama); $i++) {
+            // Pastikan semua array memiliki panjang yang sama
+            $maxCount = max(
+                count($id_keluarga),
+                count($nama),
+                count($hubungan),
+                count($tanggal_lahir_keluarga),
+                count($pekerjaan)
+            );
+
+            for ($i = 0; $i < $maxCount; $i++) {
+                // Skip jika data tidak lengkap
+                if (empty($nama[$i]) || empty($hubungan[$i]) || empty($tanggal_lahir_keluarga[$i]) || empty($pekerjaan[$i])) {
+                    continue;
+                }
+
                 $id = $id_keluarga[$i] ?? null;
 
                 $user->keluarga()->updateOrCreate(
@@ -205,7 +230,20 @@ class ProfileController extends Controller
             $username = $request->input('username', []);
             $link = $request->input('link', []);
 
-            for ($i = 0; $i < count($id_platform); $i++) {
+            // Pastikan semua array memiliki panjang yang sama
+            $maxCount = max(
+                count($id_user_sosmed),
+                count($id_platform),
+                count($username),
+                count($link)
+            );
+
+            for ($i = 0; $i < $maxCount; $i++) {
+                // Skip jika data tidak lengkap
+                if (empty($id_platform[$i]) || empty($username[$i]) || empty($link[$i])) {
+                    continue;
+                }
+
                 $id = $id_user_sosmed[$i] ?? null;
 
                 $user->userSosialMedia()->updateOrCreate(
@@ -236,9 +274,14 @@ class ProfileController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollback();
+            \Log::error('Profile update error: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update profile: ' . $e->getMessage(),
+                'error' => config('app.debug') ? $e->getTraceAsString() : null,
             ], 500);
         }
     }
