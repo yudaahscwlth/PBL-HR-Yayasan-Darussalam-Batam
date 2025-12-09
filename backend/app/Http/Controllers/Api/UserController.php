@@ -117,6 +117,7 @@ class UserController extends Controller
             'nama_lengkap' => 'sometimes|string',
             'nik' => 'sometimes|string',
             'npwp' => 'nullable|string',
+            'nomor_rekening' => 'nullable|string',
             'tempat_lahir' => 'nullable|string',
             'tanggal_lahir' => 'nullable|date',
             'jenis_kelamin' => 'nullable|string',
@@ -150,7 +151,7 @@ class UserController extends Controller
 
             // Update Profile Pribadi
             $profilePribadiData = [];
-            $pribadiFields = ['nama_lengkap', 'nik', 'npwp', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'status_pernikahan', 'golongan_darah', 'kecamatan', 'alamat_lengkap', 'no_hp'];
+            $pribadiFields = ['nama_lengkap', 'nik', 'npwp', 'nomor_rekening', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'status_pernikahan', 'golongan_darah', 'kecamatan', 'alamat_lengkap', 'no_hp'];
             foreach ($pribadiFields as $field) {
                 if ($request->has($field)) {
                     // Map 'nik' to 'nomor_induk_kependudukan'

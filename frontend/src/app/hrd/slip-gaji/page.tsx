@@ -102,6 +102,7 @@ export default function HRDSlipGaji() {
   const [uploadResult, setUploadResult] = useState<any>(null);
   const [mySlipGajiData, setMySlipGajiData] = useState<SlipGaji[]>([]);
   const [isLoadingMySlipGaji, setIsLoadingMySlipGaji] = useState(false);
+  const [nomorRekeningManual, setNomorRekeningManual] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -363,11 +364,13 @@ export default function HRDSlipGaji() {
     });
     setSelectedUserId(null);
     setEmployeeData(null);
+    setNomorRekeningManual("");
   };
 
   const handleUserSelect = async (userId: number) => {
     setSelectedUserId(userId);
     setFormData((prev) => ({ ...prev, id_user: userId.toString() }));
+    setNomorRekeningManual("");
     await loadEmployeeData(userId);
     // Nomor rekening akan diisi otomatis di loadEmployeeData
   };
@@ -375,14 +378,31 @@ export default function HRDSlipGaji() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Prepare slip gaji data
       const data = {
         id_user: parseInt(formData.id_user),
         tanggal: formData.tanggal,
         total_gaji: parseFloat(formData.total_gaji),
         keterangan: formData.keterangan || undefined,
+        nomor_rekening: nomorRekeningManual || employeeData?.nomor_rekening || undefined,
       };
 
+      // Create slip gaji
       await apiClient.slipGaji.create(data);
+
+      // If nomor rekening was entered manually and employee doesn't have one in profile,
+      // update the employee's profile with the new nomor rekening
+      if (nomorRekeningManual && !employeeData?.nomor_rekening) {
+        try {
+          await apiClient.users.update(parseInt(formData.id_user), {
+            nomor_rekening: nomorRekeningManual,
+          });
+          console.log("Nomor rekening berhasil disimpan ke profile karyawan");
+        } catch (profileError: any) {
+          console.error("Error updating profile with nomor rekening:", profileError);
+          // Don't fail the entire operation if profile update fails
+        }
+      }
 
       await loadSlipGajiData();
       await loadEmployeesByPaymentStatus(); // Reload payment status
@@ -1327,9 +1347,20 @@ export default function HRDSlipGaji() {
                       </div>
                     )}
                     {!employeeData?.nomor_rekening && selectedUserId && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                        <p className="text-sm text-yellow-800">
-                          <span className="font-medium">Peringatan:</span> Nomor rekening belum tersedia di profile karyawan.
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nomor Rekening *
+                        </label>
+                        <input
+                          type="text"
+                          value={nomorRekeningManual}
+                          onChange={(e) => setNomorRekeningManual(e.target.value)}
+                          required
+                          placeholder="Masukkan nomor rekening"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-yellow-600 mt-1">
+                          ⚠ Nomor rekening belum tersedia di profile karyawan. Silakan isi manual.
                         </p>
                       </div>
                     )}
