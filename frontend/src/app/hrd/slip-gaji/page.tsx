@@ -103,6 +103,10 @@ export default function HRDSlipGaji() {
   const [mySlipGajiData, setMySlipGajiData] = useState<SlipGaji[]>([]);
   const [isLoadingMySlipGaji, setIsLoadingMySlipGaji] = useState(false);
   const [nomorRekeningManual, setNomorRekeningManual] = useState("");
+  
+  // Delete confirmation modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -415,20 +419,30 @@ export default function HRDSlipGaji() {
   };
 
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus slip gaji ini?")) {
-      return;
-    }
+  const handleDelete = (id: number) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
 
     try {
-      await apiClient.slipGaji.delete(id);
+      await apiClient.slipGaji.delete(deleteId);
       await loadSlipGajiData();
       await loadEmployeesByPaymentStatus(); // Reload payment status
       toast.success("Slip gaji berhasil dihapus");
+      setShowDeleteModal(false);
+      setDeleteId(null);
     } catch (error: any) {
       console.error("Error deleting slip gaji:", error);
       toast.error(error.response?.data?.message || "Gagal menghapus slip gaji");
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteId(null);
   };
 
   const handleDownloadTemplate = async () => {
@@ -697,7 +711,7 @@ export default function HRDSlipGaji() {
                   <select
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                    className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm min-h-[44px]"
+                    className=" text-gray-800 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm min-h-[44px]"
                   >
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                       <option key={month} value={month}>
@@ -711,7 +725,7 @@ export default function HRDSlipGaji() {
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm min-h-[44px]"
+                    className="text-gray-800 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm min-h-[44px]"
                   >
                     {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
                       <option key={year} value={year}>
@@ -769,7 +783,7 @@ export default function HRDSlipGaji() {
                       setUnpaidPageSize(Number(e.target.value));
                       setUnpaidCurrentPage(1);
                     }}
-                    className="px-2 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
+                    className="text-gray-800 px-2 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
                   >
                     {[1, 2, 3, 4, 5].map((size) => (
                       <option key={size} value={size}>
@@ -829,7 +843,7 @@ export default function HRDSlipGaji() {
                   
                   {/* Pagination untuk Karyawan Belum Digaji */}
                   {Math.ceil(unpaidEmployees.length / unpaidPageSize) > 1 && (
-                    <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 p-3 sm:p-4 border-t">
+                    <div className="text-gray-800 flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 p-3 sm:p-4 border-t">
                       <div className="text-xs sm:text-sm text-gray-600 text-center xs:text-left">
                         <span className="hidden sm:inline">
                           Menampilkan {(unpaidCurrentPage - 1) * unpaidPageSize + 1} sampai{" "}
@@ -952,7 +966,7 @@ export default function HRDSlipGaji() {
                   
                   {/* Pagination untuk Karyawan Sudah Digaji */}
                   {Math.ceil(paidEmployees.length / paidPageSize) > 1 && (
-                    <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 p-3 sm:p-4 border-t">
+                    <div className="text-gray-800 flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 p-3 sm:p-4 border-t">
                       <div className="text-xs sm:text-sm text-gray-600 text-center xs:text-left">
                         <span className="hidden sm:inline">
                           Menampilkan {(paidCurrentPage - 1) * paidPageSize + 1} sampai{" "}
@@ -1252,17 +1266,17 @@ export default function HRDSlipGaji() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <span className="text-gray-600">Nama:</span>{" "}
-                        <span className="font-medium">
+                        <span className="font-medium text-gray-800">
                           {employeeData.nama}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">NIK:</span>{" "}
-                        <span className="font-medium">{employeeData.nik}</span>
+                        <span className="font-medium text-gray-800">{employeeData.nik}</span>
                       </div>
                       <div>
                         <span className="text-gray-600">Tempat, Tgl Lahir:</span>{" "}
-                        <span className="font-medium">
+                        <span className="font-medium text-gray-800">
                           {employeeData.tempat_lahir},{" "}
                           {employeeData.tanggal_lahir
                             ? formatDate(employeeData.tanggal_lahir)
@@ -1271,13 +1285,13 @@ export default function HRDSlipGaji() {
                       </div>
                       <div>
                         <span className="text-gray-600">Departemen:</span>{" "}
-                        <span className="font-medium">
+                        <span className="font-medium text-gray-800">
                           {employeeData.departemen}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">Jabatan:</span>{" "}
-                        <span className="font-medium">
+                        <span className="font-medium text-gray-800">
                           {employeeData.jabatan}
                         </span>
                       </div>
@@ -1301,7 +1315,7 @@ export default function HRDSlipGaji() {
                         }}
                         required
                         disabled={isLoadingEmployees}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        className="text-gray-800 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       >
                         <option value="">
                           {isLoadingEmployees 
@@ -1348,7 +1362,7 @@ export default function HRDSlipGaji() {
                           setFormData({ ...formData, tanggal: e.target.value })
                         }
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="text-gray-800 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -1366,7 +1380,7 @@ export default function HRDSlipGaji() {
                         }
                         required
                         placeholder="0"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="text-gray-800 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -1390,7 +1404,7 @@ export default function HRDSlipGaji() {
                           onChange={(e) => setNomorRekeningManual(e.target.value)}
                           required
                           placeholder="Masukkan nomor rekening"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="text-gray-800 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <p className="text-xs text-yellow-600 mt-1">
                           ⚠ Nomor rekening belum tersedia di profile karyawan. Silakan isi manual.
@@ -1409,7 +1423,7 @@ export default function HRDSlipGaji() {
                         }
                         rows={3}
                         placeholder="Keterangan (opsional)"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="text-gray-800 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -1606,6 +1620,66 @@ export default function HRDSlipGaji() {
                     <li>Upload file Excel yang sudah diisi</li>
                     <li>Sistem akan memvalidasi dan mengimport data</li>
                   </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div 
+            className="fixed inset-0 bg-white/50 flex items-center justify-center z-50 p-3 sm:p-4 animate-fadeIn"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                cancelDelete();
+              }
+            }}
+          >
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-slideUp">
+              {/* Modal Header */}
+              <div className="p-4 sm:p-6 text-center">
+                {/* Warning Icon */}
+                <div className="mx-auto flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-red-100 mb-4">
+                  <svg
+                    className="h-6 w-6 sm:h-7 sm:w-7 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                  Hapus Slip Gaji?
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm sm:text-base text-gray-600 mb-6">
+                  Apakah Anda yakin ingin menghapus slip gaji ini? Tindakan ini tidak dapat dibatalkan.
+                </p>
+
+                {/* Buttons */}
+                <div className="flex flex-col xs:flex-row gap-3 justify-center">
+                  <button
+                    onClick={cancelDelete}
+                    className="px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors font-medium min-h-[44px] flex-1 xs:flex-none"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="px-4 sm:px-6 py-2.5 sm:py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium min-h-[44px] flex-1 xs:flex-none"
+                  >
+                    Ya, Hapus
+                  </button>
                 </div>
               </div>
             </div>
