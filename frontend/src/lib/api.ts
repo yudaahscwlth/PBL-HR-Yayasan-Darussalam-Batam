@@ -573,6 +573,235 @@ export const apiClient = {
       return response.data;
     },
   },
+
+  // Slip Gaji endpoints
+  slipGaji: {
+    getAll: async (params?: Record<string, unknown>): Promise<ApiResponse> => {
+      const response = await api.get("/slip-gaji", { params });
+      return response.data;
+    },
+
+    getById: async (id: number): Promise<ApiResponse> => {
+      const response = await api.get(`/slip-gaji/${id}`);
+      return response.data;
+    },
+
+    create: async (data: {
+      id_user: number;
+      tanggal: string;
+      total_gaji: number;
+      nomor_rekening?: string;
+      keterangan?: string;
+    }): Promise<ApiResponse> => {
+      const response = await api.post("/slip-gaji", data);
+      return response.data;
+    },
+
+    update: async (
+      id: number,
+      data: {
+        id_user?: number;
+        tanggal?: string;
+        total_gaji?: number;
+        nomor_rekening?: string;
+        keterangan?: string;
+      }
+    ): Promise<ApiResponse> => {
+      const response = await api.put(`/slip-gaji/${id}`, data);
+      return response.data;
+    },
+
+    delete: async (id: number): Promise<ApiResponse> => {
+      const response = await api.delete(`/slip-gaji/${id}`);
+      return response.data;
+    },
+
+    getUserHistory: async (
+      userId: number,
+      params?: Record<string, unknown>
+    ): Promise<ApiResponse> => {
+      const response = await api.get(`/slip-gaji/user/${userId}`, { params });
+      return response.data;
+    },
+
+    getEmployeeData: async (userId: number): Promise<ApiResponse> => {
+      const response = await api.get(`/slip-gaji/employee/${userId}/data`);
+      return response.data;
+    },
+
+    getEmployeesByPaymentStatus: async (month?: number, year?: number): Promise<ApiResponse> => {
+      const params: Record<string, unknown> = {};
+      if (month) params.month = month;
+      if (year) params.year = year;
+      const response = await api.get("/slip-gaji/employees-by-payment-status", { params });
+      return response.data;
+    },
+
+    uploadExcel: async (file: File): Promise<ApiResponse> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await api.post("/slip-gaji/upload-excel", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    },
+
+    downloadPDF: async (id: number): Promise<void> => {
+      try {
+        // Get token for authorization
+        const token = localStorage.getItem("auth_token");
+        
+        // Create a direct axios request to bypass interceptors that might modify blob
+        const response = await axios.get(
+          `${API_CONFIG.BASE_URL}/api/slip-gaji/${id}/download-pdf`,
+          {
+            responseType: "blob",
+            headers: {
+              Accept: "application/pdf",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+            withCredentials: true,
+          }
+        );
+        
+        // Verify response is blob
+        if (!(response.data instanceof Blob)) {
+          // Try to read as text to see error message
+          const text = await response.data.text();
+          try {
+            const json = JSON.parse(text);
+            throw new Error(json.message || "Gagal download PDF");
+          } catch {
+            throw new Error("Gagal download PDF");
+          }
+        }
+        
+        // Create download link
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        
+        // Get filename from Content-Disposition header or use default
+        const contentDisposition = response.headers["content-disposition"];
+        let filename = `slip_gaji_${id}.pdf`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+          if (filenameMatch) {
+            filename = filenameMatch[1];
+          }
+        }
+        
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error: any) {
+        console.error("Error downloading PDF:", error);
+        throw error;
+      }
+    },
+
+    downloadTemplate: async (): Promise<Blob> => {
+      try {
+        // Get token for authorization
+        const token = localStorage.getItem("auth_token");
+        
+        // Create a direct axios request to bypass interceptors that might modify blob
+        const response = await axios.get(
+          `${API_CONFIG.BASE_URL}/api/slip-gaji/download-template`,
+          {
+            responseType: "blob",
+            headers: {
+              Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+            withCredentials: true,
+          }
+        );
+        
+        // Verify response is blob
+        if (!(response.data instanceof Blob)) {
+          // Try to read as text to see error message
+          const text = await new Response(response.data).text();
+          try {
+            const json = JSON.parse(text);
+            throw new Error(json.message || "Gagal download template");
+          } catch {
+            throw new Error("Response bukan file Excel yang valid");
+          }
+        }
+        
+        return response.data;
+      } catch (error: any) {
+        console.error("Download template error:", error);
+        console.error("Error response:", error.response);
+        console.error("Error response data:", error.response?.data);
+        
+        // If error response is blob, try to parse it as JSON
+        if (error.response?.data instanceof Blob) {
+          try {
+            const text = await error.response.data.text();
+            console.log("Blob text content:", text);
+            const json = JSON.parse(text);
+            throw new Error(json.message || json.error?.message || "Gagal download template");
+          } catch (parseError) {
+            console.error("Failed to parse blob as JSON:", parseError);
+            throw new Error("Gagal download template: Response tidak valid");
+          }
+        }
+        
+        // If error response is JSON (from our improved error handling)
+        if (error.response?.data) {
+          const errorData = error.response.data;
+          
+          // Handle if data is already an object
+          if (typeof errorData === 'object' && !(errorData instanceof Blob)) {
+            if (errorData.message) {
+              throw new Error(errorData.message);
+            }
+            if (errorData.error) {
+              if (typeof errorData.error === 'string') {
+                throw new Error(errorData.error);
+              }
+              if (errorData.error.message) {
+                throw new Error(errorData.error.message);
+              }
+            }
+          }
+          
+          // Handle if data is a string (JSON string)
+          if (typeof errorData === 'string') {
+            try {
+              const json = JSON.parse(errorData);
+              throw new Error(json.message || json.error?.message || "Gagal download template");
+            } catch {
+              // If not JSON, use the string as error message
+              throw new Error(errorData);
+            }
+          }
+        }
+        
+        // Handle different error types
+        if (error.response?.status === 403) {
+          throw new Error("Anda tidak memiliki izin untuk download template");
+        } else if (error.response?.status === 404) {
+          throw new Error("Endpoint download template tidak ditemukan");
+        } else if (error.response?.status === 500) {
+          // Try to get error message from various possible locations
+          const errorMsg = 
+            error.response?.data?.message || 
+            error.response?.data?.error?.message ||
+            error.response?.data?.error ||
+            (typeof error.response?.data === 'string' ? error.response.data : null) ||
+            "Server error. Periksa log backend Laravel";
+          throw new Error(errorMsg);
+        }
+        
+        throw new Error(error?.message || "Gagal download template");
+      }
+    },
+  },
 };
 
 export default api;

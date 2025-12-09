@@ -87,4 +87,8 @@ class User extends Authenticatable
         return $this->hasMany(Evaluasi::class, 'id_user');
     }
 
+    public function slipGaji(){
+        return $this->hasMany(SlipGaji::class, 'id_user');
+    }
+
 }

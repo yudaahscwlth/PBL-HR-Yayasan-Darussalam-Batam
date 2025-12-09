@@ -37,6 +37,7 @@ class UserResource extends JsonResource
                 'kecamatan' => $this->profilePribadi->kecamatan,
                 'alamat_lengkap' => $this->profilePribadi->alamat_lengkap,
                 'no_hp' => $this->profilePribadi->no_hp,
+                'nomor_rekening' => $this->profilePribadi->nomor_rekening,
                 'foto' => $this->profilePribadi->foto,
                 'created_at' => $this->profilePribadi->created_at,
                 'updated_at' => $this->profilePribadi->updated_at,

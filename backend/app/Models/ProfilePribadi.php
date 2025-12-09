@@ -25,6 +25,7 @@ class ProfilePribadi extends Model
         'kecamatan',
         'alamat_lengkap',
         'no_hp',
+        'nomor_rekening',
         'foto',
     ];
 

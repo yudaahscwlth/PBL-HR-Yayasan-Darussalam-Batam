@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\JamKerjaController;
 use App\Http\Controllers\Api\DepartemenController;
 use App\Http\Controllers\Api\KategoriEvaluasiController as KategoriEvaluasiController;
 use App\Http\Controllers\Api\TahunAjaranController;
+use App\Http\Controllers\Api\SlipGajiController;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
@@ -134,6 +135,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/tahun-ajaran/{tahunAjaran}', [\App\Http\Controllers\Api\TahunAjaranController::class, 'update']);
     Route::delete('/tahun-ajaran/{tahunAjaran}', [\App\Http\Controllers\Api\TahunAjaranController::class, 'destroy']);
     Route::apiResource('tahun-ajaran', TahunAjaranController::class);
+
+    // Slip Gaji routes
+    Route::prefix('slip-gaji')->group(function () {
+        Route::get('/', [SlipGajiController::class, 'index']);
+        Route::post('/', [SlipGajiController::class, 'store']);
+        Route::get('/user/{userId}', [SlipGajiController::class, 'getUserHistory']);
+        Route::get('/employee/{userId}/data', [SlipGajiController::class, 'getEmployeeData']);
+        Route::get('/employees-by-payment-status', [SlipGajiController::class, 'getEmployeesByPaymentStatus']);
+        Route::post('/upload-excel', [SlipGajiController::class, 'uploadExcel']);
+        Route::get('/download-template', [SlipGajiController::class, 'downloadTemplate']);
+        Route::get('/{id}/download-pdf', [SlipGajiController::class, 'downloadPDF']);
+        Route::get('/{id}', [SlipGajiController::class, 'show']);
+        Route::put('/{id}', [SlipGajiController::class, 'update']);
+        Route::delete('/{id}', [SlipGajiController::class, 'destroy']);
+    });
 });
 
 
