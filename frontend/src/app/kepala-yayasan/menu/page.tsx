@@ -14,7 +14,7 @@ export default function KYMenu() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/kepala-yayasan/dashboard");
-    else if (tab === "notifikasi") router.push("/kepala-yayasan/announcements");
+    else if (tab === "notifikasi") router.push("/kepala-yayasan/notifications");
     else if (tab === "profile") router.push("/kepala-yayasan/profile");
   };
 

@@ -14,7 +14,7 @@ export default function HRDMenu() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/hrd/dashboard");
-    else if (tab === "notifikasi") router.push("/hrd/announcements");
+    else if (tab === "notifikasi") router.push("/hrd/notifications");
     else if (tab === "profile") router.push("/hrd/profile");
   };
 
