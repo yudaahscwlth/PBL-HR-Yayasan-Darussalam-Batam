@@ -2,6 +2,8 @@
 
 import ProfileEdit from "@/components/ProfileEdit";
 
-export default function KYProfileEdit() {
+export default function KepalaYayasanProfileEdit() {
   return <ProfileEdit allowedRoles={["kepala yayasan"]} />;
 }
+
+
