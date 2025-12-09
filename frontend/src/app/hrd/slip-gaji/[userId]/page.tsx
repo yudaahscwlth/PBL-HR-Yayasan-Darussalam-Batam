@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Download } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
+import { useRouter, useParams } from "next/navigation";
+import { ArrowLeft, X } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import AccessControl from "@/components/AccessControl";
 import toast from "react-hot-toast";
@@ -16,26 +15,41 @@ interface SlipGaji {
   keterangan: string | null;
   created_at: string;
   updated_at: string;
+  user?: {
+    id: number;
+    email: string;
+    profile_pribadi?: {
+      nama_lengkap: string;
+      nomor_induk_kependudukan: string;
+      tempat_lahir: string;
+      tanggal_lahir: string;
+    };
+    profile_pekerjaan?: {
+      departemen?: {
+        nama: string;
+      };
+      jabatan?: {
+        nama: string;
+      };
+    };
+  };
 }
 
-interface EmployeeData {
-  id: number;
-  nama: string;
-  nik: string;
-  tempat_lahir: string;
-  tanggal_lahir: string;
-  departemen: string;
-  jabatan: string;
-  nomor_rekening: string | null; // Dari profile_pribadi
-}
-
-export default function TPSlipGaji() {
+export default function HRDSlipGajiHistory() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const params = useParams();
+  const userId = parseInt(params.userId as string);
   const [slipGajiData, setSlipGajiData] = useState<SlipGaji[]>([]);
-  const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
+  const [employeeData, setEmployeeData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({
+    tanggal: "",
+    total_gaji: "",
+    keterangan: "",
+  });
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -43,23 +57,17 @@ export default function TPSlipGaji() {
   }, []);
 
   useEffect(() => {
-    if (user?.id && isMounted) {
+    if (userId) {
       loadData();
     }
-  }, [user, isMounted]);
+  }, [userId]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
       const [historyResponse, employeeResponse] = await Promise.all([
-        apiClient.slipGaji.getUserHistory(user!.id).catch(err => {
-          console.error("Error loading history:", err);
-          return { success: false, data: [] };
-        }),
-        apiClient.slipGaji.getEmployeeData(user!.id).catch(err => {
-          console.error("Error loading employee data:", err);
-          return { success: false, data: null as EmployeeData | null };
-        }),
+        apiClient.slipGaji.getUserHistory(userId),
+        apiClient.slipGaji.getEmployeeData(userId),
       ]);
 
       if (historyResponse.success && historyResponse.data) {
@@ -79,17 +87,10 @@ export default function TPSlipGaji() {
       }
 
       if (employeeResponse.success && employeeResponse.data) {
-        setEmployeeData(employeeResponse.data as EmployeeData);
-      } else if (employeeResponse && !employeeResponse.success) {
-        console.warn("Failed to load employee data:", employeeResponse);
-        // Try to load from profile instead if getEmployeeData fails
-        // This is a fallback - employee data is optional for viewing slip gaji
+        setEmployeeData(employeeResponse.data);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error loading data:", error);
-      if (error.response?.status === 403) {
-        console.error("Access denied. Make sure you have permission to view this data.");
-      }
     } finally {
       setIsLoading(false);
     }
@@ -137,19 +138,53 @@ export default function TPSlipGaji() {
     }
   };
 
-  const handleDownloadPDF = async (slipGajiId: number) => {
+  const handleEdit = async (item: SlipGaji) => {
+    setEditingId(item.id);
+    
+    // Set form data
+    setFormData({
+      tanggal: item.tanggal.split("T")[0],
+      total_gaji: item.total_gaji.toString(),
+      keterangan: item.keterangan || "",
+    });
+    
+    setShowEditModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowEditModal(false);
+    setEditingId(null);
+    setFormData({
+      tanggal: "",
+      total_gaji: "",
+      keterangan: "",
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      toast.loading("Mengunduh PDF...", { id: "download-pdf" });
-      await apiClient.slipGaji.downloadPDF(slipGajiId);
-      toast.success("PDF berhasil diunduh", { id: "download-pdf" });
+      if (!editingId) return;
+
+      const data = {
+        id_user: userId,
+        tanggal: formData.tanggal,
+        total_gaji: parseFloat(formData.total_gaji),
+        keterangan: formData.keterangan || undefined,
+      };
+
+      await apiClient.slipGaji.update(editingId, data);
+      await loadData();
+      handleCloseModal();
+      toast.success("Slip gaji berhasil diupdate");
     } catch (error: any) {
-      console.error("Error downloading PDF:", error);
-      toast.error(error?.message || "Gagal mengunduh PDF", { id: "download-pdf" });
+      console.error("Error updating slip gaji:", error);
+      toast.error(error.response?.data?.message || "Gagal mengupdate slip gaji");
     }
   };
 
   return (
-    <AccessControl allowedRoles={["tenaga pendidik"]}>
+    <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
       <div className="min-h-screen bg-gray-100">
         <div className="px-5 py-6">
           <div className="flex items-center gap-4 mb-4">
@@ -160,8 +195,11 @@ export default function TPSlipGaji() {
             >
               <ArrowLeft className="w-6 h-6 text-gray-700" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Slip Gaji</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Riwayat Slip Gaji
+            </h1>
           </div>
+
 
           {/* Employee Info */}
           {employeeData && (
@@ -180,7 +218,7 @@ export default function TPSlipGaji() {
                 </div>
                 <div>
                   <span className="text-gray-600">Tempat, Tgl Lahir:</span>{" "}
-                    <span className="font-medium">
+                  <span className="font-medium">
                     {employeeData.tempat_lahir},{" "}
                     {isMounted && employeeData.tanggal_lahir
                       ? formatDate(employeeData.tanggal_lahir)
@@ -207,11 +245,6 @@ export default function TPSlipGaji() {
 
           {/* Slip Gaji Table */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Riwayat Slip Gaji
-              </h2>
-            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -272,12 +305,10 @@ export default function TPSlipGaji() {
                         </td>
                         <td className="py-3 px-4">
                           <button
-                            onClick={() => handleDownloadPDF(item.id)}
-                            className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center gap-1"
-                            title="Download PDF"
+                            onClick={() => handleEdit(item)}
+                            className="bg-yellow-500 text-white px-3 py-1 rounded text-xs hover:bg-yellow-600 transition-colors"
                           >
-                            <Download className="w-3 h-3" />
-                            PDF
+                            Edit
                           </button>
                         </td>
                       </tr>
@@ -311,6 +342,92 @@ export default function TPSlipGaji() {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-800">Edit Slip Gaji</h2>
+              <button
+                onClick={handleCloseModal}
+                className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                aria-label="Tutup"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tanggal <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.tanggal}
+                    onChange={(e) =>
+                      setFormData({ ...formData, tanggal: e.target.value })
+                    }
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Total Gaji <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.total_gaji}
+                    onChange={(e) =>
+                      setFormData({ ...formData, total_gaji: e.target.value })
+                    }
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Masukkan total gaji"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Keterangan
+                  </label>
+                  <textarea
+                    value={formData.keterangan}
+                    onChange={(e) =>
+                      setFormData({ ...formData, keterangan: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Masukkan keterangan (opsional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Simpan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AccessControl>
   );
 }

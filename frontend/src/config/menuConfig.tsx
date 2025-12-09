@@ -235,15 +235,6 @@ export const adminMenuConfig: MenuSection[] = [
         ),
         path: "/admin/evaluasi-pribadi",
       },
-      {
-        title: "Slip Gaji",
-        icon: (
-          <svg className="w-8 h-8 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        ),
-        path: "/admin/slip-gaji",
-      },
     ],
   },
   {
@@ -529,15 +520,6 @@ export const kepalaSekolahMenuConfig: MenuSection[] = [
         ),
         path: "/kepala-sekolah/verifikasi-cuti",
       },
-      {
-        title: "Slip Gaji",
-        icon: (
-          <svg className="w-8 h-8 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        ),
-        path: "/kepala-sekolah/slip-gaji",
-      },
     ],
   },
 ];
@@ -604,15 +586,6 @@ export const tenagaPendidikMenuConfig: MenuSection[] = [
         ),
         path: "/tenaga-pendidik/pengajuan-cuti",
       },
-      {
-        title: "Slip Gaji",
-        icon: (
-          <svg className="w-8 h-8 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        ),
-        path: "/tenaga-pendidik/slip-gaji",
-      },
     ],
   },
 ];
@@ -654,15 +627,6 @@ export const kepalaYayasanMenuConfig: MenuSection[] = [
         ),
         path: "/kepala-yayasan/pengajuan-cuti",
       },
-      {
-        title: "Slip Gaji",
-        icon: (
-          <svg className="w-8 h-8 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        ),
-        path: "/kepala-yayasan/slip-gaji",
-      },
     ],
   },
 ];
@@ -673,13 +637,61 @@ export const direkturPendidikanMenuConfig: MenuSection[] = [
     category: "Menu umum",
     items: [
       {
-        title: "Slip Gaji",
+        title: "Absensi Pribadi",
         icon: (
-          <svg className="w-8 h-8 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            className="w-8 h-8 text-[#1e4d8b]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+            />
           </svg>
         ),
-        path: "/direktur-pendidikan/slip-gaji",
+        path: "/direktur-pendidikan/absensi-pribadi",
+      },
+      {
+        title: "Evaluasi Pribadi",
+        icon: (
+          <svg
+            className="w-8 h-8 text-[#1e4d8b]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            />
+          </svg>
+        ),
+        path: "/direktur-pendidikan/evaluasi-pribadi",
+      },
+      {
+        title: "Pengajuan Cuti",
+        icon: (
+          <svg
+            className="w-8 h-8 text-[#1e4d8b]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        ),
+        path: "/direktur-pendidikan/pengajuan-cuti",
       },
     ],
   },

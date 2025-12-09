@@ -27,6 +27,7 @@ interface ProfileData {
     kecamatan: string;
     alamat_lengkap: string;
     no_hp: string;
+    nomor_rekening: string | null;
     foto: string | null;
   };
 
@@ -108,6 +109,7 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
     kecamatan: "",
     alamat_lengkap: "",
     no_hp: "",
+    nomor_rekening: "",
     foto: null as File | null,
     
     // Data Orang Tua
@@ -215,6 +217,7 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
         kecamatan: userData.profile_pribadi?.kecamatan || "",
         alamat_lengkap: userData.profile_pribadi?.alamat_lengkap || "",
         no_hp: userData.profile_pribadi?.no_hp || "",
+        nomor_rekening: userData.profile_pribadi?.nomor_rekening || "",
         foto: null,
         nama_ayah: userData.orang_tua?.nama_ayah || "",
         pekerjaan_ayah: userData.orang_tua?.pekerjaan_ayah || "",
@@ -253,12 +256,16 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
       const submitData = new FormData();
       submitData.append("_method", "PUT");
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null && value !== "") {
-          if (key === "foto" && value instanceof File) {
+        // Skip foto yang akan ditangani terpisah
+        if (key === "foto") {
+          if (value instanceof File) {
             submitData.append(key, value);
-          } else {
-            submitData.append(key, value as string);
           }
+          return;
+        }
+        // Untuk field lain, kirim meskipun kosong (kecuali null)
+        if (value !== null) {
+          submitData.append(key, value as string);
         }
       });
 
@@ -277,15 +284,27 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
         submitData.append(`link[${index}]`, item.link);
       });
 
-      await api.post("/profile/update", submitData, {
+      const response = await api.post("/profile/update", submitData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      if (response.data.success) {
       showToast("success", "Profile berhasil diperbarui!");
       fetchProfileData();
+      } else {
+        showToast("error", response.data.message || "Gagal memperbarui profile");
+      }
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      showToast("error", error.response?.data?.message || "Gagal memperbarui profile");
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          "Gagal memperbarui profile. Pastikan kolom nomor_rekening sudah ada di database.";
+      showToast("error", errorMessage);
+      
+      // Log detailed error for debugging
+      if (error.response?.data) {
+        console.error("Error details:", error.response.data);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -529,6 +548,13 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
                                     <div className="relative">
                                         <input type="text" name="no_hp" value={formData.no_hp} onChange={handleInputChange} className={`${inputClass} pl-10`} />
                                         <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Nomor Rekening</label>
+                                    <div className="relative">
+                                        <input type="text" name="nomor_rekening" value={formData.nomor_rekening} onChange={handleInputChange} className={`${inputClass} pl-10`} placeholder="Masukkan nomor rekening" />
+                                        <CreditCard className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                                     </div>
                                 </div>
                                 <div>
