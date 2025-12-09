@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\DepartemenController;
 use App\Http\Controllers\Api\KategoriEvaluasiController as KategoriEvaluasiController;
 use App\Http\Controllers\Api\TahunAjaranController;
 use App\Http\Controllers\Api\SlipGajiController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
@@ -150,6 +151,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [SlipGajiController::class, 'update']);
         Route::delete('/{id}', [SlipGajiController::class, 'destroy']);
     });
+
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
 });
 
 
