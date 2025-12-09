@@ -673,102 +673,112 @@ export default function HRDSlipGaji() {
   return (
     <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
       <div className="min-h-screen bg-gray-100">
-        <div className="px-5 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+        <div className="px-3 sm:px-5 py-4 sm:py-6">
+          {/* Header - Responsive Layout */}
+          <div className="mb-4 space-y-3">
+            {/* Title Row */}
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => router.back()}
-                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0"
                 aria-label="Kembali"
               >
-                <ArrowLeft className="w-6 h-6 text-gray-700" />
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">Slip Gaji</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Slip Gaji</h1>
             </div>
             
-            {/* Filter Bulan dan Tahun */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Bulan:</label>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                    <option key={month} value={month}>
-                      {new Date(selectedYear, month - 1).toLocaleDateString('id-ID', { month: 'long' })}
-                    </option>
-                  ))}
-                </select>
+            {/* Filters and Actions - Responsive Grid */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              {/* Filter Bulan dan Tahun */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Bulan:</label>
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                    className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm min-h-[44px]"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                      <option key={month} value={month}>
+                        {new Date(selectedYear, month - 1).toLocaleDateString('id-ID', { month: 'long' })}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Tahun:</label>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    className="px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm min-h-[44px]"
+                  >
+                    {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Tahun:</label>
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="bg-green-600 text-white px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px]"
                 >
-                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
+                  <Upload className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span>Upload Excel</span>
+                </button>
+                <button
+                  onClick={handleDownloadTemplate}
+                  disabled={isUploading}
+                  className="bg-gray-600 text-white px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm sm:text-base min-h-[44px]"
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+                      <span className="hidden xs:inline">Downloading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                      <span className="hidden xs:inline">Download Template</span>
+                      <span className="xs:hidden">Template</span>
+                    </>
+                  )}
+                </button>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-              >
-                <Upload className="w-5 h-5" />
-                Upload Excel
-              </button>
-              <button
-                onClick={handleDownloadTemplate}
-                disabled={isUploading}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {isUploading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Downloading...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-5 h-5" />
-                    Download Template
-                  </>
-                )}
-              </button>
             </div>
           </div>
 
           {/* Tabel Karyawan Belum Digaji */}
           <div className="mb-6 bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b bg-yellow-50 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
-                Karyawan Belum Digaji ({unpaidEmployees.length})
-              </h2>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Tampilkan:</label>
-                <select
-                  value={unpaidPageSize}
-                  onChange={(e) => {
-                    setUnpaidPageSize(Number(e.target.value));
-                    setUnpaidCurrentPage(1);
-                  }}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {[1, 2, 3, 4, 5].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm text-gray-700">per halaman</span>
+            <div className="p-3 sm:p-4 border-b bg-yellow-50">
+              <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></span>
+                  <span>Karyawan Belum Digaji ({unpaidEmployees.length})</span>
+                </h2>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">Tampilkan:</label>
+                  <select
+                    value={unpaidPageSize}
+                    onChange={(e) => {
+                      setUnpaidPageSize(Number(e.target.value));
+                      setUnpaidCurrentPage(1);
+                    }}
+                    className="px-2 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
+                  >
+                    {[1, 2, 3, 4, 5].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap hidden xs:inline">per halaman</span>
+                </div>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -819,29 +829,36 @@ export default function HRDSlipGaji() {
                   
                   {/* Pagination untuk Karyawan Belum Digaji */}
                   {Math.ceil(unpaidEmployees.length / unpaidPageSize) > 1 && (
-                    <div className="flex items-center justify-between p-4 border-t">
-                      <div className="text-sm text-gray-600">
-                        Menampilkan {(unpaidCurrentPage - 1) * unpaidPageSize + 1} sampai{" "}
-                        {Math.min(unpaidCurrentPage * unpaidPageSize, unpaidEmployees.length)} dari{" "}
-                        {unpaidEmployees.length} entri
+                    <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 p-3 sm:p-4 border-t">
+                      <div className="text-xs sm:text-sm text-gray-600 text-center xs:text-left">
+                        <span className="hidden sm:inline">
+                          Menampilkan {(unpaidCurrentPage - 1) * unpaidPageSize + 1} sampai{" "}
+                          {Math.min(unpaidCurrentPage * unpaidPageSize, unpaidEmployees.length)} dari{" "}
+                          {unpaidEmployees.length} entri
+                        </span>
+                        <span className="sm:hidden">
+                          {(unpaidCurrentPage - 1) * unpaidPageSize + 1}-{Math.min(unpaidCurrentPage * unpaidPageSize, unpaidEmployees.length)} dari {unpaidEmployees.length}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => setUnpaidCurrentPage((prev) => Math.max(prev - 1, 1))}
                           disabled={unpaidCurrentPage === 1}
-                          className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                          className="px-3 py-2 border border-gray-300 rounded text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 min-h-[40px] min-w-[80px] sm:min-w-[100px]"
                         >
-                          Sebelumnya
+                          <span className="hidden xs:inline">Sebelumnya</span>
+                          <span className="xs:hidden">←</span>
                         </button>
-                        <span className="px-3 py-1 bg-blue-500 text-white rounded text-sm">
-                          {unpaidCurrentPage} dari {Math.ceil(unpaidEmployees.length / unpaidPageSize)}
+                        <span className="px-3 py-2 bg-blue-500 text-white rounded text-xs sm:text-sm min-h-[40px] flex items-center">
+                          {unpaidCurrentPage} / {Math.ceil(unpaidEmployees.length / unpaidPageSize)}
                         </span>
                         <button
                           onClick={() => setUnpaidCurrentPage((prev) => Math.min(prev + 1, Math.ceil(unpaidEmployees.length / unpaidPageSize)))}
                           disabled={unpaidCurrentPage >= Math.ceil(unpaidEmployees.length / unpaidPageSize)}
-                          className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                          className="px-3 py-2 border border-gray-300 rounded text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 min-h-[40px] min-w-[80px] sm:min-w-[100px]"
                         >
-                          Selanjutnya
+                          <span className="hidden xs:inline">Selanjutnya</span>
+                          <span className="xs:hidden">→</span>
                         </button>
                       </div>
                     </div>
@@ -853,28 +870,30 @@ export default function HRDSlipGaji() {
 
           {/* Tabel Karyawan Sudah Digaji */}
           <div className="mb-6 bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="p-4 border-b bg-green-50 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-                Karyawan Sudah Digaji ({paidEmployees.length})
-              </h2>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-700">Tampilkan:</label>
-                <select
-                  value={paidPageSize}
-                  onChange={(e) => {
-                    setPaidPageSize(Number(e.target.value));
-                    setPaidCurrentPage(1);
-                  }}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {[1, 2, 3, 4, 5].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm text-gray-700">per halaman</span>
+            <div className="p-3 sm:p-4 border-b bg-green-50">
+              <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <span className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></span>
+                  <span>Karyawan Sudah Digaji ({paidEmployees.length})</span>
+                </h2>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs sm:text-sm text-gray-700 whitespace-nowrap">Tampilkan:</label>
+                  <select
+                    value={paidPageSize}
+                    onChange={(e) => {
+                      setPaidPageSize(Number(e.target.value));
+                      setPaidCurrentPage(1);
+                    }}
+                    className="px-2 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
+                  >
+                    {[1, 2, 3, 4, 5].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs sm:text-sm text-gray-700 whitespace-nowrap hidden xs:inline">per halaman</span>
+                </div>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -933,29 +952,36 @@ export default function HRDSlipGaji() {
                   
                   {/* Pagination untuk Karyawan Sudah Digaji */}
                   {Math.ceil(paidEmployees.length / paidPageSize) > 1 && (
-                    <div className="flex items-center justify-between p-4 border-t">
-                      <div className="text-sm text-gray-600">
-                        Menampilkan {(paidCurrentPage - 1) * paidPageSize + 1} sampai{" "}
-                        {Math.min(paidCurrentPage * paidPageSize, paidEmployees.length)} dari{" "}
-                        {paidEmployees.length} entri
+                    <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 p-3 sm:p-4 border-t">
+                      <div className="text-xs sm:text-sm text-gray-600 text-center xs:text-left">
+                        <span className="hidden sm:inline">
+                          Menampilkan {(paidCurrentPage - 1) * paidPageSize + 1} sampai{" "}
+                          {Math.min(paidCurrentPage * paidPageSize, paidEmployees.length)} dari{" "}
+                          {paidEmployees.length} entri
+                        </span>
+                        <span className="sm:hidden">
+                          {(paidCurrentPage - 1) * paidPageSize + 1}-{Math.min(paidCurrentPage * paidPageSize, paidEmployees.length)} dari {paidEmployees.length}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => setPaidCurrentPage((prev) => Math.max(prev - 1, 1))}
                           disabled={paidCurrentPage === 1}
-                          className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                          className="px-3 py-2 border border-gray-300 rounded text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 min-h-[40px] min-w-[80px] sm:min-w-[100px]"
                         >
-                          Sebelumnya
+                          <span className="hidden xs:inline">Sebelumnya</span>
+                          <span className="xs:hidden">←</span>
                         </button>
-                        <span className="px-3 py-1 bg-blue-500 text-white rounded text-sm">
-                          {paidCurrentPage} dari {Math.ceil(paidEmployees.length / paidPageSize)}
+                        <span className="px-3 py-2 bg-blue-500 text-white rounded text-xs sm:text-sm min-h-[40px] flex items-center">
+                          {paidCurrentPage} / {Math.ceil(paidEmployees.length / paidPageSize)}
                         </span>
                         <button
                           onClick={() => setPaidCurrentPage((prev) => Math.min(prev + 1, Math.ceil(paidEmployees.length / paidPageSize)))}
                           disabled={paidCurrentPage >= Math.ceil(paidEmployees.length / paidPageSize)}
-                          className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                          className="px-3 py-2 border border-gray-300 rounded text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 min-h-[40px] min-w-[80px] sm:min-w-[100px]"
                         >
-                          Selanjutnya
+                          <span className="hidden xs:inline">Selanjutnya</span>
+                          <span className="xs:hidden">→</span>
                         </button>
                       </div>
                     </div>
@@ -972,7 +998,7 @@ export default function HRDSlipGaji() {
               placeholder="Cari nama, email, atau tanggal..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base min-h-[48px]"
             />
           </div>
 
@@ -1136,33 +1162,40 @@ export default function HRDSlipGaji() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between p-4 border-t">
-                <div className="text-sm text-gray-600">
-                  Menampilkan {startIndex + 1} sampai{" "}
-                  {Math.min(endIndex, filteredData.length)} dari{" "}
-                  {filteredData.length} entri
+              <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 p-3 sm:p-4 border-t">
+                <div className="text-xs sm:text-sm text-gray-600 text-center xs:text-left">
+                  <span className="hidden sm:inline">
+                    Menampilkan {startIndex + 1} sampai{" "}
+                    {Math.min(endIndex, filteredData.length)} dari{" "}
+                    {filteredData.length} entri
+                  </span>
+                  <span className="sm:hidden">
+                    {startIndex + 1}-{Math.min(endIndex, filteredData.length)} dari {filteredData.length}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <button
                     onClick={() =>
                       setCurrentPage((prev) => Math.max(prev - 1, 1))
                     }
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    className="px-3 py-2 border border-gray-300 rounded text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 min-h-[40px] min-w-[80px] sm:min-w-[100px]"
                   >
-                    Sebelumnya
+                    <span className="hidden xs:inline">Sebelumnya</span>
+                    <span className="xs:hidden">←</span>
                   </button>
-                  <span className="px-3 py-1 bg-blue-500 text-white rounded text-sm">
-                    {currentPage} dari {totalPages}
+                  <span className="px-3 py-2 bg-blue-500 text-white rounded text-xs sm:text-sm min-h-[40px] flex items-center">
+                    {currentPage} / {totalPages}
                   </span>
                   <button
                     onClick={() =>
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                     }
                     disabled={currentPage === totalPages}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                    className="px-3 py-2 border border-gray-300 rounded text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 min-h-[40px] min-w-[80px] sm:min-w-[100px]"
                   >
-                    Selanjutnya
+                    <span className="hidden xs:inline">Selanjutnya</span>
+                    <span className="xs:hidden">→</span>
                   </button>
                 </div>
               </div>
@@ -1173,7 +1206,7 @@ export default function HRDSlipGaji() {
         {/* Add Modal */}
         {showModal && (
           <div 
-            className="fixed inset-0 bg-transparent flex items-center justify-center z-50 p-4 animate-fadeIn"
+            className="fixed inset-0 bg-transparent flex items-center justify-center z-50 p-3 sm:p-4 animate-fadeIn"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 handleCloseModal();
@@ -1182,19 +1215,19 @@ export default function HRDSlipGaji() {
               }
             }}
           >
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slideUp">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slideUp">
               {/* Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
-                <h2 className="text-xl font-bold text-gray-800">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between rounded-t-xl">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800">
                   Tambah Slip Gaji
                 </h2>
                 <button
                   onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100 flex-shrink-0"
                   aria-label="Tutup"
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5 sm:w-6 sm:h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1209,7 +1242,7 @@ export default function HRDSlipGaji() {
                 </button>
               </div>
 
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
 
                 {employeeData && (
                   <div className="mb-4 p-4 bg-gray-50 rounded-lg">
