@@ -15,6 +15,40 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
   const { user } = useAuthStore();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentTab, setCurrentTab] = useState(activeTab);
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  // Fetch notification count
+  useEffect(() => {
+    const fetchNotificationCount = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/notifications`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Accept': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            // Get read notifications from localStorage
+            const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+            // Count unread notifications
+            const unreadCount = data.data.filter((n: any) => !readNotifications.includes(n.id)).length;
+            setNotificationCount(unreadCount);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching notification count:', error);
+      }
+    };
+
+    if (user) {
+      fetchNotificationCount();
+      // Refresh count every 30 seconds
+      const interval = setInterval(fetchNotificationCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   // Get role-based paths
   const getRoleBasedPaths = () => {
@@ -33,49 +67,49 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
         dashboard: "/admin/dashboard",
         menu: "/admin/menu",
         profile: "/admin/profile",
-        notifikasi: "/admin/announcements",
+        notifikasi: "/admin/notifications",
       };
     } else if (isKepalaYayasan) {
       return {
         dashboard: "/kepala-yayasan/dashboard",
         menu: "/kepala-yayasan/menu",
         profile: "/kepala-yayasan/profile",
-        notifikasi: "/kepala-yayasan/announcements",
+        notifikasi: "/kepala-yayasan/notifications",
       };
     } else if (isDirekturPendidikan) {
       return {
         dashboard: "/direktur-pendidikan/dashboard",
         menu: "/direktur-pendidikan/menu",
         profile: "/direktur-pendidikan/profile",
-        notifikasi: "/direktur-pendidikan/announcements",
+        notifikasi: "/direktur-pendidikan/notifications",
       };
     } else if (isHRD) {
       return {
         dashboard: "/hrd/dashboard",
         menu: "/hrd/menu",
         profile: "/hrd/profile",
-        notifikasi: "/hrd/announcements",
+        notifikasi: "/hrd/notifications",
       };
     } else if (isKepalaDepartemen) {
       return {
         dashboard: "/kepala-departemen/dashboard",
         menu: "/kepala-departemen/menu",
         profile: "/kepala-departemen/profile",
-        notifikasi: "/kepala-departemen/announcements",
+        notifikasi: "/kepala-departemen/notifications",
       };
     } else if (isKepalaSekolah) {
       return {
         dashboard: "/kepala-sekolah/dashboard",
         menu: "/kepala-sekolah/menu",
         profile: "/kepala-sekolah/profile",
-        notifikasi: "/kepala-sekolah/announcements",
+        notifikasi: "/kepala-sekolah/notifications",
       };
     } else if (isTenagaPendidik) {
       return {
         dashboard: "/tenaga-pendidik/dashboard",
         menu: "/tenaga-pendidik/menu",
         profile: "/tenaga-pendidik/profile",
-        notifikasi: "/tenaga-pendidik/announcements",
+        notifikasi: "/tenaga-pendidik/notifications",
       };
     }
 
@@ -116,14 +150,21 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
       id: "notifikasi",
       label: "Notifikasi",
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
+        <div className="relative">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          {notificationCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+              {notificationCount > 99 ? '99+' : notificationCount}
+            </span>
+          )}
+        </div>
       ),
       path: rolePaths.notifikasi,
     },

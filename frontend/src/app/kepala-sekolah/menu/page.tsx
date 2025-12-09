@@ -14,7 +14,7 @@ export default function KSMenu() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/kepala-sekolah/dashboard");
-    else if (tab === "notifikasi") router.push("/kepala-sekolah/announcements");
+    else if (tab === "notifikasi") router.push("/kepala-sekolah/notifications");
     else if (tab === "profile") router.push("/kepala-sekolah/profile");
   };
 

@@ -14,7 +14,7 @@ export default function TPMenu() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/tenaga-pendidik/dashboard");
-    else if (tab === "notifikasi") router.push("/tenaga-pendidik/announcements");
+    else if (tab === "notifikasi") router.push("/tenaga-pendidik/notifications");
     else if (tab === "profile") router.push("/tenaga-pendidik/profile");
   };
 

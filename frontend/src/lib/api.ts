@@ -802,6 +802,13 @@ export const apiClient = {
       }
     },
   },
+
+  notifications: {
+    getAll: async (): Promise<ApiResponse> => {
+      const response = await api.get("/notifications");
+      return response.data;
+    },
+  },
 };
 
 export default api;

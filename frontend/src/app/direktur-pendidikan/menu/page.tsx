@@ -14,7 +14,7 @@ export default function DPMenu() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     if (tab === "dashboard") router.push("/direktur-pendidikan/dashboard");
-    else if (tab === "notifikasi") router.push("/direktur-pendidikan/announcements");
+    else if (tab === "notifikasi") router.push("/direktur-pendidikan/notifications");
     else if (tab === "profile") router.push("/direktur-pendidikan/profile");
   };
 
