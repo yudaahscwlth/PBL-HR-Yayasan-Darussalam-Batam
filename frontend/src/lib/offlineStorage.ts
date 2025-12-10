@@ -259,6 +259,78 @@ export class OfflineStorage {
     return await this.getDataById('userData', 'currentUser');
   }
 
+  // Save last login user data (specifically for offline display)
+  async saveLastLoginUser(userData: any): Promise<void> {
+    const lastLoginData = {
+      ...userData,
+      id: 'lastLogin',
+      loginTime: new Date().toISOString(),
+      savedAt: new Date().toISOString()
+    };
+    await this.updateData('userData', lastLoginData);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lastLoginTime', lastLoginData.loginTime);
+    }
+  }
+
+  // Get last login user data
+  async getLastLoginUser(): Promise<any> {
+    return await this.getDataById('userData', 'lastLogin');
+  }
+
+  // Save user attendance data for offline access
+  async saveUserAttendance(attendanceData: any[]): Promise<void> {
+    const attendanceWithId = {
+      id: 'userAttendance',
+      data: attendanceData,
+      lastUpdated: new Date().toISOString()
+    };
+    await this.updateData('appData', attendanceWithId);
+  }
+
+  // Get user attendance data
+  async getUserAttendance(): Promise<any[]> {
+    const attendanceRecord = await this.getDataById('appData', 'userAttendance');
+    return attendanceRecord ? attendanceRecord.data : [];
+  }
+
+  // Save last login user with attendance (comprehensive method)
+  async saveLastLoginSession(userData: any, attendanceData: any[] = []): Promise<void> {
+    await this.saveLastLoginUser(userData);
+    if (attendanceData.length > 0) {
+      await this.saveUserAttendance(attendanceData);
+    }
+    console.log('[OfflineStorage] Last login session saved:', {
+      user: userData.email,
+      attendanceCount: attendanceData.length,
+      savedAt: new Date().toISOString()
+    });
+  }
+
+  // Get complete last login session
+  async getLastLoginSession(): Promise<{
+    user: any;
+    attendance: any[];
+    loginTime: string;
+  } | null> {
+    try {
+      const user = await this.getLastLoginUser();
+      const attendance = await this.getUserAttendance();
+      
+      if (user) {
+        return {
+          user,
+          attendance,
+          loginTime: user.loginTime || user.savedAt
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('[OfflineStorage] Failed to get last login session:', error);
+      return null;
+    }
+  }
+
   // Add action to sync queue
   async addToSyncQueue(action: string, data: any, endpoint: string): Promise<void> {
     const syncItem = {

@@ -141,7 +141,7 @@ export default function LogAbsensiPage() {
 
   if (isLoading) {
     return (
-      <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
+      <AccessControl allowedRoles={["kepala hrd", "staff hrd", "direktur pendidikan"]}>
         <div className="min-h-screen bg-gray-100 flex items-center justify-center">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -154,7 +154,7 @@ export default function LogAbsensiPage() {
 
   if (!logData) {
     return (
-      <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
+      <AccessControl allowedRoles={["kepala hrd", "staff hrd", "direktur pendidikan"]}>
         <div className="min-h-screen bg-gray-100 flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-600 mb-4">Data log absensi tidak ditemukan</p>
@@ -171,7 +171,7 @@ export default function LogAbsensiPage() {
   const userPhotoUrl = logData.user.foto ? `${apiBaseUrl}/storage/${logData.user.foto}` : null;
 
   return (
-    <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
+    <AccessControl allowedRoles={["kepala hrd", "staff hrd", "direktur pendidikan"]}>
       <div className="min-h-screen bg-gray-100 pb-28">
         {/* Header Section */}
         <div className="px-5 pt-3 pb-4">

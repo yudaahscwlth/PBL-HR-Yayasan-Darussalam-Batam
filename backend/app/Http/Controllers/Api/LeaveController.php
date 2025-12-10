@@ -36,6 +36,18 @@ class LeaveController extends Controller
             } else {
                 $leaves = collect([]);
             }
+        } elseif ($user->hasRole('direktur pendidikan')) {
+            // Direktur pendidikan melihat pengajuan cuti yang perlu ditinjau olehnya
+            $leaves = PengajuanCuti::with(['user.profilePribadi'])
+                ->whereIn('status_pengajuan', [
+                    'disetujui hrd menunggu tinjauan dirpen',
+                    'disetujui kepala hrd menunggu tinjauan dirpen',
+                    'disetujui kepala sekolah menunggu tinjauan dirpen',
+                    'ditinjau direktur pendidikan',
+                    'ditolak direktur pendidikan'
+                ])
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
             $leaves = PengajuanCuti::where('id_user', $user->id)
                 ->with(['user.profilePribadi'])
