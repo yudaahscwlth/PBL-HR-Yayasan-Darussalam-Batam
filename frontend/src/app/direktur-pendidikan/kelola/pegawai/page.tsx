@@ -67,44 +67,43 @@ function ActionMenuPortal({
 
   if (!open) return null;
 
-  const menu = (
+  return createPortal(
     <div
       ref={menuRef}
       className="fixed z-[1000] w-56 bg-white rounded-md shadow-lg border border-gray-100 py-1 text-left"
       style={{ top: y, left: x }}
     >
       <Link
-        href={`/hrd/profile/${userId}`}
+        href={`/direktur-pendidikan/profile/${userId}`}
         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
       >
         <UserIcon className="w-4 h-4" />
         Detail Profil
       </Link>
       <Link
-        href={`/hrd/absensi/${userId}`}
+        href={`/direktur-pendidikan/absensi/${userId}`}
         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
       >
         <Calendar className="w-4 h-4" />
         Rekap Absensi
       </Link>
       <Link
-        href={`/hrd/cuti/${userId}`}
+        href={`/direktur-pendidikan/cuti/${userId}`}
         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
       >
         <FileText className="w-4 h-4" />
         Rekap Cuti
       </Link>
       <Link
-        href={`/hrd/evaluasi/${userId}`}
+        href={`/direktur-pendidikan/evaluasi/${userId}`}
         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
       >
         <ClipboardList className="w-4 h-4" />
         Rekap Evaluasi
       </Link>
-    </div>
+    </div>,
+    document.body
   );
-
-  return createPortal(menu, document.body);
 }
 
 export default function HrdKelolaPegawaiPage() {
