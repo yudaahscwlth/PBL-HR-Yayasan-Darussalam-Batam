@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { AuthState, User, LoginRequest, UserRole } from "@/types/auth";
 import { apiClient } from "@/lib/api";
+import { offlineStorage } from "@/lib/offlineStorage";
 
 interface AuthStore extends AuthState {
   // Additional methods for role-based access
@@ -52,6 +53,25 @@ export const useAuthStore = create<AuthStore>()(
             });
             console.log("✅ Login successful, user set:", response.user);
             console.log("✅ Auth state updated - isAuthenticated: true");
+
+            // Save last login session for offline access
+            try {
+              // Fetch attendance data for offline storage
+              let attendanceData = [];
+              try {
+                const attendanceResponse = await apiClient.attendance.getHistory();
+                if (attendanceResponse.success && attendanceResponse.data) {
+                  attendanceData = attendanceResponse.data;
+                }
+              } catch (attendanceError) {
+                console.warn("⚠️ Failed to fetch attendance data during login:", attendanceError);
+              }
+
+              await offlineStorage.saveLastLoginSession(response.user, attendanceData);
+              console.log("📱 Last login session saved for offline access with", attendanceData.length, "attendance records");
+            } catch (error) {
+              console.warn("⚠️ Failed to save last login session:", error);
+            }
 
             // Verify state was set
             const currentState = get();

@@ -2,32 +2,53 @@
 
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
+import { offlineStorage } from "@/lib/offlineStorage";
 
 export default function OfflinePage() {
   const { user } = useAuthStore();
   const [isOnline, setIsOnline] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
+  const [lastLoginSession, setLastLoginSession] = useState<{
+    user: any;
+    attendance: any[];
+    loginTime: string;
+  } | null>(null);
 
   useEffect(() => {
-    // Check online status
-    setIsOnline(navigator.onLine);
-    
-    // Get last sync time from localStorage
-    const lastSync = localStorage.getItem("lastSyncTime");
-    if (lastSync) {
-      setLastSyncTime(new Date(lastSync).toLocaleString("id-ID"));
-    }
+    const loadLastLoginSession = async () => {
+      try {
+        // Check online status
+        setIsOnline(navigator.onLine);
+        
+        // Get last sync time from localStorage
+        const lastSync = localStorage.getItem("lastSyncTime");
+        if (lastSync) {
+          setLastSyncTime(new Date(lastSync).toLocaleString("id-ID"));
+        }
 
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+        // Load last login session
+        const session = await offlineStorage.getLastLoginSession();
+        if (session) {
+          setLastLoginSession(session);
+          console.log("Last login session loaded:", session);
+        }
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
 
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+
+        return () => {
+          window.removeEventListener("online", handleOnline);
+          window.removeEventListener("offline", handleOffline);
+        };
+      } catch (error) {
+        console.error("Failed to load last login session:", error);
+      }
     };
+
+    loadLastLoginSession();
   }, []);
 
   const handleRefresh = () => {
@@ -57,28 +78,123 @@ export default function OfflinePage() {
           </div>
         </div>
 
-        {/* User Info */}
-        {user && (
+        {/* User Info - Show last login session when offline, current user when online */}
+        {(user || lastLoginSession) && (
           <div className="max-w-4xl mx-auto mb-8">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Informasi Pengguna</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                {isOnline ? "Informasi Pengguna Saat Ini" : "Data Login Terakhir (Offline)"}
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium text-gray-900">{user.email}</p>
+                  <p className="font-medium text-gray-900">
+                    {(isOnline ? user : lastLoginSession?.user)?.email || 'Tidak tersedia'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Nama</p>
-                  <p className="font-medium text-gray-900">{user.profile_pribadi?.nama_lengkap || 'Tidak tersedia'}</p>
+                  <p className="font-medium text-gray-900">
+                    {(isOnline ? user : lastLoginSession?.user)?.profile_pribadi?.nama_lengkap || 'Tidak tersedia'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Role</p>
-                  <p className="font-medium text-gray-900 capitalize">{user.roles?.join(', ') || 'Tidak tersedia'}</p>
+                  <p className="font-medium text-gray-900 capitalize">
+                    {(isOnline ? user : lastLoginSession?.user)?.roles?.join(', ') || 'Tidak tersedia'}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Terakhir Sync</p>
-                  <p className="font-medium text-gray-900">{lastSyncTime || "Belum ada data"}</p>
+                  <p className="text-sm text-gray-500">
+                    {isOnline ? "Terakhir Sync" : "Waktu Login Terakhir"}
+                  </p>
+                  <p className="font-medium text-gray-900">
+                    {isOnline 
+                      ? (lastSyncTime || "Belum ada data")
+                      : (lastLoginSession?.loginTime 
+                        ? new Date(lastLoginSession.loginTime).toLocaleString("id-ID")
+                        : "Belum ada data"
+                      )
+                    }
+                  </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Attendance Data - Show when offline and last login session has attendance */}
+        {!isOnline && lastLoginSession && lastLoginSession.attendance.length > 0 && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Data Absensi Terakhir</h2>
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  Menampilkan {lastLoginSession.attendance.length} record absensi terakhir yang tersimpan secara lokal.
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Tanggal</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Check In</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Check Out</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lastLoginSession.attendance.slice(0, 10).map((record: any) => (
+                      <tr key={record.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 text-gray-700">
+                          {new Date(record.tanggal).toLocaleDateString("id-ID", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric"
+                          })}
+                        </td>
+                        <td className="py-3 px-4 text-gray-700">
+                          {record.check_in 
+                            ? new Date(record.check_in).toLocaleTimeString("id-ID", {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })
+                            : "-"
+                          }
+                        </td>
+                        <td className="py-3 px-4 text-gray-700">
+                          {record.check_out 
+                            ? new Date(record.check_out).toLocaleTimeString("id-ID", {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })
+                            : "-"
+                          }
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            record.status === "hadir" 
+                              ? "bg-green-100 text-green-800"
+                              : record.status === "terlambat"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-red-100 text-red-800"
+                          }`}>
+                            {record.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-gray-700">
+                          {record.keterangan || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {lastLoginSession.attendance.length > 10 && (
+                  <div className="mt-4 text-center text-sm text-gray-500">
+                    Menampilkan 10 dari {lastLoginSession.attendance.length} record absensi
+                  </div>
+                )}
               </div>
             </div>
           </div>
