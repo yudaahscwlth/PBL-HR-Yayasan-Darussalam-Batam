@@ -249,7 +249,7 @@ export default function HRDEvaluasiPage() {
   };
 
   return (
-    <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
+    <AccessControl allowedRoles={["staff hrd"]}>
       <div className="min-h-screen bg-gray-50 px-4 py-8 md:px-8 font-sans">
         <div className="max-w-full mx-auto">
           {/* Header */}

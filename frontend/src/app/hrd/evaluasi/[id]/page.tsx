@@ -79,14 +79,13 @@ export default function HrdRekapEvaluasiPage() {
   useEffect(() => {
     const checkPermission = async () => {
       try {
-        // Check if user has permission to edit (staff hrd or kepala hrd)
+        // Check if user has permission to edit (only staff hrd can edit)
+        // Kepala hrd can only read/view
         const userRoles = currentUser?.roles || [];
         const roleNames = userRoles.map((r: any) =>
           typeof r === "string" ? r.toLowerCase() : r?.name?.toLowerCase()
         );
-        const canEdit = roleNames.some(
-          (role: string) => role === "kepala hrd" || role === "staff hrd"
-        );
+        const canEdit = roleNames.some((role: string) => role === "staff hrd");
         setHasEditPermission(canEdit);
       } catch (error) {
         console.error("Error checking permission:", error);
