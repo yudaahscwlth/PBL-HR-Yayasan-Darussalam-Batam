@@ -36,7 +36,21 @@ class LeaveController extends Controller
             } else {
                 $leaves = collect([]);
             }
-        } elseif ($user->hasRole('direktur pendidikan')) {
+        } elseif ($user->hasRole('kepala departemen')) {
+        // Kepala departemen hanya melihat pengajuan cuti dari departemen yang sama
+        $departemenId = $user->profilePekerjaan?->id_departemen;
+
+        if ($departemenId) {
+            $leaves = PengajuanCuti::whereHas('user.profilePekerjaan', function ($query) use ($departemenId) {
+                $query->where('id_departemen', $departemenId);
+            })
+                ->with(['user.profilePribadi'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } else {
+            $leaves = collect([]);
+        }
+    } elseif ($user->hasRole('direktur pendidikan')) {
             // Direktur pendidikan melihat pengajuan cuti yang perlu ditinjau olehnya
             $leaves = PengajuanCuti::with(['user.profilePribadi'])
                 ->whereIn('status_pengajuan', [

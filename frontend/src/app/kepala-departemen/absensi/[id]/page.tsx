@@ -39,7 +39,7 @@ interface AttendanceSummary {
   alpha: number;
 }
 
-export default function HrdRekapAbsensiPage() {
+export default function KepalaDepartemenRekapAbsensiPage() {
   const params = useParams();
   const router = useRouter();
   const userId = params?.id as string;
@@ -252,7 +252,7 @@ export default function HrdRekapAbsensiPage() {
   );
 
   return (
-    <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
+    <AccessControl allowedRoles={["kepala departemen"]}>
       <div className="min-h-screen bg-gray-50 p-4 md:p-8 overflow-x-hidden">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}

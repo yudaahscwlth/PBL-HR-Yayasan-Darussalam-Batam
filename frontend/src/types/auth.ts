@@ -43,7 +43,7 @@ export interface ProfilePekerjaan {
   id_departemen?: number;
   id_tempat_kerja?: number;
   tanggal_masuk?: string;
-  status_pegawai?: string;
+  status?: string;
   created_at: string;
   updated_at: string;
   jabatan?: Jabatan;
