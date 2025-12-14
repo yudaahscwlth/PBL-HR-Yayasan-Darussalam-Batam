@@ -6,7 +6,16 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
-import { User } from "@/types/auth";
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  profile_pribadi?: {
+    nama_lengkap: string;
+  };
+}
 
 interface KategoriEvaluasi {
   id: number;
@@ -23,79 +32,96 @@ interface TahunAjaran {
 export default function KepalaDepartemenEvaluasiPage() {
   const router = useRouter();
   const { user: currentUser } = useAuthStore();
-  
+
   const [users, setUsers] = useState<User[]>([]);
-  const [kategoriEvaluasi, setKategoriEvaluasi] = useState<KategoriEvaluasi[]>([]);
+  const [kategoriEvaluasi, setKategoriEvaluasi] = useState<KategoriEvaluasi[]>(
+    []
+  );
   const [tahunAjaran, setTahunAjaran] = useState<TahunAjaran[]>([]);
-  
+
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedTahun, setSelectedTahun] = useState<string>("");
   const [evaluations, setEvaluations] = useState<Record<number, number>>({});
   const [catatan, setCatatan] = useState<string>("");
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [evaluationExists, setEvaluationExists] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const token = localStorage.getItem("auth_token");
-        
+
         if (!token) {
           console.error("No token found in localStorage");
-          setMessage({ type: 'error', text: 'Sesi anda telah berakhir. Silakan login kembali.' });
+          setMessage({
+            type: "error",
+            text: "Sesi anda telah berakhir. Silakan login kembali.",
+          });
           setIsLoading(false);
           return;
         }
 
         const headers = { Authorization: `Bearer ${token}` };
-        
+
         console.log("Fetching evaluation data...");
-        const currentDeptId = currentUser?.profile_pekerjaan?.id_departemen;
-
-        if (!currentDeptId) {
-            console.error("User has no department ID");
-            setUsers([]);
-            return;
-        }
-
         const [usersRes, kategoriRes, tahunRes] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/departemen/${currentDeptId}/members`, { headers }),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/kategori-evaluasi`, { headers }),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/tahun-ajaran`, { headers })
+          axios.get(
+            `${
+              process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+            }/api/users`,
+            { headers }
+          ),
+          axios.get(
+            `${
+              process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+            }/api/kategori-evaluasi`,
+            { headers }
+          ),
+          axios.get(
+            `${
+              process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+            }/api/tahun-ajaran`,
+            { headers }
+          ),
         ]);
 
         console.log("Data fetched successfully");
-        
-        // Filter out the current user themselves
-        const filteredUsers = usersRes.data.data.filter((u: User) => u.id !== currentUser?.id);
-
+        const filteredUsers = usersRes.data.data.filter(
+          (u: User) => u.id !== currentUser?.id
+        );
         setUsers(filteredUsers);
-        
+
         setKategoriEvaluasi(kategoriRes.data.data);
         setTahunAjaran(tahunRes.data.data);
-        
-        const activeTahun = tahunRes.data.data.find((t: TahunAjaran) => t.is_aktif);
+
+        const activeTahun = tahunRes.data.data.find(
+          (t: TahunAjaran) => t.is_aktif
+        );
         if (activeTahun) {
           setSelectedTahun(activeTahun.id.toString());
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        setMessage({ type: 'error', text: 'Gagal memuat data. Silakan coba lagi.' });
+        setMessage({
+          type: "error",
+          text: "Gagal memuat data. Silakan coba lagi.",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (currentUser) {
-        fetchData();
-    }
+    fetchData();
   }, [currentUser]);
 
-  // Check if evaluation already exists when user and tahun ajaran are selected  
+  // Check if evaluation already exists when user and tahun ajaran are selected
   useEffect(() => {
     const checkEvaluationExists = async () => {
       if (!selectedUser || !selectedTahun) {
@@ -106,18 +132,20 @@ export default function KepalaDepartemenEvaluasiPage() {
       try {
         const token = localStorage.getItem("auth_token");
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/evaluation/check-exists`,
+          `${
+            process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+          }/api/evaluation/check-exists`,
           {
             id_user: parseInt(selectedUser),
-            id_tahun_ajaran: parseInt(selectedTahun)
+            id_tahun_ajaran: parseInt(selectedTahun),
           },
           {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
 
         setEvaluationExists(response.data.exists);
-        
+
         // Load existing evaluation data if exists
         if (response.data.exists) {
           if (response.data.evaluations) {
@@ -140,9 +168,9 @@ export default function KepalaDepartemenEvaluasiPage() {
   }, [selectedUser, selectedTahun]);
 
   const handleScoreChange = (kategoriId: number, score: number) => {
-    setEvaluations(prev => ({
+    setEvaluations((prev) => ({
       ...prev,
-      [kategoriId]: score
+      [kategoriId]: score,
     }));
   };
 
@@ -156,13 +184,19 @@ export default function KepalaDepartemenEvaluasiPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser || !selectedTahun) {
-      setMessage({ type: 'error', text: 'Mohon pilih pegawai dan tahun ajaran.' });
+      setMessage({
+        type: "error",
+        text: "Mohon pilih pegawai dan tahun ajaran.",
+      });
       return;
     }
 
     // Check if all categories are filled
     if (Object.keys(evaluations).length < kategoriEvaluasi.length) {
-      setMessage({ type: 'error', text: 'Mohon isi nilai untuk semua indikator penilaian.' });
+      setMessage({
+        type: "error",
+        text: "Mohon isi nilai untuk semua indikator penilaian.",
+      });
       return;
     }
 
@@ -171,38 +205,43 @@ export default function KepalaDepartemenEvaluasiPage() {
       setMessage(null);
       const token = localStorage.getItem("auth_token");
 
-      const evaluationData = kategoriEvaluasi.map(kategori => ({
+      const evaluationData = kategoriEvaluasi.map((kategori) => ({
         id_kategori: kategori.id,
         nilai: evaluations[kategori.id] || 0,
-        catatan: null as string | null
+        catatan: null as string | null,
       }));
 
       if (evaluationData.length > 0) {
         evaluationData[0].catatan = catatan;
       }
 
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/evaluation`, {
-        id_user: parseInt(selectedUser),
-        id_tahun_ajaran: parseInt(selectedTahun),
-        evaluations: evaluationData
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post(
+        `${
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+        }/api/evaluation`,
+        {
+          id_user: parseInt(selectedUser),
+          id_tahun_ajaran: parseInt(selectedTahun),
+          evaluations: evaluationData,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      setMessage({ type: 'success', text: 'Evaluasi berhasil disimpan.' });
-      
+      setMessage({ type: "success", text: "Evaluasi berhasil disimpan." });
+
       // Reset form
       setEvaluations({});
       setCatatan("");
       setSelectedUser("");
       setEvaluationExists(false);
       window.scrollTo(0, 0);
-      
     } catch (error: any) {
       console.error("Error submitting evaluation:", error);
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Gagal menyimpan evaluasi.' 
+      setMessage({
+        type: "error",
+        text: error.response?.data?.message || "Gagal menyimpan evaluasi.",
       });
     } finally {
       setIsSubmitting(false);
@@ -226,16 +265,25 @@ export default function KepalaDepartemenEvaluasiPage() {
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8">
-              
               {/* Form Header */}
               <div className="space-y-6">
-                <h2 className="text-xl font-semibold text-gray-800 border-b pb-4">Evaluasi Pegawai</h2>
-                
+                <h2 className="text-xl font-semibold text-gray-800 border-b pb-4">
+                  Evaluasi
+                </h2>
+
                 {message && (
-                  <div className={`p-4 rounded-lg flex items-center gap-3 ${
-                    message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                  }`}>
-                    {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                  <div
+                    className={`p-4 rounded-lg flex items-center gap-3 ${
+                      message.type === "success"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {message.type === "success" ? (
+                      <CheckCircle className="w-5 h-5" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5" />
+                    )}
                     <p>{message.text}</p>
                   </div>
                 )}
@@ -254,13 +302,11 @@ export default function KepalaDepartemenEvaluasiPage() {
                       <option value="">Pilih Pegawai</option>
                       {users.map((u) => (
                         <option key={u.id} value={u.id}>
-                          {u.profile_pribadi?.nama_lengkap || "Nama Belum Diisi"} ({u.email})
+                          {u.profile_pribadi?.nama_lengkap || u.name} ({u.email}
+                          )
                         </option>
                       ))}
                     </select>
-                    {users.length === 0 && !isLoading && (
-                        <p className="text-xs text-red-500">Tidak ada pegawai lain di departemen ini.</p>
-                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -276,18 +322,22 @@ export default function KepalaDepartemenEvaluasiPage() {
                       <option value="">Pilih Tahun Ajaran</option>
                       {tahunAjaran.map((t) => (
                         <option key={t.id} value={t.id}>
-                          {t.nama} - {t.semester} {t.is_aktif ? '(Aktif)' : ''}
+                          {t.nama} - {t.semester} {t.is_aktif ? "(Aktif)" : ""}
                         </option>
                       ))}
                     </select>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-700">Status :</span>
-                    <span className={`px-3 py-1 text-white text-xs font-medium rounded-md ${
-                      evaluationExists ? 'bg-green-600' : 'bg-gray-400'
-                    }`}>
-                      {evaluationExists ? 'Sudah Terisi' : 'Belum Lengkap'}
+                    <span className="text-sm font-medium text-gray-700">
+                      Status :
+                    </span>
+                    <span
+                      className={`px-3 py-1 text-white text-xs font-medium rounded-md ${
+                        evaluationExists ? "bg-green-600" : "bg-gray-400"
+                      }`}
+                    >
+                      {evaluationExists ? "Sudah Terisi" : "Belum Lengkap"}
                     </span>
                   </div>
                 </div>
@@ -298,14 +348,18 @@ export default function KepalaDepartemenEvaluasiPage() {
                 <h3 className="text-center font-bold text-gray-800 text-sm uppercase tracking-wider">
                   Indikator Penilaian
                 </h3>
-                
+
                 {/* Table Header */}
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b-2 border-gray-300">
-                        <th className="text-left p-3 font-semibold text-gray-700">No</th>
-                        <th className="text-left p-3 font-semibold text-gray-700">Indikator Penilaian</th>
+                        <th className="text-left p-3 font-semibold text-gray-700">
+                          No
+                        </th>
+                        <th className="text-left p-3 font-semibold text-gray-700">
+                          Indikator Penilaian
+                        </th>
                         <th className="text-center p-3 font-semibold text-gray-700">
                           <div>Sangat Baik</div>
                           <div className="text-xs font-normal">(5)</div>
@@ -330,22 +384,37 @@ export default function KepalaDepartemenEvaluasiPage() {
                     </thead>
                     <tbody>
                       {kategoriEvaluasi.map((kategori, index) => (
-                        <tr 
+                        <tr
                           key={kategori.id}
-                          className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
+                          className={
+                            index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                          }
                         >
-                          <td className="p-3 border-b border-gray-200 text-gray-700">{index + 1}</td>
-                          <td className="p-3 border-b border-gray-200 text-gray-700 font-medium">{kategori.nama}</td>
+                          <td className="p-3 border-b border-gray-200 text-gray-700">
+                            {index + 1}
+                          </td>
+                          <td className="p-3 border-b border-gray-200 text-gray-700 font-medium">
+                            {kategori.nama}
+                          </td>
                           {[5, 4, 3, 2, 1].map((score) => (
-                            <td key={score} className="p-3 border-b border-gray-200 text-center">
+                            <td
+                              key={score}
+                              className="p-3 border-b border-gray-200 text-center"
+                            >
                               <input
                                 type="radio"
                                 name={`evaluation-${kategori.id}`}
                                 value={score}
                                 checked={evaluations[kategori.id] === score}
-                                onChange={() => handleScoreChange(kategori.id, score)}
+                                onChange={() =>
+                                  handleScoreChange(kategori.id, score)
+                                }
                                 disabled={evaluationExists}
-                                className={`w-5 h-5 text-sky-800 focus:ring-sky-800 ${evaluationExists ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                                className={`w-5 h-5 text-sky-800 focus:ring-sky-800 ${
+                                  evaluationExists
+                                    ? "cursor-not-allowed opacity-60"
+                                    : "cursor-pointer"
+                                }`}
                               />
                             </td>
                           ))}
@@ -385,7 +454,9 @@ export default function KepalaDepartemenEvaluasiPage() {
                     onChange={(e) => setCatatan(e.target.value)}
                     rows={4}
                     disabled={evaluationExists}
-                    className={`w-full px-4 py-3 border text-gray-700 border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-800 focus:border-sky-800 outline-none resize-none ${evaluationExists ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg focus:ring-2 focus:ring-sky-800 focus:border-sky-800 outline-none resize-none ${
+                      evaluationExists ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     placeholder="Tulis catatan evaluasi di sini..."
                   />
                 </div>
@@ -405,12 +476,11 @@ export default function KepalaDepartemenEvaluasiPage() {
                         Menyimpan...
                       </>
                     ) : (
-                      'Simpan Evaluasi'
+                      "Simpan Evaluasi"
                     )}
                   </button>
                 </div>
               )}
-
             </form>
           </div>
         </div>
