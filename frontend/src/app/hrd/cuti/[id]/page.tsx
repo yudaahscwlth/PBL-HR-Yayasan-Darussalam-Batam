@@ -282,7 +282,7 @@ export default function HrdRekapCutiPage() {
 
   return (
     <AccessControl allowedRoles={["kepala hrd", "staff hrd"]}>
-      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8 overflow-x-hidden">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center gap-4">
@@ -338,12 +338,12 @@ export default function HrdRekapCutiPage() {
                         </div>
                       )}
                     </div>
-                    <div>
+                    <div className="min-w-0 overflow-hidden">
                       <h2 className="text-2xl font-bold text-gray-800">
                         {userProfile.profile_pribadi?.nama_lengkap ||
                           "Nama Belum Diisi"}
                       </h2>
-                      <p className="text-gray-600">{userProfile.email}</p>
+                      <p className="text-gray-600 truncate">{userProfile.email}</p>
                     </div>
                   </div>
                 ) : (
