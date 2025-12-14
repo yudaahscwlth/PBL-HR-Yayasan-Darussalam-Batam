@@ -79,7 +79,9 @@ export default function AdminSlipGaji() {
       }
 
       if (employeeResponse.success && employeeResponse.data) {
-        setEmployeeData(employeeResponse.data);
+        // Handle nested data structure (data.data) or direct data
+        const empData = (employeeResponse.data as any).data || employeeResponse.data;
+        setEmployeeData(empData as EmployeeData);
       }
     } catch (error: any) {
       console.error("Error loading data:", error);

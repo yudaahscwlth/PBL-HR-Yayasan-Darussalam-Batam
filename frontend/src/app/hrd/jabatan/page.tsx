@@ -16,6 +16,21 @@ interface FormData {
   nama_jabatan: string;
 }
 
+interface FormErrors {
+  [key: string]: string[];
+}
+
+interface ApiError {
+  response?: {
+    data?: {
+      errors?: FormErrors;
+      message?: string;
+    };
+    status?: number;
+  };
+  message?: string;
+}
+
 export default function KelolaJabatan() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();

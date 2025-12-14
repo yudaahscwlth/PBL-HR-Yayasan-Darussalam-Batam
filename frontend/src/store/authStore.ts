@@ -57,11 +57,13 @@ export const useAuthStore = create<AuthStore>()(
             // Save last login session for offline access
             try {
               // Fetch attendance data for offline storage
-              let attendanceData = [];
+              let attendanceData: any[] = [];
               try {
                 const attendanceResponse = await apiClient.attendance.getHistory();
                 if (attendanceResponse.success && attendanceResponse.data) {
-                  attendanceData = attendanceResponse.data;
+                  attendanceData = Array.isArray(attendanceResponse.data) 
+                    ? attendanceResponse.data 
+                    : [];
                 }
               } catch (attendanceError) {
                 console.warn("⚠️ Failed to fetch attendance data during login:", attendanceError);

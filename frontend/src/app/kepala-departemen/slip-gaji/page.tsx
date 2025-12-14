@@ -79,7 +79,7 @@ export default function KDSlipGaji() {
       }
 
       if (employeeResponse.success && employeeResponse.data) {
-        setEmployeeData(employeeResponse.data);
+        setEmployeeData(employeeResponse.data as EmployeeData);
       }
     } catch (error: any) {
       console.error("Error loading data:", error);

@@ -57,6 +57,20 @@ interface Employee {
   };
 }
 
+interface UploadResult {
+  success_count?: number;
+  error_count?: number;
+  errors?: Array<{
+    line: number;
+    error: string;
+  }>;
+}
+
+interface PaymentStatusResponse {
+  unpaid_employees: any[];
+  paid_employees: any[];
+}
+
 export default function HRDSlipGaji() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -99,7 +113,7 @@ export default function HRDSlipGaji() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<any>(null);
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [mySlipGajiData, setMySlipGajiData] = useState<SlipGaji[]>([]);
   const [isLoadingMySlipGaji, setIsLoadingMySlipGaji] = useState(false);
   const [nomorRekeningManual, setNomorRekeningManual] = useState("");
@@ -537,13 +551,13 @@ export default function HRDSlipGaji() {
       const response = await apiClient.slipGaji.uploadExcel(uploadFile);
       
       if (response.success) {
-        setUploadResult(response.data);
+        setUploadResult(response.data as UploadResult);
         toast.success(response.message);
         await loadSlipGajiData();
         await loadEmployeesByPaymentStatus(); // Reload payment status
         
         // Reset setelah 3 detik jika tidak ada error
-        if (response.data.error_count === 0) {
+        if ((response.data as UploadResult)?.error_count === 0) {
           setTimeout(() => {
             setShowUploadModal(false);
             setUploadFile(null);
@@ -552,7 +566,7 @@ export default function HRDSlipGaji() {
         }
       } else {
         toast.error(response.message || "Gagal mengupload file");
-        setUploadResult(response.data || null);
+        setUploadResult((response.data as UploadResult) || null);
       }
     } catch (error: any) {
       console.error("Error uploading Excel:", error);
@@ -643,8 +657,9 @@ export default function HRDSlipGaji() {
       const response = await apiClient.slipGaji.getEmployeesByPaymentStatus(selectedMonth, selectedYear);
       
       if (response.success && response.data) {
-        setUnpaidEmployees(response.data.unpaid_employees || []);
-        setPaidEmployees(response.data.paid_employees || []);
+        const paymentData = response.data as PaymentStatusResponse;
+        setUnpaidEmployees(paymentData.unpaid_employees || []);
+        setPaidEmployees(paymentData.paid_employees || []);
       }
     } catch (error: any) {
       console.error("Error loading employees by payment status:", error);
@@ -1224,8 +1239,6 @@ export default function HRDSlipGaji() {
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 handleCloseModal();
-                setShowEditModal(false);
-                setEditingId(null);
               }
             }}
           >
@@ -1439,8 +1452,6 @@ export default function HRDSlipGaji() {
                       type="button"
                       onClick={() => {
                         handleCloseModal();
-                        setShowEditModal(false);
-                        setEditingId(null);
                       }}
                       className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium"
                     >
@@ -1530,7 +1541,7 @@ export default function HRDSlipGaji() {
                 {uploadResult && (
                   <div
                     className={`rounded-lg p-4 ${
-                      uploadResult.error_count > 0
+                      (uploadResult.error_count ?? 0) > 0
                         ? "bg-yellow-50 border border-yellow-200"
                         : "bg-green-50 border border-green-200"
                     }`}
@@ -1538,12 +1549,12 @@ export default function HRDSlipGaji() {
                     <div className="flex items-center gap-2 mb-2">
                       <p
                         className={`font-semibold ${
-                          uploadResult.error_count > 0
+                          (uploadResult.error_count ?? 0) > 0
                             ? "text-yellow-800"
                             : "text-green-800"
                         }`}
                       >
-                        {uploadResult.error_count > 0
+                        {(uploadResult.error_count ?? 0) > 0
                           ? "Import dengan beberapa error"
                           : "Import berhasil"}
                       </p>
