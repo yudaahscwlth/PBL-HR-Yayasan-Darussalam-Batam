@@ -23,7 +23,7 @@ const debounce = (func: Function, wait: number) => {
 
 export function useOfflineSync() {
   const [state, setState] = useState<OfflineSyncState>({
-    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
     pendingActions: 0,
     lastSyncTime: null,
     storageUsage: { used: 0, available: 0 },
@@ -34,8 +34,10 @@ export function useOfflineSync() {
   const updateOnlineStatus = useCallback(
     debounce(() => {
       const isOnline = navigator.onLine;
-      console.log(`[useOfflineSync] Network status: ${isOnline ? 'Online' : 'Offline'}`);
-      setState(prev => ({ ...prev, isOnline }));
+      console.log(
+        `[useOfflineSync] Network status: ${isOnline ? "Online" : "Offline"}`
+      );
+      setState((prev) => ({ ...prev, isOnline }));
 
       // Trigger sync when coming back online
       if (isOnline) {
@@ -49,7 +51,7 @@ export function useOfflineSync() {
   const getStorageUsage = useCallback(async () => {
     try {
       const usage = await offlineStorage.getStorageUsage();
-      setState(prev => ({ ...prev, storageUsage: usage }));
+      setState((prev) => ({ ...prev, storageUsage: usage }));
     } catch (error) {
       console.error("Failed to get storage usage:", error);
     }
@@ -59,7 +61,7 @@ export function useOfflineSync() {
   const getPendingActions = useCallback(async () => {
     try {
       const actions = await offlineStorage.getPendingSyncActions();
-      setState(prev => ({ ...prev, pendingActions: actions.length }));
+      setState((prev) => ({ ...prev, pendingActions: actions.length }));
     } catch (error) {
       console.error("Failed to get pending actions:", error);
     }
@@ -67,45 +69,46 @@ export function useOfflineSync() {
 
   // Get last sync time
   const getLastSyncTime = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    
+    if (typeof window === "undefined") return;
+
     const lastSync = localStorage.getItem("lastSyncTime");
-    setState(prev => ({ 
-      ...prev, 
-      lastSyncTime: lastSync ? new Date(lastSync).toLocaleString("id-ID") : null 
+    setState((prev) => ({
+      ...prev,
+      lastSyncTime: lastSync
+        ? new Date(lastSync).toLocaleString("id-ID")
+        : null,
     }));
   }, []);
 
   // Sync data
   const syncData = useCallback(async () => {
-    if (typeof navigator === 'undefined' || !navigator.onLine) {
+    if (typeof navigator === "undefined" || !navigator.onLine) {
       console.log("Cannot sync: device is offline");
       return;
     }
 
     console.log("[useOfflineSync] Starting manual sync...");
-    setState(prev => ({ ...prev, isSyncing: true }));
+    setState((prev) => ({ ...prev, isSyncing: true }));
 
     try {
       await syncService.syncPendingActions();
-      
+
       // Update last sync time
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         localStorage.setItem("lastSyncTime", new Date().toISOString());
       }
-      
+
       getLastSyncTime();
       await getPendingActions();
-      
+
       // Register background sync for future
       syncService.registerBackgroundSync();
-      
+
       console.log("[useOfflineSync] Sync completed successfully");
-      
     } catch (error) {
       console.error("Sync failed:", error);
     } finally {
-      setState(prev => ({ ...prev, isSyncing: false }));
+      setState((prev) => ({ ...prev, isSyncing: false }));
     }
   }, [getPendingActions, getLastSyncTime]);
 
@@ -133,54 +136,61 @@ export function useOfflineSync() {
   }, []);
 
   // Queue action for sync
-  const queueAction = useCallback(async (action: string, data: any, endpoint: string) => {
-    try {
-      await offlineStorage.addToSyncQueue(action, data, endpoint);
-      await getPendingActions();
-      
-      console.log(`[useOfflineSync] Action queued: ${action} for ${endpoint}`);
-      
-      // If online, try to sync immediately
-      if (navigator.onLine) {
-        syncData();
+  const queueAction = useCallback(
+    async (action: string, data: any, endpoint: string) => {
+      try {
+        await offlineStorage.addToSyncQueue(action, data, endpoint);
+        await getPendingActions();
+
+        console.log(
+          `[useOfflineSync] Action queued: ${action} for ${endpoint}`
+        );
+
+        // If online, try to sync immediately
+        if (navigator.onLine) {
+          syncData();
+        }
+      } catch (error) {
+        console.error("Failed to queue action:", error);
+        throw error;
       }
-    } catch (error) {
-      console.error("Failed to queue action:", error);
-      throw error;
-    }
-  }, [getPendingActions, syncData]);
+    },
+    [getPendingActions, syncData]
+  );
 
   // Clear cached data
-  const clearCache = useCallback(async (storeName?: string) => {
-    try {
-      if (storeName) {
-        await offlineStorage.clearStore(storeName);
-        console.log(`[useOfflineSync] Store cleared: ${storeName}`);
-      } else {
-        // Clear all caches
-        await Promise.all([
-          offlineStorage.clearStore('absensi'),
-          offlineStorage.clearStore('cuti'),
-          offlineStorage.clearStore('evaluasi'),
-          offlineStorage.clearStore('syncQueue'),
-          offlineStorage.clearStore('appData'),
-        ]);
-        console.log("[useOfflineSync] All stores cleared");
+  const clearCache = useCallback(
+    async (storeName?: string) => {
+      try {
+        if (storeName) {
+          await offlineStorage.clearStore(storeName);
+          console.log(`[useOfflineSync] Store cleared: ${storeName}`);
+        } else {
+          // Clear all caches
+          await Promise.all([
+            offlineStorage.clearStore("absensi"),
+            offlineStorage.clearStore("cuti"),
+            offlineStorage.clearStore("evaluasi"),
+            offlineStorage.clearStore("syncQueue"),
+            offlineStorage.clearStore("appData"),
+          ]);
+          console.log("[useOfflineSync] All stores cleared");
+        }
+
+        await getPendingActions();
+        await getStorageUsage();
+      } catch (error) {
+        console.error("Failed to clear cache:", error);
+        throw error;
       }
-      
-      await getPendingActions();
-      await getStorageUsage();
-      
-    } catch (error) {
-      console.error("Failed to clear cache:", error);
-      throw error;
-    }
-  }, [getPendingActions, getStorageUsage]);
+    },
+    [getPendingActions, getStorageUsage]
+  );
 
   // Initialize all data
   const initializeData = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-    
+    if (typeof window === "undefined") return;
+
     console.log("[useOfflineSync] Initializing data...");
     await Promise.all([
       updateOnlineStatus(),
@@ -192,7 +202,7 @@ export function useOfflineSync() {
 
   // Initialize and set up event listeners
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     // Initial setup
     initializeData();
@@ -205,11 +215,11 @@ export function useOfflineSync() {
     const handleMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === "SYNC_STATUS") {
         console.log(`[useOfflineSync] Sync status: ${event.data.status}`);
-        setState(prev => ({ 
-          ...prev, 
-          isSyncing: event.data.status === "syncing" 
+        setState((prev) => ({
+          ...prev,
+          isSyncing: event.data.status === "syncing",
         }));
-        
+
         if (event.data.status === "completed") {
           getLastSyncTime();
           getPendingActions();
@@ -217,8 +227,18 @@ export function useOfflineSync() {
       }
     };
 
+    // Wait for service worker to be ready before adding message listener
     if (navigator.serviceWorker) {
-      navigator.serviceWorker.addEventListener("message", handleMessage);
+      navigator.serviceWorker.ready
+        .then(() => {
+          navigator.serviceWorker.addEventListener("message", handleMessage);
+        })
+        .catch((error) => {
+          console.warn(
+            "[useOfflineSync] Service worker ready check failed:",
+            error
+          );
+        });
     }
 
     // Periodic updates (every 30 seconds)
@@ -229,14 +249,28 @@ export function useOfflineSync() {
     return () => {
       window.removeEventListener("online", updateOnlineStatus);
       window.removeEventListener("offline", updateOnlineStatus);
-      
+
       if (navigator.serviceWorker) {
-        navigator.serviceWorker.removeEventListener("message", handleMessage);
+        try {
+          navigator.serviceWorker.removeEventListener("message", handleMessage);
+        } catch (error) {
+          // Ignore errors when removing listener
+          console.warn(
+            "[useOfflineSync] Error removing message listener:",
+            error
+          );
+        }
       }
-      
+
       clearInterval(interval);
     };
-  }, [initializeData, updateOnlineStatus, getStorageUsage, getPendingActions, getLastSyncTime]);
+  }, [
+    initializeData,
+    updateOnlineStatus,
+    getStorageUsage,
+    getPendingActions,
+    getLastSyncTime,
+  ]);
 
   return {
     ...state,
@@ -259,7 +293,7 @@ export function useOfflineData<T>(key: string, defaultValue?: T) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const offlineData = await offlineStorage.getAppConfig(key);
       setData(offlineData || defaultValue || null);
     } catch (err) {
@@ -269,16 +303,19 @@ export function useOfflineData<T>(key: string, defaultValue?: T) {
     }
   }, [key, defaultValue]);
 
-  const saveData = useCallback(async (newData: T) => {
-    try {
-      setError(null);
-      await offlineStorage.saveAppConfig(key, newData);
-      setData(newData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save data");
-      throw err;
-    }
-  }, [key]);
+  const saveData = useCallback(
+    async (newData: T) => {
+      try {
+        setError(null);
+        await offlineStorage.saveAppConfig(key, newData);
+        setData(newData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save data");
+        throw err;
+      }
+    },
+    [key]
+  );
 
   useEffect(() => {
     loadData();

@@ -1,7 +1,7 @@
 // src/lib/offlineStorage.ts
 // Offline Storage Utility using IndexedDB
 export class OfflineStorage {
-  private dbName = 'HRDarussalamOfflineDB';
+  private dbName = "HRDarussalamOfflineDB";
   private version = 2; // Increased version for schema updates
   private db: IDBDatabase | null = null;
   private isInitialized = false;
@@ -17,14 +17,14 @@ export class OfflineStorage {
       const request = indexedDB.open(this.dbName, this.version);
 
       request.onerror = () => {
-        console.error('Failed to open IndexedDB:', request.error);
+        console.error("Failed to open IndexedDB:", request.error);
         reject(request.error);
       };
 
       request.onsuccess = () => {
         this.db = request.result;
         this.isInitialized = true;
-        console.log('IndexedDB opened successfully');
+        console.log("IndexedDB opened successfully");
         resolve();
       };
 
@@ -33,52 +33,68 @@ export class OfflineStorage {
         console.log(`Upgrading database to version ${this.version}`);
 
         // Create object stores for different data types
-        if (!db.objectStoreNames.contains('userData')) {
-          const userStore = db.createObjectStore('userData', { keyPath: 'id' });
-          userStore.createIndex('email', 'email', { unique: false });
+        if (!db.objectStoreNames.contains("userData")) {
+          const userStore = db.createObjectStore("userData", { keyPath: "id" });
+          userStore.createIndex("email", "email", { unique: false });
         }
 
-        if (!db.objectStoreNames.contains('absensi')) {
-          const absensiStore = db.createObjectStore('absensi', { keyPath: 'id', autoIncrement: true });
-          absensiStore.createIndex('user_id', 'user_id', { unique: false });
-          absensiStore.createIndex('tanggal', 'tanggal', { unique: false });
-          absensiStore.createIndex('status', 'status', { unique: false });
+        if (!db.objectStoreNames.contains("absensi")) {
+          const absensiStore = db.createObjectStore("absensi", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+          absensiStore.createIndex("user_id", "user_id", { unique: false });
+          absensiStore.createIndex("tanggal", "tanggal", { unique: false });
+          absensiStore.createIndex("status", "status", { unique: false });
         }
 
-        if (!db.objectStoreNames.contains('cuti')) {
-          const cutiStore = db.createObjectStore('cuti', { keyPath: 'id', autoIncrement: true });
-          cutiStore.createIndex('user_id', 'user_id', { unique: false });
-          cutiStore.createIndex('status', 'status', { unique: false });
-          cutiStore.createIndex('tanggal_pengajuan', 'tanggal_pengajuan', { unique: false });
+        if (!db.objectStoreNames.contains("cuti")) {
+          const cutiStore = db.createObjectStore("cuti", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+          cutiStore.createIndex("user_id", "user_id", { unique: false });
+          cutiStore.createIndex("status", "status", { unique: false });
+          cutiStore.createIndex("tanggal_pengajuan", "tanggal_pengajuan", {
+            unique: false,
+          });
         }
 
-        if (!db.objectStoreNames.contains('evaluasi')) {
-          const evaluasiStore = db.createObjectStore('evaluasi', { keyPath: 'id', autoIncrement: true });
-          evaluasiStore.createIndex('user_id', 'user_id', { unique: false });
-          evaluasiStore.createIndex('kategori_id', 'kategori_id', { unique: false });
-          evaluasiStore.createIndex('periode', 'periode', { unique: false });
+        if (!db.objectStoreNames.contains("evaluasi")) {
+          const evaluasiStore = db.createObjectStore("evaluasi", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+          evaluasiStore.createIndex("user_id", "user_id", { unique: false });
+          evaluasiStore.createIndex("kategori_id", "kategori_id", {
+            unique: false,
+          });
+          evaluasiStore.createIndex("periode", "periode", { unique: false });
         }
 
-        if (!db.objectStoreNames.contains('syncQueue')) {
-          const syncStore = db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
-          syncStore.createIndex('timestamp', 'timestamp', { unique: false });
-          syncStore.createIndex('action', 'action', { unique: false });
-          syncStore.createIndex('status', 'status', { unique: false });
-          syncStore.createIndex('endpoint', 'endpoint', { unique: false });
+        if (!db.objectStoreNames.contains("syncQueue")) {
+          const syncStore = db.createObjectStore("syncQueue", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+          syncStore.createIndex("timestamp", "timestamp", { unique: false });
+          syncStore.createIndex("action", "action", { unique: false });
+          syncStore.createIndex("status", "status", { unique: false });
+          syncStore.createIndex("endpoint", "endpoint", { unique: false });
         }
 
-        if (!db.objectStoreNames.contains('appData')) {
-          db.createObjectStore('appData', { keyPath: 'key' });
+        if (!db.objectStoreNames.contains("appData")) {
+          db.createObjectStore("appData", { keyPath: "key" });
         }
 
-        if (!db.objectStoreNames.contains('cache')) {
-          const cacheStore = db.createObjectStore('cache', { keyPath: 'key' });
-          cacheStore.createIndex('expires', 'expires', { unique: false });
+        if (!db.objectStoreNames.contains("cache")) {
+          const cacheStore = db.createObjectStore("cache", { keyPath: "key" });
+          cacheStore.createIndex("expires", "expires", { unique: false });
         }
       };
 
       request.onblocked = () => {
-        console.warn('Database upgrade blocked - please close other tabs');
+        console.warn("Database upgrade blocked - please close other tabs");
       };
     });
   }
@@ -88,13 +104,16 @@ export class OfflineStorage {
       await this.initDB();
     }
     if (!this.db) {
-      throw new Error('Database not initialized');
+      throw new Error("Database not initialized");
     }
     return this.db;
   }
 
   // Retry mechanism for failed operations
-  private async withRetry<T>(operation: () => Promise<T>, retries = 3): Promise<T> {
+  private async withRetry<T>(
+    operation: () => Promise<T>,
+    retries = 3
+  ): Promise<T> {
     try {
       return await operation();
     } catch (error) {
@@ -102,7 +121,7 @@ export class OfflineStorage {
         console.log(`Retrying operation, ${retries} attempts left`);
         // Reinitialize DB on error
         this.isInitialized = false;
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         return this.withRetry(operation, retries - 1);
       }
       throw error;
@@ -113,9 +132,9 @@ export class OfflineStorage {
   async addData(storeName: string, data: any): Promise<any> {
     return this.withRetry(async () => {
       const db = await this.ensureDB();
-      
+
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction([storeName], 'readwrite');
+        const transaction = db.transaction([storeName], "readwrite");
         const store = transaction.objectStore(storeName);
         const request = store.add(data);
 
@@ -136,9 +155,9 @@ export class OfflineStorage {
   async getAllData(storeName: string): Promise<any[]> {
     return this.withRetry(async () => {
       const db = await this.ensureDB();
-      
+
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction([storeName], 'readonly');
+        const transaction = db.transaction([storeName], "readonly");
         const store = transaction.objectStore(storeName);
         const request = store.getAll();
 
@@ -158,9 +177,9 @@ export class OfflineStorage {
   async getDataById(storeName: string, id: string | number): Promise<any> {
     return this.withRetry(async () => {
       const db = await this.ensureDB();
-      
+
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction([storeName], 'readonly');
+        const transaction = db.transaction([storeName], "readonly");
         const store = transaction.objectStore(storeName);
         const request = store.get(id);
 
@@ -180,9 +199,9 @@ export class OfflineStorage {
   async updateData(storeName: string, data: any): Promise<any> {
     return this.withRetry(async () => {
       const db = await this.ensureDB();
-      
+
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction([storeName], 'readwrite');
+        const transaction = db.transaction([storeName], "readwrite");
         const store = transaction.objectStore(storeName);
         const request = store.put(data);
 
@@ -192,7 +211,10 @@ export class OfflineStorage {
         };
 
         request.onerror = () => {
-          console.error(`Failed to update data in ${storeName}:`, request.error);
+          console.error(
+            `Failed to update data in ${storeName}:`,
+            request.error
+          );
           reject(request.error);
         };
       });
@@ -203,9 +225,9 @@ export class OfflineStorage {
   async deleteData(storeName: string, id: string | number): Promise<void> {
     return this.withRetry(async () => {
       const db = await this.ensureDB();
-      
+
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction([storeName], 'readwrite');
+        const transaction = db.transaction([storeName], "readwrite");
         const store = transaction.objectStore(storeName);
         const request = store.delete(id);
 
@@ -215,7 +237,10 @@ export class OfflineStorage {
         };
 
         request.onerror = () => {
-          console.error(`Failed to delete data from ${storeName}:`, request.error);
+          console.error(
+            `Failed to delete data from ${storeName}:`,
+            request.error
+          );
           reject(request.error);
         };
       });
@@ -226,9 +251,9 @@ export class OfflineStorage {
   async clearStore(storeName: string): Promise<void> {
     return this.withRetry(async () => {
       const db = await this.ensureDB();
-      
+
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction([storeName], 'readwrite');
+        const transaction = db.transaction([storeName], "readwrite");
         const store = transaction.objectStore(storeName);
         const request = store.clear();
 
@@ -247,63 +272,69 @@ export class OfflineStorage {
 
   // Save user data
   async saveUserData(userData: any): Promise<void> {
-    const userDataWithId = { ...userData, id: 'currentUser' };
-    await this.updateData('userData', userDataWithId);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lastSyncTime', new Date().toISOString());
+    const userDataWithId = { ...userData, id: "currentUser" };
+    await this.updateData("userData", userDataWithId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lastSyncTime", new Date().toISOString());
     }
   }
 
   // Get user data
   async getUserData(): Promise<any> {
-    return await this.getDataById('userData', 'currentUser');
+    return await this.getDataById("userData", "currentUser");
   }
 
   // Save last login user data (specifically for offline display)
   async saveLastLoginUser(userData: any): Promise<void> {
     const lastLoginData = {
       ...userData,
-      id: 'lastLogin',
+      id: "lastLogin",
       loginTime: new Date().toISOString(),
-      savedAt: new Date().toISOString()
+      savedAt: new Date().toISOString(),
     };
-    await this.updateData('userData', lastLoginData);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lastLoginTime', lastLoginData.loginTime);
+    await this.updateData("userData", lastLoginData);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lastLoginTime", lastLoginData.loginTime);
     }
   }
 
   // Get last login user data
   async getLastLoginUser(): Promise<any> {
-    return await this.getDataById('userData', 'lastLogin');
+    return await this.getDataById("userData", "lastLogin");
   }
 
   // Save user attendance data for offline access
   async saveUserAttendance(attendanceData: any[]): Promise<void> {
     const attendanceWithId = {
-      id: 'userAttendance',
+      id: "userAttendance",
       data: attendanceData,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     };
-    await this.updateData('appData', attendanceWithId);
+    await this.updateData("appData", attendanceWithId);
   }
 
   // Get user attendance data
   async getUserAttendance(): Promise<any[]> {
-    const attendanceRecord = await this.getDataById('appData', 'userAttendance');
+    const attendanceRecord = await this.getDataById(
+      "appData",
+      "userAttendance"
+    );
     return attendanceRecord ? attendanceRecord.data : [];
   }
 
   // Save last login user with attendance (comprehensive method)
-  async saveLastLoginSession(userData: any, attendanceData: any[] = []): Promise<void> {
+  async saveLastLoginSession(
+    userData: any,
+    attendanceData: any[] = []
+  ): Promise<void> {
     await this.saveLastLoginUser(userData);
     if (attendanceData.length > 0) {
       await this.saveUserAttendance(attendanceData);
     }
-    console.log('[OfflineStorage] Last login session saved:', {
+    console.log("[OfflineStorage] Last login session saved:", {
       user: userData.email,
       attendanceCount: attendanceData.length,
-      savedAt: new Date().toISOString()
+      savedAt: new Date().toISOString(),
     });
   }
 
@@ -316,90 +347,105 @@ export class OfflineStorage {
     try {
       const user = await this.getLastLoginUser();
       const attendance = await this.getUserAttendance();
-      
+
       if (user) {
         return {
           user,
           attendance,
-          loginTime: user.loginTime || user.savedAt
+          loginTime: user.loginTime || user.savedAt,
         };
       }
       return null;
     } catch (error) {
-      console.error('[OfflineStorage] Failed to get last login session:', error);
+      console.error(
+        "[OfflineStorage] Failed to get last login session:",
+        error
+      );
       return null;
     }
   }
 
   // Add action to sync queue
-  async addToSyncQueue(action: string, data: any, endpoint: string): Promise<void> {
+  async addToSyncQueue(
+    action: string,
+    data: any,
+    endpoint: string
+  ): Promise<void> {
     const syncItem = {
       action,
       data,
       endpoint,
       timestamp: new Date().toISOString(),
-      status: 'pending',
+      status: "pending",
       retryCount: 0,
-      lastAttempt: null
+      lastAttempt: null,
     };
-    await this.addData('syncQueue', syncItem);
+    await this.addData("syncQueue", syncItem);
   }
 
   // Get all pending sync actions
   async getPendingSyncActions(): Promise<any[]> {
-    const allActions = await this.getAllData('syncQueue');
-    return allActions.filter(action => action.status === 'pending');
+    const allActions = await this.getAllData("syncQueue");
+    return allActions.filter((action) => action.status === "pending");
   }
 
   // Mark sync action as completed
   async markSyncCompleted(id: number): Promise<void> {
-    const action = await this.getDataById('syncQueue', id);
+    const action = await this.getDataById("syncQueue", id);
     if (action) {
-      action.status = 'completed';
+      action.status = "completed";
       action.completedAt = new Date().toISOString();
-      await this.updateData('syncQueue', action);
+      await this.updateData("syncQueue", action);
     }
   }
 
   // Mark sync action as failed
   async markSyncFailed(id: number, error: string): Promise<void> {
-    const action = await this.getDataById('syncQueue', id);
+    const action = await this.getDataById("syncQueue", id);
     if (action) {
       action.retryCount = (action.retryCount || 0) + 1;
       action.lastAttempt = new Date().toISOString();
       action.lastError = error;
-      
+
       // If retry count exceeds limit, mark as failed
       if (action.retryCount >= 3) {
-        action.status = 'failed';
+        action.status = "failed";
       }
-      
-      await this.updateData('syncQueue', action);
+
+      await this.updateData("syncQueue", action);
     }
   }
 
   // Save app configuration
   async saveAppConfig(key: string, value: any): Promise<void> {
-    await this.updateData('appData', { key, value, updatedAt: new Date().toISOString() });
+    await this.updateData("appData", {
+      key,
+      value,
+      updatedAt: new Date().toISOString(),
+    });
   }
 
   // Get app configuration
   async getAppConfig(key: string): Promise<any> {
-    const config = await this.getDataById('appData', key);
+    const config = await this.getDataById("appData", key);
     return config ? config.value : null;
   }
 
   // Get storage usage
-  async getStorageUsage(): Promise<{ used: number, available: number }> {
-    if (typeof navigator !== 'undefined' && 'storage' in navigator && 'estimate' in navigator.storage) {
+  async getStorageUsage(): Promise<{ used: number; available: number }> {
+    if (
+      typeof navigator !== "undefined" &&
+      "storage" in navigator &&
+      "estimate" in navigator.storage
+    ) {
       try {
         const estimate = await navigator.storage.estimate();
         return {
           used: estimate.usage || 0,
-          available: estimate.quota || 0
+          available: estimate.quota || 0,
         };
       } catch (error) {
-        console.error('Failed to estimate storage:', error);
+        console.error("Failed to estimate storage:", error);
       }
     }
     return { used: 0, available: 0 };
@@ -411,7 +457,7 @@ export class OfflineStorage {
     let totalSize = 0;
 
     const storeNames = Array.from(db.objectStoreNames);
-    
+
     for (const storeName of storeNames) {
       const size = await this.getStoreSize(storeName);
       totalSize += size;
@@ -422,7 +468,7 @@ export class OfflineStorage {
 
   private async getStoreSize(storeName: string): Promise<number> {
     return new Promise((resolve) => {
-      const transaction = this.db!.transaction([storeName], 'readonly');
+      const transaction = this.db!.transaction([storeName], "readonly");
       const store = transaction.objectStore(storeName);
       const request = store.getAll();
 
@@ -466,7 +512,9 @@ export class SyncService {
       let successCount = 0;
       let failedCount = 0;
 
-      console.log(`[SyncService] Syncing ${pendingActions.length} pending actions`);
+      console.log(
+        `[SyncService] Syncing ${pendingActions.length} pending actions`
+      );
 
       for (const action of pendingActions) {
         try {
@@ -475,35 +523,43 @@ export class SyncService {
           successCount++;
           console.log(`[SyncService] Action ${action.id} synced successfully`);
         } catch (error) {
-          await this.offlineStorage.markSyncFailed(action.id, error instanceof Error ? error.message : 'Unknown error');
+          await this.offlineStorage.markSyncFailed(
+            action.id,
+            error instanceof Error ? error.message : "Unknown error"
+          );
           failedCount++;
-          console.error(`[SyncService] Failed to sync action ${action.id}:`, error);
+          console.error(
+            `[SyncService] Failed to sync action ${action.id}:`,
+            error
+          );
         }
       }
 
-      console.log(`[SyncService] Sync completed: ${successCount} success, ${failedCount} failed`);
+      console.log(
+        `[SyncService] Sync completed: ${successCount} success, ${failedCount} failed`
+      );
       return { success: successCount, failed: failedCount };
-
     } catch (error) {
-      console.error('[SyncService] Failed to sync pending actions:', error);
+      console.error("[SyncService] Failed to sync pending actions:", error);
       return { success: 0, failed: 0 };
     }
   }
 
   private async syncAction(action: any): Promise<void> {
     const { action: actionType, data, endpoint } = action;
-    
+
     // TODO: Integrate with your actual API client
     // This is a placeholder for the actual sync logic
-    
+
     console.log(`[SyncService] Syncing ${actionType} to ${endpoint}:`, data);
-    
+
     // Simulate API call
     await new Promise((resolve, reject) => {
       setTimeout(() => {
         // Simulate random failures for testing
-        if (Math.random() < 0.2) { // 20% failure rate for testing
-          reject(new Error('Simulated network error'));
+        if (Math.random() < 0.2) {
+          // 20% failure rate for testing
+          reject(new Error("Simulated network error"));
         } else {
           resolve({ success: true });
         }
@@ -513,16 +569,49 @@ export class SyncService {
 
   // Register for background sync if available
   registerBackgroundSync(): void {
-    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && 'SyncManager' in window) {
-      navigator.serviceWorker.ready.then(registration => {
-        return registration.sync.register('sync-data');
-      }).then(() => {
-        console.log('[SyncService] Background sync registered');
-      }).catch(error => {
-        console.error('[SyncService] Failed to register background sync:', error);
-      });
+    if (
+      typeof navigator !== "undefined" &&
+      "serviceWorker" in navigator &&
+      "SyncManager" in window
+    ) {
+      navigator.serviceWorker.ready
+        .then((registration) => {
+          // Type assertion untuk SyncManager API yang eksperimental
+          // SyncManager tidak ada di type definitions standar TypeScript
+          // Menggunakan 'any' untuk mengakses property sync yang eksperimental
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const registrationWithSync = registration as any;
+
+          // Check if sync is available on registration
+          if (!registrationWithSync.sync) {
+            console.log(
+              "[SyncService] Background sync not available on registration"
+            );
+            return;
+          }
+          return registrationWithSync.sync.register("sync-data");
+        })
+        .then(() => {
+          console.log("[SyncService] Background sync registered");
+        })
+        .catch((error) => {
+          // Handle permission errors gracefully
+          if (
+            error.name === "NotAllowedError" ||
+            error.message?.includes("permission")
+          ) {
+            console.warn(
+              "[SyncService] Background sync permission denied. This is normal if the feature is not enabled or user denied permission."
+            );
+          } else {
+            console.error(
+              "[SyncService] Failed to register background sync:",
+              error
+            );
+          }
+        });
     } else {
-      console.log('[SyncService] Background sync not supported');
+      console.log("[SyncService] Background sync not supported");
     }
   }
 
@@ -533,13 +622,13 @@ export class SyncService {
     failed: number;
     total: number;
   }> {
-    const allActions = await this.offlineStorage.getAllData('syncQueue');
-    
+    const allActions = await this.offlineStorage.getAllData("syncQueue");
+
     return {
-      pending: allActions.filter(a => a.status === 'pending').length,
-      completed: allActions.filter(a => a.status === 'completed').length,
-      failed: allActions.filter(a => a.status === 'failed').length,
-      total: allActions.length
+      pending: allActions.filter((a) => a.status === "pending").length,
+      completed: allActions.filter((a) => a.status === "completed").length,
+      failed: allActions.filter((a) => a.status === "failed").length,
+      total: allActions.length,
     };
   }
 }
