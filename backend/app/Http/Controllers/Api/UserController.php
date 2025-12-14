@@ -32,6 +32,11 @@ class UserController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // Log incoming request data for debugging
+        \Illuminate\Support\Facades\Log::info('User creation attempt', [
+            'request_data' => $request->all()
+        ]);
+
         $request->validate([
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:6',
@@ -83,10 +88,23 @@ class UserController extends Controller
 
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\DB::rollBack();
+            
+            // Enhanced error logging
+            \Illuminate\Support\Facades\Log::error('User creation failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create user',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'details' => config('app.debug') ? [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ] : null
             ], 500);
         }
     }

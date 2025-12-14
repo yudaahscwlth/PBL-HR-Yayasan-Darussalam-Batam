@@ -185,6 +185,14 @@ export default function HrdKelolaPegawaiPage() {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("auth_token");
+        
+        if (!token) {
+          console.warn("⚠️ No auth token found, user might need to login");
+          toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
+          router.push("/");
+          return;
+        }
+        
         const headers = { Authorization: `Bearer ${token}` };
 
         const [jabatanRes, departemenRes, tempatKerjaRes] = await Promise.all([
@@ -198,29 +206,45 @@ export default function HrdKelolaPegawaiPage() {
         const departemenData = departemenRes.data.data;
         setDepartemenList(Array.isArray(departemenData) ? departemenData : departemenData?.departemen || []);
         setTempatKerjaList(tempatKerjaRes.data.data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching dropdown data:", error);
+        
+        // Handle 401 Unauthorized - session expired
+        if (error.response?.status === 401) {
+          console.warn("🔒 Authentication failed (401). Token might be expired.");
+          toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
+          localStorage.removeItem("auth_token");
+          router.push("/");
+        } else {
+          toast.error("Gagal memuat data dropdown. Silakan refresh halaman.");
+        }
       }
     };
 
     if (isModalOpen) {
       fetchData();
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log("📤 Submitting form data:", formData);
+    
     try {
       const token = localStorage.getItem("auth_token");
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, formData, {
+      const createResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      console.log("✅ User created successfully:", createResponse.data);
       setIsModalOpen(false);
+      
       // Refresh users
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, {
+      const usersResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const fetchedData = response.data.data;
+      const fetchedData = usersResponse.data.data;
       setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
 
       // Reset form
@@ -238,9 +262,37 @@ export default function HrdKelolaPegawaiPage() {
         role: ''
       });
       toast.success("Pegawai berhasil ditambahkan");
-    } catch (error) {
-      console.error("Error creating user:", error);
-      toast.error("Gagal menambahkan pegawai");
+    } catch (error: any) {
+      console.error("❌ Error creating user:", error);
+      console.error("📝 Error response:", error.response);
+      
+      // Handle validation errors (422)
+      if (error.response?.status === 422) {
+        const validationErrors = error.response?.data?.errors;
+        if (validationErrors) {
+          const errorMessages = Object.values(validationErrors).flat().join(', ');
+          toast.error(`Validasi gagal: ${errorMessages}`);
+        } else {
+          toast.error("Validasi gagal, periksa kembali form");
+        }
+      }
+      // Handle server errors (500)
+      else if (error.response?.status === 500) {
+        const errorMessage = error.response?.data?.error || "Terjadi kesalahan server";
+        const errorDetails = error.response?.data?.details;
+        
+        console.error("🔥 Server error details:", {
+          message: errorMessage,
+          details: errorDetails,
+          fullResponse: error.response?.data
+        });
+        
+        toast.error(`Gagal menambahkan pegawai: ${errorMessage}`);
+      }
+      // Handle other errors
+      else {
+        toast.error("Gagal menambahkan pegawai. Silakan coba lagi.");
+      }
     }
   };
 
