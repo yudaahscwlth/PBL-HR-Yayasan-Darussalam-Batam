@@ -21,7 +21,21 @@ class EvaluationController extends Controller
             $evaluations = Evaluasi::with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
                 ->orderBy('created_at', 'desc')
                 ->get();
+        } elseif ($user->hasRole('kepala departemen')) {
+        // Kepala departemen hanya melihat evaluasi dari departemen yang sama
+        $departemenId = $user->profilePekerjaan?->id_departemen;
+
+        if ($departemenId) {
+            $evaluations = Evaluasi::whereHas('user.profilePekerjaan', function ($query) use ($departemenId) {
+                $query->where('id_departemen', $departemenId);
+            })
+                ->with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
+            $evaluations = collect([]);
+        }
+    } else {
             $evaluations = Evaluasi::where('id_user', $user->id)
                 ->with(['kategoriEvaluasi'])
                 ->orderBy('created_at', 'desc')

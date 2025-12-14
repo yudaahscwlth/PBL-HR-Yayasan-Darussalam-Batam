@@ -418,7 +418,7 @@ export const kepalaDepartemenMenuConfig: MenuSection[] = [
             />
           </svg>
         ),
-        path: "/kepala-departemen/pegawai",
+        path: "/kepala-departemen/kelola/pegawai",
       },
     ]
   },
