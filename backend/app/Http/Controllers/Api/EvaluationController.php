@@ -15,10 +15,10 @@ class EvaluationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        
-        // Check if user is HRD or admin
-        if ($user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
-            $evaluations = Evaluasi::with(['user.profilePribadi', 'kategoriEvaluasi'])
+
+        // Check if user is HRD, admin, or kepala yayasan (can view all evaluations)
+        if ($user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin', 'kepala yayasan'])) {
+            $evaluations = Evaluasi::with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
                 ->orderBy('created_at', 'desc')
                 ->get();
         } else {
@@ -41,7 +41,7 @@ class EvaluationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Check if user has permission to create evaluations
         if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
             return response()->json([
@@ -115,7 +115,7 @@ class EvaluationController extends Controller
     public function update(Request $request, Evaluasi $evaluation): JsonResponse
     {
         $user = $request->user();
-        
+
         // Check if user has permission to update evaluations
         if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
             return response()->json([
@@ -146,7 +146,7 @@ class EvaluationController extends Controller
     public function destroy(Request $request, Evaluasi $evaluation): JsonResponse
     {
         $user = $request->user();
-        
+
         // Check if user has permission to delete evaluations
         if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
             return response()->json([
@@ -169,7 +169,7 @@ class EvaluationController extends Controller
     public function getPersonal(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $evaluations = Evaluasi::where('id_user', $user->id)
             ->with(['kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
             ->orderBy('created_at', 'desc')
@@ -198,11 +198,11 @@ class EvaluationController extends Controller
             ->get();
 
         $exists = $evaluations->count() > 0;
-        
+
         // Format evaluations data for frontend
         $evaluationData = [];
         $catatan = '';
-        
+
         if ($exists) {
             foreach ($evaluations as $index => $eval) {
                 $evaluationData[$eval->id_kategori] = $eval->nilai;

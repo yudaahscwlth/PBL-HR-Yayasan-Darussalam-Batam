@@ -72,7 +72,7 @@ function ActionMenuPortal({
         Detail Profil
       </Link>
       <Link
-        href={`/hrd/evaluasi/${userId}`}
+        href={`/kepala-yayasan/evaluasi/${userId}`}
         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-sky-800 flex items-center gap-2"
       >
         <ClipboardList className="w-4 h-4" />
