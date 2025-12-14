@@ -58,10 +58,31 @@ export default function NotifikasiPage() {
   const loadNotifications = async () => {
     try {
       setIsLoading(true);
-      const response = await apiClient.notifications.getAll();
-      if (response.success && response.data) {
-        setNotifications(response.data);
+      
+      // Fetch both notification types concurrently
+      const [userNotifs, verifierNotifs] = await Promise.all([
+        apiClient.notifications.getAll(),
+        apiClient.notifications.getVerifierNotifications()
+      ]);
+      
+      const allNotifications: Notification[] = [];
+      
+      // Add user notifications (approval/rejection of their own leaves)
+      if (userNotifs.success && userNotifs.data && Array.isArray(userNotifs.data)) {
+        allNotifications.push(...userNotifs.data);
       }
+      
+      // Add verifier notifications (leaves that need verification)
+      if (verifierNotifs.success && verifierNotifs.data && Array.isArray(verifierNotifs.data)) {
+        allNotifications.push(...verifierNotifs.data);
+      }
+      
+      // Sort by timestamp (most recent first)
+      allNotifications.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      
+      setNotifications(allNotifications);
     } catch (error: any) {
       console.error("Error loading notifications:", error);
       toast.error("Gagal memuat notifikasi");
@@ -155,6 +176,8 @@ export default function NotifikasiPage() {
         return <Check className="w-5 h-5 text-green-600" />;
       case "leave_rejected":
         return <X className="w-5 h-5 text-red-600" />;
+      case "leave_verification_needed":
+        return <Calendar className="w-5 h-5 text-orange-600" />;
       case "slip_gaji":
         return <FileText className="w-5 h-5 text-blue-600" />;
       default:
@@ -168,6 +191,8 @@ export default function NotifikasiPage() {
         return "border-r-4 border-r-green-500";
       case "leave_rejected":
         return "border-r-4 border-r-red-500";
+      case "leave_verification_needed":
+        return "border-r-4 border-r-orange-500";
       case "slip_gaji":
         return "border-r-4 border-r-blue-500";
       default:

@@ -21,22 +21,43 @@ export default function BottomNavbar({ activeTab, onTabChange }: BottomNavbarPro
   useEffect(() => {
     const fetchNotificationCount = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/notifications`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-            'Accept': 'application/json',
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            // Get read notifications from localStorage
-            const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
-            // Count unread notifications
-            const unreadCount = data.data.filter((n: any) => !readNotifications.includes(n.id)).length;
-            setNotificationCount(unreadCount);
+        const token = localStorage.getItem('auth_token');
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        };
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+        // Fetch both notification types concurrently
+        const [personalResponse, verifierResponse] = await Promise.all([
+          fetch(`${baseUrl}/api/notifications`, { headers }),
+          fetch(`${baseUrl}/api/verifier-notifications`, { headers })
+        ]);
+
+        const allNotifications: any[] = [];
+
+        // Add personal notifications
+        if (personalResponse.ok) {
+          const personalData = await personalResponse.json();
+          if (personalData.success && personalData.data && Array.isArray(personalData.data)) {
+            allNotifications.push(...personalData.data);
           }
         }
+
+        // Add verifier notifications
+        if (verifierResponse.ok) {
+          const verifierData = await verifierResponse.json();
+          if (verifierData.success && verifierData.data && Array.isArray(verifierData.data)) {
+            allNotifications.push(...verifierData.data);
+          }
+        }
+
+        // Get read notifications from localStorage
+        const readNotifications = JSON.parse(localStorage.getItem('readNotifications') || '[]');
+        
+        // Count unread notifications (from both sources)
+        const unreadCount = allNotifications.filter((n: any) => !readNotifications.includes(n.id)).length;
+        setNotificationCount(unreadCount);
       } catch (error) {
         console.error('Error fetching notification count:', error);
       }

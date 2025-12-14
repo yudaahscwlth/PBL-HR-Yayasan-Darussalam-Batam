@@ -154,6 +154,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::get('/verifier-notifications', [NotificationController::class, 'getVerifierNotifications']);
 });
 
 

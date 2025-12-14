@@ -808,6 +808,10 @@ export const apiClient = {
       const response = await api.get("/notifications");
       return response.data;
     },
+    getVerifierNotifications: async (): Promise<ApiResponse> => {
+      const response = await api.get("/verifier-notifications");
+      return response.data;
+    },
   },
 };
 
