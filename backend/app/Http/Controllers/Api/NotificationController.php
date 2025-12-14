@@ -317,6 +317,50 @@ class NotificationController extends Controller
                     ]
                 ];
             }
+        } elseif ($user->hasRole('kepala departemen')) {
+            // Kepala departemen sees leaves from members of their department
+            $departemenId = $user->profilePekerjaan?->id_departemen;
+
+            if ($departemenId) {
+                $leaves = PengajuanCuti::whereHas('user.profilePekerjaan', function ($query) use ($departemenId) {
+                    $query->where('id_departemen', $departemenId);
+                })
+                    ->where('id_user', '!=', $user->id) // Exclude their own leaves
+                    ->whereIn('status_pengajuan', [
+                        'ditinjau kepala sekolah',
+                        'ditinjau hrd',
+                        'disetujui kepala sekolah',
+                        'disetujui hrd',
+                        'ditolak kepala sekolah',
+                        'ditolak hrd'
+                    ])
+                    ->where('created_at', '>=', Carbon::now()->subDays($daysBack))
+                    ->with(['user.profilePribadi'])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                foreach ($leaves as $leave) {
+                    $leaveDate = Carbon::parse($leave->tanggal_mulai)->format('d M Y');
+                    $requesterName = $leave->user?->profilePribadi?->nama_lengkap ?? 'User';
+
+                    $notifications[] = [
+                        'id' => 'leave-verify-' . $leave->id,
+                        'type' => 'leave_verification_needed',
+                        'category' => 'leave',
+                        'title' => 'Pengajuan Cuti dari Anggota Departemen',
+                        'message' => "{$requesterName} mengajukan cuti untuk tanggal {$leaveDate}",
+                        'timestamp' => $leave->created_at->toIso8601String(),
+                        'data' => [
+                            'leave_id' => $leave->id,
+                            'requester_name' => $requesterName,
+                            'tanggal_mulai' => $leave->tanggal_mulai,
+                            'tanggal_selesai' => $leave->tanggal_selesai,
+                            'tipe_cuti' => $leave->tipe_cuti,
+                            'status' => $leave->status_pengajuan,
+                        ]
+                    ];
+                }
+            }
         } elseif ($user->hasRole('direktur pendidikan')) {
             // Direktur pendidikan sees leaves that are waiting for their review
             $leaves = PengajuanCuti::whereIn('status_pengajuan', [
@@ -340,6 +384,47 @@ class NotificationController extends Controller
                     'category' => 'leave',
                     'title' => 'Pengajuan Cuti Menunggu Tinjauan Direktur Pendidikan',
                     'message' => "{$requesterName} mengajukan cuti untuk tanggal {$leaveDate}",
+                    'timestamp' => $leave->created_at->toIso8601String(),
+                    'data' => [
+                        'leave_id' => $leave->id,
+                        'requester_name' => $requesterName,
+                        'tanggal_mulai' => $leave->tanggal_mulai,
+                        'tanggal_selesai' => $leave->tanggal_selesai,
+                        'tipe_cuti' => $leave->tipe_cuti,
+                        'status' => $leave->status_pengajuan,
+                    ]
+                ];
+            }
+        } elseif ($user->hasRole('kepala yayasan')) {
+            // Kepala yayasan sees all important leaves (all statuses for overview)
+            $leaves = PengajuanCuti::whereIn('status_pengajuan', [
+                'ditinjau kepala sekolah',
+                'ditinjau hrd',
+                'ditinjau kepala hrd',
+                'ditinjau dirpen',
+                'disetujui hrd menunggu tinjauan dirpen',
+                'disetujui kepala hrd menunggu tinjauan dirpen',
+                'disetujui kepala sekolah menunggu tinjauan dirpen',
+                'disetujui dirpen',
+                'disetujui kepala sekolah',
+                'disetujui hrd',
+                'disetujui kepala hrd'
+            ])
+                ->where('created_at', '>=', Carbon::now()->subDays($daysBack))
+                ->with(['user.profilePribadi'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            foreach ($leaves as $leave) {
+                $leaveDate = Carbon::parse($leave->tanggal_mulai)->format('d M Y');
+                $requesterName = $leave->user?->profilePribadi?->nama_lengkap ?? 'User';
+
+                $notifications[] = [
+                    'id' => 'leave-verify-' . $leave->id,
+                    'type' => 'leave_verification_needed',
+                    'category' => 'leave',
+                    'title' => 'Pengajuan Cuti',
+                    'message' => "{$requesterName} mengajukan cuti untuk tanggal {$leaveDate} - Status: {$leave->status_pengajuan}",
                     'timestamp' => $leave->created_at->toIso8601String(),
                     'data' => [
                         'leave_id' => $leave->id,
