@@ -562,6 +562,7 @@ class LeaveController extends Controller
         $allowedStatuses = [
             'disetujui hrd menunggu tinjauan dirpen',
             'disetujui kepala hrd menunggu tinjauan dirpen',
+            'disetujui kepala sekolah menunggu tinjauan dirpen',
             'ditinjau dirpen'
         ];
 
@@ -634,6 +635,7 @@ class LeaveController extends Controller
         $allowedStatuses = [
             'disetujui hrd menunggu tinjauan dirpen',
             'disetujui kepala hrd menunggu tinjauan dirpen',
+            'disetujui kepala sekolah menunggu tinjauan dirpen',
             'ditinjau dirpen'
         ];
 
