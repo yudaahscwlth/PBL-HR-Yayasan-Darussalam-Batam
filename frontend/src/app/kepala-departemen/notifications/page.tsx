@@ -112,45 +112,9 @@ export default function NotifikasiPage() {
 
     // Navigate based on category
     if (notification.category === "leave") {
-      // Get user role to determine correct path
-      const userRoles = user?.roles || [];
-      let basePath = "/hrd";
-      
-      if (userRoles.includes("kepala hrd") || userRoles.includes("staff hrd")) {
-        basePath = "/hrd";
-      } else if (userRoles.includes("kepala sekolah")) {
-        basePath = "/kepala-sekolah";
-      } else if (userRoles.includes("direktur pendidikan")) {
-        basePath = "/direktur-pendidikan";
-      } else if (userRoles.includes("kepala departemen")) {
-        basePath = "/kepala-departemen";
-      } else if (userRoles.includes("tenaga pendidik")) {
-        basePath = "/tenaga-pendidik";
-      } else if (userRoles.includes("kepala yayasan")) {
-        basePath = "/kepala-yayasan";
-      }
-      
-      router.push(`${basePath}/pengajuan-cuti`);
+      router.push("/kepala-departemen/pengajuan-cuti");
     } else if (notification.category === "slip_gaji") {
-      // Navigate to slip gaji riwayat
-      const userRoles = user?.roles || [];
-      let basePath = "/hrd";
-      
-      if (userRoles.includes("kepala hrd") || userRoles.includes("staff hrd")) {
-        basePath = "/hrd";
-      } else if (userRoles.includes("kepala sekolah")) {
-        basePath = "/kepala-sekolah";
-      } else if (userRoles.includes("direktur pendidikan")) {
-        basePath = "/direktur-pendidikan";
-      } else if (userRoles.includes("kepala departemen")) {
-        basePath = "/kepala-departemen";
-      } else if (userRoles.includes("tenaga pendidik")) {
-        basePath = "/tenaga-pendidik";
-      } else if (userRoles.includes("kepala yayasan")) {
-        basePath = "/kepala-yayasan";
-      }
-      
-      router.push(`${basePath}/slip-gaji`);
+      router.push("/kepala-departemen/slip-gaji");
     }
   };
 
@@ -205,7 +169,7 @@ export default function NotifikasiPage() {
   ).length;
 
   return (
-    <AccessControl allowedRoles={["kepala hrd", "staff hrd", "direktur pendidikan"]}>
+    <AccessControl allowedRoles={["kepala departemen"]}>
       <div className="min-h-screen bg-gray-100 pb-20">
         <div className="px-3 sm:px-5 py-4 sm:py-6">
           {/* Header */}

@@ -150,7 +150,7 @@ export default function NotifikasiPage() {
         basePath = "/kepala-yayasan";
       }
       
-      router.push(`${basePath}/slip-gaji/riwayat`);
+      router.push(`${basePath}/slip-gaji`);
     }
   };
 
