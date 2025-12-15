@@ -33,6 +33,7 @@ export default function HRDPengajuanCutiPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [supportingFile, setSupportingFile] = useState<File | null>(null);
 
   // Pagination and search state for Ajukan Cuti
   const [searchAjukan, setSearchAjukan] = useState("");
@@ -132,7 +133,17 @@ export default function HRDPengajuanCutiPage() {
         return;
       }
 
-      const response = await apiClient.leave.create(formData);
+      // Build FormData to support file upload
+      const payload = new FormData();
+      payload.append("tanggal_mulai", formData.tanggal_mulai);
+      payload.append("tanggal_selesai", formData.tanggal_selesai);
+      payload.append("jenis_cuti", formData.jenis_cuti);
+      payload.append("alasan", formData.alasan);
+      if (supportingFile) {
+        payload.append("file_pendukung", supportingFile);
+      }
+
+      const response = await apiClient.leave.create(payload);
 
       if (response.success) {
         showToast("success", "✅ Pengajuan cuti berhasil dikirim!");
@@ -144,6 +155,7 @@ export default function HRDPengajuanCutiPage() {
           jenis_cuti: "cuti tahunan",
           alasan: "",
         });
+        setSupportingFile(null);
 
         // Close modal and reload leave requests
         setShowModal(false);
@@ -172,6 +184,11 @@ export default function HRDPengajuanCutiPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setSupportingFile(file ?? null);
   };
 
   const getStatusColor = (status: string) => {
@@ -879,6 +896,22 @@ export default function HRDPengajuanCutiPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-800 resize-none text-black"
                     required
                   />
+                </div>
+
+                {/* File Pendukung */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">
+                    File Pendukung (opsional)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-800 text-black"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: pdf, jpg, jpeg, png. Maks 2MB.
+                  </p>
                 </div>
 
                 {/* Submit Button */}

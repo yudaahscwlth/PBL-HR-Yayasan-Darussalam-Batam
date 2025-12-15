@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PengajuanCuti;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class LeaveController extends Controller
@@ -88,6 +89,7 @@ class LeaveController extends Controller
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'jenis_cuti' => 'required|string|max:255',
             'alasan' => 'required|string',
+            'file_pendukung' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         // Determine initial status based on user role
@@ -105,12 +107,18 @@ class LeaveController extends Controller
             $initialStatus = 'ditinjau dirpen';
         }
 
+        $filePath = null;
+        if ($request->hasFile('file_pendukung')) {
+            $filePath = $request->file('file_pendukung')->store('leave-files', 'public');
+        }
+
         $leave = PengajuanCuti::create([
             'id_user' => $user->id,
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
             'tipe_cuti' => strtolower($request->jenis_cuti),
             'alasan_pendukung' => $request->alasan,
+            'file_pendukung' => $filePath,
             'status_pengajuan' => $initialStatus,
         ]);
 
@@ -169,6 +177,7 @@ class LeaveController extends Controller
             'tanggal_selesai' => 'sometimes|date|after_or_equal:tanggal_mulai',
             'jenis_cuti' => 'sometimes|string|max:255',
             'alasan' => 'sometimes|string',
+            'file_pendukung' => 'sometimes|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         $updateData = [];
@@ -176,6 +185,14 @@ class LeaveController extends Controller
         if ($request->has('tanggal_selesai')) $updateData['tanggal_selesai'] = $request->tanggal_selesai;
         if ($request->has('jenis_cuti')) $updateData['tipe_cuti'] = strtolower($request->jenis_cuti);
         if ($request->has('alasan')) $updateData['alasan_pendukung'] = $request->alasan;
+
+        // Handle file replacement
+        if ($request->hasFile('file_pendukung')) {
+            if ($leave->file_pendukung && Storage::disk('public')->exists($leave->file_pendukung)) {
+                Storage::disk('public')->delete($leave->file_pendukung);
+            }
+            $updateData['file_pendukung'] = $request->file('file_pendukung')->store('leave-files', 'public');
+        }
 
         $leave->update($updateData);
 
