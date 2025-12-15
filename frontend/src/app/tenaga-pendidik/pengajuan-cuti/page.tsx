@@ -33,6 +33,8 @@ export default function TenagaPendidikPengajuanCuti() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [supportingFile, setSupportingFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
 
   // Pagination and search state for Ajukan Cuti
   const [searchAjukan, setSearchAjukan] = useState("");
@@ -62,6 +64,13 @@ export default function TenagaPendidikPengajuanCuti() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Clean up object URL when file changes/unmounts
+  useEffect(() => {
+    return () => {
+      if (filePreview) URL.revokeObjectURL(filePreview);
+    };
+  }, [filePreview]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -138,7 +147,16 @@ export default function TenagaPendidikPengajuanCuti() {
         return;
       }
 
-      const response = await apiClient.leave.create(formData);
+      const payload = new FormData();
+      payload.append("tanggal_mulai", formData.tanggal_mulai);
+      payload.append("tanggal_selesai", formData.tanggal_selesai);
+      payload.append("jenis_cuti", formData.jenis_cuti);
+      payload.append("alasan", formData.alasan);
+      if (supportingFile) {
+        payload.append("file_pendukung", supportingFile);
+      }
+
+      const response = await apiClient.leave.create(payload);
 
       if (response.success) {
         showToast("success", "✅ Pengajuan cuti berhasil dikirim!");
@@ -150,6 +168,7 @@ export default function TenagaPendidikPengajuanCuti() {
           jenis_cuti: "cuti tahunan",
           alasan: "",
         });
+        setSupportingFile(null);
 
         // Close modal and reload leave requests
         setShowModal(false);
@@ -178,6 +197,17 @@ export default function TenagaPendidikPengajuanCuti() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (filePreview) URL.revokeObjectURL(filePreview);
+    setSupportingFile(file ?? null);
+    if (file && file.type.startsWith("image/")) {
+      setFilePreview(URL.createObjectURL(file));
+    } else {
+      setFilePreview(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -881,6 +911,36 @@ export default function TenagaPendidikPengajuanCuti() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-800 resize-none text-black"
                   required
                 />
+              </div>
+
+              {/* File Pendukung */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 font-['Poppins']">
+                  File Pendukung (opsional)
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-800 text-black"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Format: pdf, jpg, jpeg, png. Maks 2MB.
+                </p>
+                {supportingFile && (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-gray-600">
+                      File: {supportingFile.name}
+                    </p>
+                    {filePreview && (
+                      <img
+                        src={filePreview}
+                        alt="Preview"
+                        className="w-full max-h-60 object-contain rounded-lg border border-gray-200"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}

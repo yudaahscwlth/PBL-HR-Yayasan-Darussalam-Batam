@@ -452,7 +452,13 @@ export const apiClient = {
     },
 
     create: async (data: unknown): Promise<ApiResponse> => {
-      const response = await api.post("/leave", data);
+      const isFormData =
+        typeof FormData !== "undefined" && data instanceof FormData;
+      const response = await api.post("/leave", data, {
+        headers: isFormData
+          ? { "Content-Type": "multipart/form-data" }
+          : undefined,
+      });
       return response.data;
     },
 
