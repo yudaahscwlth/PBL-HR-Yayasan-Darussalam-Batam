@@ -245,7 +245,17 @@ export default function HrdKelolaPegawaiPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const fetchedData = usersResponse.data.data;
-      setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
+      const allUsers = Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || [];
+
+      // Filter out superadmin dan kepala yayasan
+      const filteredUsers = allUsers.filter((user: any) => {
+        const firstRole = user.roles?.[0];
+        const roleName = typeof firstRole === 'string' ? firstRole : firstRole?.name;
+        const userRole = roleName?.toLowerCase()?.trim() || '';
+        return userRole !== 'superadmin' && userRole !== 'kepala yayasan';
+      });
+
+      setUsers(filteredUsers);
 
       // Reset form
       setFormData({
@@ -463,7 +473,17 @@ export default function HrdKelolaPegawaiPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const fetchedData = response.data.data;
-      setUsers(Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || []);
+      const allUsers = Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || [];
+
+      // Filter out superadmin dan kepala yayasan
+      const filteredUsers = allUsers.filter((user: any) => {
+        const firstRole = user.roles?.[0];
+        const roleName = typeof firstRole === 'string' ? firstRole : firstRole?.name;
+        const userRole = roleName?.toLowerCase()?.trim() || '';
+        return userRole !== 'superadmin' && userRole !== 'kepala yayasan';
+      });
+
+      setUsers(filteredUsers);
 
     } catch (error) {
       console.error("Error deleting user(s):", error);

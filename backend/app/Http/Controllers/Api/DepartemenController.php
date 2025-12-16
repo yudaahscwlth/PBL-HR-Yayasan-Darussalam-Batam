@@ -226,7 +226,12 @@ class DepartemenController extends Controller
         try {
             $users = User::whereHas('profilePekerjaan', function($q) use ($id) {
                 $q->where('id_departemen', $id);
-            })->with(['profilePribadi', 'profilePekerjaan', 'profilePekerjaan.jabatan'])->get();
+            })
+            ->whereDoesntHave('roles', function($q) {
+                $q->whereIn('name', ['superadmin', 'kepala yayasan']);
+            })
+            ->with(['profilePribadi', 'profilePekerjaan', 'profilePekerjaan.jabatan'])
+            ->get();
 
             return response()->json([
                 'success' => true,
