@@ -16,44 +16,31 @@ export default function AccessControl({ allowedRoles, children, fallbackPath = "
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    console.log("=== ACCESS CONTROL ===");
-    console.log("isAuthenticated:", isAuthenticated);
-    console.log("user:", user);
-    console.log("user roles:", user?.roles);
-    console.log("allowedRoles:", allowedRoles);
-    console.log("=====================");
-
     // Wait for auth state to be determined
     if (!isAuthenticated && user === null) {
-      console.log("⏳ Waiting for auth state...");
       return;
     }
 
     // If not authenticated, redirect to login
     if (!isAuthenticated) {
-      console.log("❌ Not authenticated, redirecting to login");
       router.push("/");
       return;
     }
 
     // If authenticated but no user data yet, wait
     if (isAuthenticated && !user) {
-      console.log("⏳ Authenticated but no user data yet, waiting...");
       return;
     }
 
     // If we have user data, check roles
     if (user) {
       const hasAccess = user.roles?.some((role) => allowedRoles.includes(role));
-      console.log("hasAccess:", hasAccess);
 
       if (!hasAccess) {
-        console.log("❌ Access denied, redirecting to unauthorized");
         router.push(fallbackPath);
         return;
       }
 
-      console.log("✅ Access granted");
       setIsAuthorized(true);
     }
   }, [isAuthenticated, user, router, allowedRoles, fallbackPath]);

@@ -62,12 +62,6 @@ const api: AxiosInstance = axios.create({
   }),
 });
 
-console.log("API Config:", {
-  baseURL: `${API_CONFIG.BASE_URL}/api`,
-  timeout: API_CONFIG.TIMEOUT,
-  headers: API_CONFIG.HEADERS,
-});
-
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -120,36 +114,21 @@ export const apiClient = {
     },
 
     login: async (email: string, password: string): Promise<ApiResponse> => {
-      console.log("API client login called with:", { email, password: "***" });
-      console.log("API base URL:", api.defaults.baseURL);
-      console.log("API headers:", api.defaults.headers);
-      console.log("API timeout:", api.defaults.timeout);
-
       try {
         // Test connection first with retry
-        console.log("Testing API connection...");
-        const testResponse = (await retryRequest(() =>
+        await retryRequest(() =>
           api.get("/csrf-cookie", { timeout: 5000 })
-        )) as AxiosResponse;
-        console.log("Connection test successful:", testResponse.status);
+        );
 
         // Skip CSRF token for now since we're using API routes
         const response = (await retryRequest(() =>
           api.post("/auth/login", { email, password })
         )) as AxiosResponse;
-        console.log("API login response status:", response.status);
-        console.log("API login response data:", response.data);
-        console.log("API login response headers:", response.headers);
+        
         return response.data;
       } catch (error: unknown) {
         const axiosError = error as AxiosError;
         console.error("API login error:", axiosError);
-        console.error("Error type:", axiosError.constructor.name);
-        console.error("Error message:", axiosError.message);
-        console.error("Error code:", axiosError.code);
-        console.error("Error response:", axiosError.response?.data);
-        console.error("Error status:", axiosError.response?.status);
-        console.error("Error config:", axiosError.config);
 
         // Provide more specific error messages
         if (axiosError.code === "ECONNREFUSED") {

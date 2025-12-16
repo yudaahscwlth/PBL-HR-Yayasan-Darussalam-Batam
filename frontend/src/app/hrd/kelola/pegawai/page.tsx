@@ -229,15 +229,12 @@ export default function HrdKelolaPegawaiPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("📤 Submitting form data:", formData);
-    
     try {
       const token = localStorage.getItem("auth_token");
       const createResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log("✅ User created successfully:", createResponse.data);
       setIsModalOpen(false);
       
       // Refresh users

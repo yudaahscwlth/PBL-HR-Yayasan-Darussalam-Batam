@@ -26,33 +26,23 @@ export const useAuthStore = create<AuthStore>()(
 
       // Login method
       login: async (credentials: LoginRequest) => {
-        console.log("Login attempt started:", credentials.email);
         set({ isLoading: true, error: null });
 
         try {
-          console.log("Calling API client login...");
           const response = await apiClient.auth.login(credentials.email, credentials.password);
-          console.log("API response:", response);
-          console.log("Response success:", response.success);
-          console.log("Response user:", response.user);
-          console.log("Response token:", response.token);
 
           if (response.success && response.user) {
             // Store token if provided
             if (response.token) {
               localStorage.setItem("auth_token", response.token);
-              console.log("Token stored:", response.token);
             }
 
-            console.log("🔧 Setting auth state...");
             set({
               user: response.user,
               isAuthenticated: true,
               isLoading: false,
               error: null,
             });
-            console.log("✅ Login successful, user set:", response.user);
-            console.log("✅ Auth state updated - isAuthenticated: true");
 
             // Save last login session for offline access
             try {
@@ -70,31 +60,10 @@ export const useAuthStore = create<AuthStore>()(
               }
 
               await offlineStorage.saveLastLoginSession(response.user, attendanceData);
-              console.log("📱 Last login session saved for offline access with", attendanceData.length, "attendance records");
             } catch (error) {
               console.warn("⚠️ Failed to save last login session:", error);
             }
-
-            // Verify state was set
-            const currentState = get();
-            console.log("🔍 Current auth state after login:", {
-              isAuthenticated: currentState.isAuthenticated,
-              user: currentState.user,
-              isLoading: currentState.isLoading,
-            });
-
-            // Force trigger re-render
-            console.log("🔄 Forcing state update...");
-            setTimeout(() => {
-              const delayedState = get();
-              console.log("⏰ Delayed auth state check:", {
-                isAuthenticated: delayedState.isAuthenticated,
-                user: delayedState.user,
-                isLoading: delayedState.isLoading,
-              });
-            }, 100);
           } else {
-            console.log("Login failed:", response.message);
             set({
               user: null,
               isAuthenticated: false,
@@ -240,9 +209,7 @@ export const useAuthStore = create<AuthStore>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        console.log("Auth store rehydrated:", state);
         if (state) {
-          console.log("Rehydrated state - isAuthenticated:", state.isAuthenticated, "user:", state.user);
           // Reset loading state after rehydration
           state.isLoading = false;
         }
@@ -253,59 +220,47 @@ export const useAuthStore = create<AuthStore>()(
 
 // Helper function to get redirect path based on user role
 export const getRedirectPath = (user: User | null): string => {
-  console.log("getRedirectPath called with user:", user);
-
   if (!user || !user.roles) {
-    console.log("No user or roles, returning /");
     return "/";
   }
 
   const roles = user.roles;
-  console.log("User roles:", roles);
 
   // Admin roles (only superadmin)
   if (roles.includes("superadmin")) {
-    console.log("Admin role detected, redirecting to /admin/dashboard");
     return "/admin/dashboard";
   }
 
   // Kepala Yayasan
   if (roles.includes("kepala yayasan")) {
-    console.log("Kepala Yayasan role detected, redirecting to /kepala-yayasan/dashboard");
     return "/kepala-yayasan/dashboard";
   }
 
   // Direktur Pendidikan
   if (roles.includes("direktur pendidikan")) {
-    console.log("Direktur Pendidikan role detected, redirecting to /direktur-pendidikan/dashboard");
     return "/direktur-pendidikan/dashboard";
   }
 
   // HRD roles
   if (roles.includes("kepala hrd") || roles.includes("staff hrd")) {
-    console.log("HRD role detected, redirecting to /hrd/dashboard");
     return "/hrd/dashboard";
   }
 
   // Kepala Departemen
   if (roles.includes("kepala departemen")) {
-    console.log("Kepala Departemen role detected, redirecting to /kepala-departemen/dashboard");
     return "/kepala-departemen/dashboard";
   }
 
   // Kepala Sekolah
   if (roles.includes("kepala sekolah")) {
-    console.log("Kepala Sekolah role detected, redirecting to /kepala-sekolah/dashboard");
     return "/kepala-sekolah/dashboard";
   }
 
   // Tenaga Pendidik
   if (roles.includes("tenaga pendidik")) {
-    console.log("Tenaga Pendidik role detected, redirecting to /tenaga-pendidik/dashboard");
     return "/tenaga-pendidik/dashboard";
   }
 
-  console.log("No matching role, returning /dashboard");
   return "/dashboard";
 };
 
