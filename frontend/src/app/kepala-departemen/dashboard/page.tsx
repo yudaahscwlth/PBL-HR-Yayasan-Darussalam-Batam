@@ -74,43 +74,31 @@ export default function KepalaDepartemenDashboard() {
 
   // Redirect if not authenticated or not Kepala Departemen
   useEffect(() => {
-    console.log("=== KEPALA DEPARTEMEN DASHBOARD USEEFFECT ===");
-    console.log("isAuthenticated:", isAuthenticated);
-    console.log("user:", user);
-    console.log("isLoading:", isLoading);
-    console.log("================================");
-
     // Wait for auth state to be determined
     if (!isAuthenticated && user === null) {
-      console.log("⏳ Waiting for auth state...");
       return;
     }
 
     // If not authenticated, redirect to login
     if (!isAuthenticated) {
-      console.log("❌ Not authenticated, redirecting to login");
       router.push("/");
       return;
     }
 
     // If authenticated but no user data yet, wait
     if (isAuthenticated && !user) {
-      console.log("⏳ Authenticated but no user data yet, waiting...");
       return;
     }
 
     // If we have user data, check roles
     if (user) {
       const isKepalaDepartemen = user.roles?.includes("kepala departemen");
-      console.log("isKepalaDepartemen:", isKepalaDepartemen);
 
       if (!isKepalaDepartemen) {
-        console.log("❌ Not kepala departemen, redirecting to unauthorized");
         router.push("/unauthorized");
         return;
       }
 
-      console.log("✅ Kepala departemen access granted");
       setIsLoading(false);
     }
   }, [isAuthenticated, user, router, isLoading]);
@@ -184,7 +172,6 @@ export default function KepalaDepartemenDashboard() {
       const tryGetLocation = (options: PositionOptions) => {
         if (!isMounted.current) return;
         attempts++;
-        console.log(`GPS Attempt ${attempts}/${maxAttempts}`);
 
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -197,11 +184,9 @@ export default function KepalaDepartemenDashboard() {
 
             // Check accuracy
             const accuracy = position.coords.accuracy;
-            console.log(`GPS Accuracy: ${accuracy}m`);
 
             // If accuracy is too poor (>20m), try again with different settings
             if (accuracy > 20 && attempts < maxAttempts) {
-              console.log(`GPS accuracy too poor (${accuracy}m), trying again...`);
               const newOptions = {
                 enableHighAccuracy: true,
                 timeout: 25000, // Increase timeout for better accuracy
@@ -218,11 +203,9 @@ export default function KepalaDepartemenDashboard() {
           },
           (error) => {
             if (!isMounted.current) return;
-            console.log(`GPS Error on attempt ${attempts}:`, error);
 
             // If timeout and we have attempts left, try again
             if (error.code === error.TIMEOUT && attempts < maxAttempts) {
-              console.log("GPS timeout, trying again...");
               const newOptions = {
                 enableHighAccuracy: true,
                 timeout: 20000,
@@ -455,12 +438,9 @@ export default function KepalaDepartemenDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      console.log("Loading personal dashboard data...");
-
       // Load personal dashboard statistics
       const personalResponse = await apiClient.dashboard.getPersonal();
       if (personalResponse.success) {
-        console.log("Personal dashboard data loaded:", personalResponse.data);
         const data = personalResponse.data as {
           today_attendance?: AttendanceData | null;
           monthly_stats?: Record<string, number>;

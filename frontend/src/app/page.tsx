@@ -29,58 +29,35 @@ export default function Home() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    console.log("=== LOGIN PAGE USEEFFECT ===");
-    console.log("isAuthenticated:", isAuthenticated);
-    console.log("user:", user);
-    console.log("hasRedirected:", hasRedirectedRef.current);
-    console.log("isLoading:", isLoading);
-    console.log("Current pathname:", window.location.pathname);
-    console.log("=============================");
-
     // Don't redirect if still loading
     if (isLoading) {
-      console.log("⏳ Still loading, waiting...");
       return;
     }
 
     // Only redirect if authenticated and have user data
     if (isAuthenticated && user && user.roles) {
       const redirectPath = getRedirectPath(user);
-      console.log("🎯 Redirect path:", redirectPath);
 
       // Check if we're already on the target path
       if (window.location.pathname === redirectPath) {
-        console.log("✅ Already on target path, no redirect needed");
         return;
       }
 
       // Check if we've already attempted redirect for this path
       if (hasRedirectedRef.current) {
-        console.log("⏳ Redirect already attempted, waiting for navigation...");
         return;
       }
 
-      console.log("✅ Conditions met for redirect");
       hasRedirectedRef.current = true;
-      console.log("🚀 Force redirecting to:", redirectPath);
-      console.log("🔍 About to redirect, current URL:", window.location.href);
 
       // Use router.push instead of window.location to avoid full page reload
       router.push(redirectPath);
-    } else {
-      console.log("❌ Not redirecting - conditions not met:");
-      console.log("  - isAuthenticated:", isAuthenticated);
-      console.log("  - user exists:", !!user);
-      console.log("  - user has roles:", !!user?.roles);
-      console.log("  - isLoading:", isLoading);
     }
   }, [isAuthenticated, user, router, isLoading]);
 
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
-    return () => {
-      console.log("Login page cleanup");
-    };
+    return () => {};
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,32 +65,17 @@ export default function Home() {
     clearError();
 
     try {
-      console.log("🚀 Starting login process...");
-      console.log("Email:", email);
-      console.log("Password length:", password.length);
-
       await login({ email, password });
-
-      console.log("✅ Login completed, checking auth state...");
-      console.log("isAuthenticated:", isAuthenticated);
-      console.log("user:", user);
 
       // Force check auth state after login
       setTimeout(() => {
         const currentAuthState = useAuthStore.getState();
-        console.log("🔍 Auth state after timeout:", {
-          isAuthenticated: currentAuthState.isAuthenticated,
-          user: currentAuthState.user,
-          isLoading: currentAuthState.isLoading,
-        });
 
         if (currentAuthState.isAuthenticated && currentAuthState.user) {
           const redirectPath = getRedirectPath(currentAuthState.user);
-          console.log("🎯 Force redirect from handleSubmit to:", redirectPath);
 
           // Check if we're already on the target path
           if (window.location.pathname === redirectPath) {
-            console.log("✅ Already on target path from handleSubmit");
             return;
           }
 
