@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { UserRole } from "@/types/auth";
+import Loading from "@/components/Loading";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -51,14 +52,7 @@ export default function ProtectedRoute({ children, requiredRoles, requiredPermis
 
   // Show loading spinner while checking authentication
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <Loading variant="fullscreen" text="Memuat..." />;
   }
 
   // Don't render children if not authenticated

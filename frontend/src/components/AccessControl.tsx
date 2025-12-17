@@ -3,6 +3,7 @@
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Loading from "@/components/Loading";
 
 interface AccessControlProps {
   allowedRoles: string[];
@@ -14,6 +15,12 @@ export default function AccessControl({ allowedRoles, children, fallbackPath = "
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track when component is mounted on client to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     // Wait for auth state to be determined
@@ -45,16 +52,10 @@ export default function AccessControl({ allowedRoles, children, fallbackPath = "
     }
   }, [isAuthenticated, user, router, allowedRoles, fallbackPath]);
 
-  // Show loading while checking authentication
-  if (isAuthorized === null) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking access...</p>
-        </div>
-      </div>
-    );
+  // Show loading while checking authentication or during initial mount
+  // Return null on server to prevent hydration mismatch
+  if (!isMounted || isAuthorized === null) {
+    return isMounted ? <Loading variant="fullscreen" text="Memeriksa akses..." /> : null;
   }
 
   // If not authorized, don't render (will redirect)
