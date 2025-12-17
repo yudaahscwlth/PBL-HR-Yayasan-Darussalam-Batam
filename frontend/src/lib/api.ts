@@ -85,18 +85,31 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401) {
-      // Clear token and redirect to login
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_data");
+    const status = error.response?.status;
+    const requestUrl: string | undefined = error.config?.url;
 
-      // Only redirect if we're not already on login page
-      if (
-        typeof window !== "undefined" &&
-        !window.location.pathname.includes("/login")
-      ) {
-        window.location.href = "/";
+    // Handle 401 Unauthorized (expired/invalid token, etc.)
+    if (status === 401) {
+      // Jangan redirect untuk endpoint auth tertentu (login, lupa password, dll)
+      const isAuthEndpoint =
+        requestUrl?.includes("/auth/login") ||
+        requestUrl?.includes("/lupa-password") ||
+        requestUrl?.includes("/auth/refresh") ||
+        requestUrl?.includes("/auth/me");
+
+      if (!isAuthEndpoint) {
+        // Clear token dan data user, lalu paksa kembali ke halaman login
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user_data");
+
+        // Hanya redirect jika kita bukan sudah di halaman login
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.includes("/login") &&
+          window.location.pathname !== "/"
+        ) {
+          window.location.href = "/";
+        }
       }
     }
 
@@ -116,15 +129,13 @@ export const apiClient = {
     login: async (email: string, password: string): Promise<ApiResponse> => {
       try {
         // Test connection first with retry
-        await retryRequest(() =>
-          api.get("/csrf-cookie", { timeout: 5000 })
-        );
+        await retryRequest(() => api.get("/csrf-cookie", { timeout: 5000 }));
 
         // Skip CSRF token for now since we're using API routes
         const response = (await retryRequest(() =>
           api.post("/auth/login", { email, password })
         )) as AxiosResponse;
-        
+
         return response.data;
       } catch (error: unknown) {
         const axiosError = error as AxiosError;
@@ -459,7 +470,10 @@ export const apiClient = {
       return response.data;
     },
 
-    approveKepsek: async (id: number, komentar?: string): Promise<ApiResponse> => {
+    approveKepsek: async (
+      id: number,
+      komentar?: string
+    ): Promise<ApiResponse> => {
       const response = await api.post(
         `/leave/${id}/approve-kepsek`,
         komentar ? { komentar } : {}
@@ -472,7 +486,10 @@ export const apiClient = {
       return response.data;
     },
 
-    approveDirpen: async (id: number, komentar?: string): Promise<ApiResponse> => {
+    approveDirpen: async (
+      id: number,
+      komentar?: string
+    ): Promise<ApiResponse> => {
       const response = await api.post(
         `/leave/${id}/approve-dirpen`,
         komentar ? { komentar } : {}
@@ -614,11 +631,16 @@ export const apiClient = {
       return response.data;
     },
 
-    getEmployeesByPaymentStatus: async (month?: number, year?: number): Promise<ApiResponse> => {
+    getEmployeesByPaymentStatus: async (
+      month?: number,
+      year?: number
+    ): Promise<ApiResponse> => {
       const params: Record<string, unknown> = {};
       if (month) params.month = month;
       if (year) params.year = year;
-      const response = await api.get("/slip-gaji/employees-by-payment-status", { params });
+      const response = await api.get("/slip-gaji/employees-by-payment-status", {
+        params,
+      });
       return response.data;
     },
 
@@ -635,7 +657,7 @@ export const apiClient = {
       try {
         // Get token for authorization
         const token = localStorage.getItem("auth_token");
-        
+
         // Create a direct axios request to bypass interceptors that might modify blob
         const response = await axios.get(
           `${API_CONFIG.BASE_URL}/api/slip-gaji/${id}/download-pdf`,
@@ -648,7 +670,7 @@ export const apiClient = {
             withCredentials: true,
           }
         );
-        
+
         // Verify response is blob
         if (!(response.data instanceof Blob)) {
           // Try to read as text to see error message
@@ -660,12 +682,12 @@ export const apiClient = {
             throw new Error("Gagal download PDF");
           }
         }
-        
+
         // Create download link
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement("a");
         link.href = url;
-        
+
         // Get filename from Content-Disposition header or use default
         const contentDisposition = response.headers["content-disposition"];
         let filename = `slip_gaji_${id}.pdf`;
@@ -675,7 +697,7 @@ export const apiClient = {
             filename = filenameMatch[1];
           }
         }
-        
+
         link.setAttribute("download", filename);
         document.body.appendChild(link);
         link.click();
@@ -691,20 +713,21 @@ export const apiClient = {
       try {
         // Get token for authorization
         const token = localStorage.getItem("auth_token");
-        
+
         // Create a direct axios request to bypass interceptors that might modify blob
         const response = await axios.get(
           `${API_CONFIG.BASE_URL}/api/slip-gaji/download-template`,
           {
             responseType: "blob",
             headers: {
-              Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              Accept:
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
               Authorization: token ? `Bearer ${token}` : "",
             },
             withCredentials: true,
           }
         );
-        
+
         // Verify response is blob
         if (!(response.data instanceof Blob)) {
           // Try to read as text to see error message
@@ -716,37 +739,39 @@ export const apiClient = {
             throw new Error("Response bukan file Excel yang valid");
           }
         }
-        
+
         return response.data;
       } catch (error: any) {
         console.error("Download template error:", error);
         console.error("Error response:", error.response);
         console.error("Error response data:", error.response?.data);
-        
+
         // If error response is blob, try to parse it as JSON
         if (error.response?.data instanceof Blob) {
           try {
             const text = await error.response.data.text();
             console.log("Blob text content:", text);
             const json = JSON.parse(text);
-            throw new Error(json.message || json.error?.message || "Gagal download template");
+            throw new Error(
+              json.message || json.error?.message || "Gagal download template"
+            );
           } catch (parseError) {
             console.error("Failed to parse blob as JSON:", parseError);
             throw new Error("Gagal download template: Response tidak valid");
           }
         }
-        
+
         // If error response is JSON (from our improved error handling)
         if (error.response?.data) {
           const errorData = error.response.data;
-          
+
           // Handle if data is already an object
-          if (typeof errorData === 'object' && !(errorData instanceof Blob)) {
+          if (typeof errorData === "object" && !(errorData instanceof Blob)) {
             if (errorData.message) {
               throw new Error(errorData.message);
             }
             if (errorData.error) {
-              if (typeof errorData.error === 'string') {
+              if (typeof errorData.error === "string") {
                 throw new Error(errorData.error);
               }
               if (errorData.error.message) {
@@ -754,19 +779,21 @@ export const apiClient = {
               }
             }
           }
-          
+
           // Handle if data is a string (JSON string)
-          if (typeof errorData === 'string') {
+          if (typeof errorData === "string") {
             try {
               const json = JSON.parse(errorData);
-              throw new Error(json.message || json.error?.message || "Gagal download template");
+              throw new Error(
+                json.message || json.error?.message || "Gagal download template"
+              );
             } catch {
               // If not JSON, use the string as error message
               throw new Error(errorData);
             }
           }
         }
-        
+
         // Handle different error types
         if (error.response?.status === 403) {
           throw new Error("Anda tidak memiliki izin untuk download template");
@@ -774,15 +801,17 @@ export const apiClient = {
           throw new Error("Endpoint download template tidak ditemukan");
         } else if (error.response?.status === 500) {
           // Try to get error message from various possible locations
-          const errorMsg = 
-            error.response?.data?.message || 
+          const errorMsg =
+            error.response?.data?.message ||
             error.response?.data?.error?.message ||
             error.response?.data?.error ||
-            (typeof error.response?.data === 'string' ? error.response.data : null) ||
+            (typeof error.response?.data === "string"
+              ? error.response.data
+              : null) ||
             "Server error. Periksa log backend Laravel";
           throw new Error(errorMsg);
         }
-        
+
         throw new Error(error?.message || "Gagal download template");
       }
     },
