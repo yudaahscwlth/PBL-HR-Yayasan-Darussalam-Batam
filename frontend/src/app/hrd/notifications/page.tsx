@@ -6,6 +6,7 @@ import { ArrowLeft, Bell, Check, X, FileText, Calendar } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/api";
 import AccessControl from "@/components/AccessControl";
+import CardSkeleton from "@/components/skeletons/CardSkeleton";
 import toast from "react-hot-toast";
 
 interface Notification {
@@ -278,12 +279,7 @@ export default function NotifikasiPage() {
 
           {/* Notifications List */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-gray-600">Memuat notifikasi...</p>
-              </div>
-            </div>
+            <CardSkeleton count={5} variant="notification" />
           ) : filteredNotifications.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center">
               <Bell className="w-12 h-12 text-gray-400 mx-auto mb-3" />
