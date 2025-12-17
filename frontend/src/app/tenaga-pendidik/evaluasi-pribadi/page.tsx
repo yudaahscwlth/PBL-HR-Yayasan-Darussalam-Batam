@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import BottomBack from "@/components/BottomBack";
 
 interface Evaluasi {
   id: number;
@@ -120,18 +121,16 @@ export default function TenagaPendidikEvaluasiPribadiPage() {
 
   return (
     <AccessControl allowedRoles={["tenaga pendidik"]}>
-      <div className="min-h-screen bg-gray-50 px-4 py-8 md:px-8 font-sans">
-        <div className="max-w-full mx-auto">
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6 text-gray-700" />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">Evaluasi Pribadi</h1>
+      <div className="min-h-screen bg-gray-100 pb-28">
+        {/* Header Section */}
+        <div className="px-5 pt-3 pb-4">
+          <div className="flex items-center gap-4">
+            <BottomBack variant="inline" />
+            <h1 className="text-xl font-bold text-gray-800">Evaluasi Pribadi</h1>
           </div>
-
+        </div>
+        
+        <div className="px-5">
           {isLoading ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-sky-800" />
