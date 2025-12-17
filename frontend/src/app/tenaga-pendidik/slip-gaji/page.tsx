@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/api";
 import AccessControl from "@/components/AccessControl";
 import toast from "react-hot-toast";
+import BottomBack from "@/components/BottomBack";
 
 interface SlipGaji {
   id: number;
@@ -150,18 +151,17 @@ export default function TPSlipGaji() {
 
   return (
     <AccessControl allowedRoles={["tenaga pendidik"]}>
-      <div className="min-h-screen bg-gray-100">
-        <div className="px-5 py-6">
-          <div className="flex items-center gap-4 mb-4">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-              aria-label="Kembali"
-            >
-              <ArrowLeft className="w-6 h-6 text-gray-700" />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">Slip Gaji</h1>
+      <div className="min-h-screen bg-gray-100 pb-28">
+        {/* Header Section */}
+        <div className="px-5 pt-3 pb-4">
+          <div className="flex items-center gap-4">
+            <BottomBack variant="inline" />
+            <h1 className="text-xl font-bold text-gray-800">Slip Gaji</h1>
           </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="px-5">
 
           {/* Employee Info */}
           {employeeData && (
@@ -172,15 +172,15 @@ export default function TPSlipGaji() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-gray-600">Nama:</span>{" "}
-                  <span className="font-medium">{employeeData.nama}</span>
+                  <span className="font-medium text-gray-700">{employeeData.nama}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">NIK:</span>{" "}
-                  <span className="font-medium">{employeeData.nik}</span>
+                  <span className="font-medium text-gray-700">{employeeData.nik}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Tempat, Tgl Lahir:</span>{" "}
-                    <span className="font-medium">
+                    <span className="font-medium text-gray-700">
                     {employeeData.tempat_lahir},{" "}
                     {isMounted && employeeData.tanggal_lahir
                       ? formatDate(employeeData.tanggal_lahir)
@@ -189,15 +189,15 @@ export default function TPSlipGaji() {
                 </div>
                 <div>
                   <span className="text-gray-600">Departemen:</span>{" "}
-                  <span className="font-medium">{employeeData.departemen}</span>
+                  <span className="font-medium text-gray-700">{employeeData.departemen}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Jabatan:</span>{" "}
-                  <span className="font-medium">{employeeData.jabatan}</span>
+                  <span className="font-medium text-gray-700">{employeeData.jabatan}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Nomor Rekening:</span>{" "}
-                  <span className="font-medium">
+                  <span className="font-medium text-gray-700">
                     {employeeData.nomor_rekening || "-"}
                   </span>
                 </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
+import BottomBack from "@/components/BottomBack";
 
 interface LeaveRequest {
   id: number;
@@ -350,42 +351,17 @@ export default function TenagaPendidikPengajuanCuti() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100">
-      {/* BREAKOUT WRAPPER: memaksa full-bleed di md+ meski parent membatasi width */}
-      <div className="md:ml-[calc(50%-50vw)] md:mr-[calc(50%-50vw)] md:w-screen">
-        {/* Inner container: mobile tetap max-w-md, desktop center max-w-7xl */}
-        <div className="w-full max-w-md mx-auto md:max-w-7xl md:px-6">
-          {/* Header */}
-          <div className="px-6 pt-6 pb-4 flex items-center gap-4 md:px-0">
-            <button
-              onClick={() => router.back()}
-              className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded transition text-black md:w-9 md:h-9"
-              aria-label="Kembali"
-            >
-              <svg
-                className="w-4 h-4 md:w-5 md:h-5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
-            <div className="flex-1">
-              <h1 className="text-xl font-medium font-['Poppins'] text-black md:text-2xl">
-                Pengajuan Cuti
-              </h1>
-              <p className="hidden md:block text-sm text-zinc-600">
-                Kelola pengajuan dan riwayat cuti Anda.
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-100 pb-28">
+      {/* Header Section */}
+      <div className="px-5 pt-3 pb-4">
+        <div className="flex items-center gap-4">
+          <BottomBack variant="inline" />
+          <h1 className="text-xl font-bold text-gray-800">Pengajuan Cuti</h1>
+        </div>
+      </div>
 
-          {/* Main Content */}
-          <div className="mx-4 md:mx-0 space-y-6">
+      {/* Main Content */}
+      <div className="px-5 space-y-6">
             {/* Ajukan Cuti */}
             <section className="bg-white rounded-[10px] shadow-md border border-black/20 p-4 w-full">
               <div className="flex items-center justify-between mb-4">
@@ -619,18 +595,19 @@ export default function TenagaPendidikPengajuanCuti() {
 
               {/* Controls */}
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-3 text-[10px] md:text-sm text-black">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-['Poppins']">Show</span>
+                {/* Kiri: Show entries */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-['Poppins'] shrink-0">Show</span>
                   <select
                     value={entriesRiwayat}
                     onChange={(e) => setEntriesRiwayat(Number(e.target.value))}
-                    className="w-10 h-4 px-1 bg-white rounded-sm border border-black/30 text-[10px] md:text-sm md:h-8 md:px-2 font-['Poppins'] text-black"
+                    className="h-7 md:h-8 w-16 md:w-24 px-2 bg-white rounded border border-black/30 font-['Poppins'] text-black"
                   >
                     <option value={5}>5</option>
                     <option value={10}>10</option>
                     <option value={25}>25</option>
                   </select>
-                  <span className="font-['Poppins']">entries</span>
+                  <span className="font-['Poppins'] shrink-0">entries</span>
                 </div>
                 <div className="flex items-center gap-1 md:gap-2">
                   <span className="font-['Poppins']">Search:</span>
@@ -667,15 +644,19 @@ export default function TenagaPendidikPengajuanCuti() {
                       <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
                         File Pendukung
                       </th>
+                      <th className="p-2 md:p-3 text-left font-semibold font-sans text-black whitespace-nowrap">
+                        Komentar
+                      </th>
                       <th className="p-2 md:p-3 text-left font-semibold font-sans text-black">
                         Status
                       </th>
+                      
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedRiwayat.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="p-4 text-center text-black">
+                        <td colSpan={8} className="p-4 text-center text-black">
                           Belum ada riwayat pengajuan cuti
                         </td>
                       </tr>
@@ -726,6 +707,18 @@ export default function TenagaPendidikPengajuanCuti() {
                               "-"
                             )}
                           </td>
+                          <td className="p-2 md:p-3 font-sans text-black">
+                            {request.komentar ? (
+                              <div
+                                className="max-w-[200px] md:max-w-[300px] truncate"
+                                title={request.komentar}
+                              >
+                                <span className="text-sm">{request.komentar}</span>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-xs italic">-</span>
+                            )}
+                          </td>
                           <td className="p-2 md:p-3">
                             <span
                               className={`px-2 py-0.5 rounded text-[8px] md:text-xs whitespace-nowrap ${getStatusColor(
@@ -735,6 +728,7 @@ export default function TenagaPendidikPengajuanCuti() {
                               {getStatusText(request.status_pengajuan)}
                             </span>
                           </td>
+                          
                         </tr>
                       ))
                     )}
@@ -786,8 +780,6 @@ export default function TenagaPendidikPengajuanCuti() {
                 </div>
               </div>
             </section>
-          </div>
-        </div>
       </div>
 
       {/* Modal Form Tambah Cuti */}
@@ -930,7 +922,7 @@ export default function TenagaPendidikPengajuanCuti() {
                 {supportingFile && (
                   <div className="mt-2 space-y-2">
                     <p className="text-xs text-gray-600">
-                      File: {supportingFile.name}
+                      File: {supportingFile?.name || "Unknown"}
                     </p>
                     {filePreview && (
                       <img
