@@ -25,6 +25,22 @@ interface LeaveRequest {
   status: string;
 }
 
+interface AttendanceRecord {
+  id: number;
+  tanggal: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: string;
+  keterangan: string | null;
+  file_pendukung: string | null;
+  latitude_in: number | null;
+  longitude_in: number | null;
+  latitude_out: number | null;
+  longitude_out: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface EmployeeDashboardData {
   todayAttendance: AttendanceData | null;
   monthlyStats: Record<string, number>;
@@ -55,6 +71,9 @@ export default function KepalaSekolahDashboard() {
     checkInTime: null,
     checkOutTime: null,
   });
+
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{
@@ -288,11 +307,11 @@ export default function KepalaSekolahDashboard() {
         const accuracy = Math.round(locationWithAccuracy.accuracy);
         const confirmProceed = confirm(
           `📍 Akurasi GPS Rendah\n\n` +
-            `Akurasi saat ini: ${accuracy}m\n` +
-            `Toleransi yang diizinkan: ${gpsTolerance}m\n` +
-            `Selisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n` +
-            `💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\n` +
-            `Apakah Anda ingin melanjutkan absensi?`
+          `Akurasi saat ini: ${accuracy}m\n` +
+          `Toleransi yang diizinkan: ${gpsTolerance}m\n` +
+          `Selisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n` +
+          `💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\n` +
+          `Apakah Anda ingin melanjutkan absensi?`
         );
 
         if (!confirmProceed) {
@@ -320,6 +339,7 @@ export default function KepalaSekolahDashboard() {
         });
 
         loadDashboardData();
+        loadAttendanceHistory();
         showToast("success", "✅ Check-in berhasil! Lokasi telah diverifikasi.");
       } else {
         if (response.message?.includes("luar area kerja")) {
@@ -353,11 +373,11 @@ export default function KepalaSekolahDashboard() {
         const accuracy = Math.round(locationWithAccuracy.accuracy);
         const confirmProceed = confirm(
           `📍 Akurasi GPS Rendah\n\n` +
-            `Akurasi saat ini: ${accuracy}m\n` +
-            `Toleransi yang diizinkan: ${gpsTolerance}m\n` +
-            `Selisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n` +
-            `💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\n` +
-            `Apakah Anda ingin melanjutkan absensi?`
+          `Akurasi saat ini: ${accuracy}m\n` +
+          `Toleransi yang diizinkan: ${gpsTolerance}m\n` +
+          `Selisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n` +
+          `💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\n` +
+          `Apakah Anda ingin melanjutkan absensi?`
         );
 
         if (!confirmProceed) {
@@ -384,6 +404,8 @@ export default function KepalaSekolahDashboard() {
           checkOutTime: data.check_out_time || new Date().toISOString(),
         });
 
+        loadDashboardData();
+        loadAttendanceHistory();
         showToast("success", "✅ Check-out berhasil! Lokasi telah diverifikasi.");
       } else {
         if (response.message?.includes("luar area kerja")) {
@@ -439,8 +461,97 @@ export default function KepalaSekolahDashboard() {
   useEffect(() => {
     if (isAuthenticated && user) {
       loadDashboardData();
+      loadAttendanceHistory();
     }
   }, [isAuthenticated, user]);
+
+  const loadAttendanceHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      const response = await apiClient.attendance.getHistory();
+
+      if (response.success && response.data) {
+        const data = response.data as AttendanceRecord[];
+        // Sort by tanggal descending and take latest 5 records
+        const sortedData = data
+          .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime())
+          .slice(0, 5);
+        setAttendanceHistory(sortedData);
+      }
+    } catch (error) {
+      console.error("Error loading attendance history:", error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "-";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
+      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+      const day = date.getDate();
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatTime = (timeString: string | null) => {
+    if (!timeString) return "-";
+    try {
+      const time = new Date(timeString);
+      return time.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "-";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes("hadir") && !statusLower.includes("tidak")) {
+      return "bg-green-100 text-green-800";
+    } else if (statusLower.includes("terlambat")) {
+      return "bg-blue-100 text-blue-800";
+    } else if (statusLower.includes("tidak hadir") || statusLower.includes("alpa")) {
+      return "bg-red-100 text-red-800";
+    } else {
+      return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes("hadir") && !statusLower.includes("tidak")) {
+      return "Hadir";
+    } else if (statusLower.includes("terlambat")) {
+      return "Terlambat";
+    } else if (statusLower.includes("tidak hadir") || statusLower.includes("alpa")) {
+      return "Tidak Hadir";
+    } else {
+      return status;
+    }
+  };
+
+  const getStatusDotColor = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes("hadir") && !statusLower.includes("tidak")) {
+      return "bg-green-500";
+    } else if (statusLower.includes("terlambat")) {
+      return "bg-blue-500";
+    } else if (statusLower.includes("tidak hadir") || statusLower.includes("alpa")) {
+      return "bg-red-500";
+    } else {
+      return "bg-gray-500";
+    }
+  };
 
   if (isLoading || !isAuthenticated || !user) {
     return (
@@ -467,10 +578,18 @@ export default function KepalaSekolahDashboard() {
               <span className="text-sm">{getCurrentDate()}</span>
             </div>
           </div>
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
+            {user?.profile_pribadi?.foto ? (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/storage/${user.profile_pribadi.foto}`}
+                alt={user?.profile_pribadi?.nama_lengkap || "Profile"}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <svg className="w-6 h-6 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            )}
           </div>
         </div>
       </div>
@@ -556,9 +675,8 @@ export default function KepalaSekolahDashboard() {
             <button
               onClick={handleCheckIn}
               disabled={attendanceStatus.hasCheckedIn || isLoading}
-              className={`flex-1 rounded-xl py-3 flex items-center justify-center transition-all ${
-                attendanceStatus.hasCheckedIn ? "bg-gray-200 border border-gray-300 cursor-not-allowed" : "bg-white border border-[#1e4d8b] hover:bg-blue-50"
-              }`}
+              className={`flex-1 rounded-xl py-3 flex items-center justify-center transition-all ${attendanceStatus.hasCheckedIn ? "bg-gray-200 border border-gray-300 cursor-not-allowed" : "bg-white border border-[#1e4d8b] hover:bg-blue-50"
+                }`}
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -587,9 +705,8 @@ export default function KepalaSekolahDashboard() {
             <button
               onClick={handleCheckOut}
               disabled={!attendanceStatus.hasCheckedIn || attendanceStatus.hasCheckedOut || isLoading}
-              className={`flex-1 rounded-xl py-3 flex items-center justify-center transition-all ${
-                !attendanceStatus.hasCheckedIn || attendanceStatus.hasCheckedOut ? "bg-gray-200 border border-gray-300 cursor-not-allowed" : "bg-white border border-[#1e4d8b] hover:bg-blue-50"
-              }`}
+              className={`flex-1 rounded-xl py-3 flex items-center justify-center transition-all ${!attendanceStatus.hasCheckedIn || attendanceStatus.hasCheckedOut ? "bg-gray-200 border border-gray-300 cursor-not-allowed" : "bg-white border border-[#1e4d8b] hover:bg-blue-50"
+                }`}
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -635,34 +752,7 @@ export default function KepalaSekolahDashboard() {
               </svg>
               <h2 className="text-lg font-bold text-gray-800">Informasi Cuti</h2>
             </div>
-            <button
-              onClick={() => router.push("/kepala-sekolah/pengajuan-cuti")}
-              className="p-2 bg-[#1e4d8b] text-white rounded-lg hover:bg-blue-700 transition-colors"
-              title="Ajukan Cuti"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
           </div>
-
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-600">Sisa Cuti Tahunan</span>
-              <span className="text-sm text-gray-600">Total Cuti</span>
-            </div>
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-2xl font-bold text-[#1e4d8b]">9 hari</span>
-              <span className="text-lg font-semibold text-gray-800">12 hari</span>
-            </div>
-
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-              <div className="bg-[#1e4d8b] h-2 rounded-full" style={{ width: "25%" }}></div>
-            </div>
-
-            <p className="text-sm text-gray-600">Anda telah menggunakan 3 hari cuti tahun ini</p>
-          </div>
-
           {dashboardData.recentLeaves && dashboardData.recentLeaves.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">Pengajuan Cuti Terbaru</h3>
@@ -681,13 +771,12 @@ export default function KepalaSekolahDashboard() {
                         </p>
                       </div>
                       <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          statusLower.includes("disetujui") || statusLower.includes("approved")
+                        className={`px-2 py-1 text-xs rounded-full ${statusLower.includes("disetujui") || statusLower.includes("approved")
                             ? "bg-green-100 text-green-800"
                             : statusLower.includes("ditolak") || statusLower.includes("rejected")
-                            ? "bg-red-100 text-red-800"
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
                       >
                         {statusLower.includes("disetujui") ? "Disetujui" : statusLower.includes("ditolak") ? "Ditolak" : "Sedang Ditinjau"}
                       </span>
@@ -721,20 +810,42 @@ export default function KepalaSekolahDashboard() {
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                <div>
-                  <p className="font-medium text-gray-800">12 Okt 2025</p>
-                  <p className="text-sm text-gray-600">Masuk: 08:00, Pulang: 17:00</p>
-                </div>
+            {isLoadingHistory ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                <span className="text-sm text-gray-500">Memuat riwayat...</span>
               </div>
-              <span className="px-2 py-1 bg-gray-800 text-white text-xs rounded-full">Tepat Waktu</span>
-            </div>
+            ) : attendanceHistory.length === 0 ? (
+              <div className="text-center py-4 text-gray-500 text-sm">
+                Belum ada riwayat absensi
+              </div>
+            ) : (
+              attendanceHistory.map((record) => (
+                <div key={record.id} className="flex items-center justify-between py-2">
+                  <div className="flex items-center">
+                    <div className={`w-2 h-2 ${getStatusDotColor(record.status)} rounded-full mr-3`}></div>
+                    <div>
+                      <p className="font-medium text-gray-800">{formatDate(record.tanggal)}</p>
+                      <p className="text-sm text-gray-600">
+                        Masuk: {formatTime(record.check_in)}, Pulang: {formatTime(record.check_out)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(record.status)}`}>
+                    {getStatusLabel(record.status)}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-200">
-            <button className="text-[#1e4d8b] text-sm font-medium hover:underline">Lihat Semua Riwayat</button>
+            <button
+              onClick={() => router.push("/kepala-sekolah/absensi-pribadi")}
+              className="text-[#1e4d8b] text-sm font-medium hover:underline"
+            >
+              Lihat Semua Riwayat
+            </button>
           </div>
         </div>
       </div>
@@ -742,15 +853,14 @@ export default function KepalaSekolahDashboard() {
       {toastMessage.show && (
         <div className="fixed top-4 right-4 z-50 max-w-sm">
           <div
-            className={`p-4 rounded-lg shadow-lg border-l-4 ${
-              toastMessage.type === "success"
+            className={`p-4 rounded-lg shadow-lg border-l-4 ${toastMessage.type === "success"
                 ? "bg-green-50 border-green-500 text-green-800"
                 : toastMessage.type === "error"
-                ? "bg-red-50 border-red-500 text-red-800"
-                : toastMessage.type === "warning"
-                ? "bg-yellow-50 border-yellow-500 text-yellow-800"
-                : "bg-blue-50 border-blue-500 text-blue-800"
-            }`}
+                  ? "bg-red-50 border-red-500 text-red-800"
+                  : toastMessage.type === "warning"
+                    ? "bg-yellow-50 border-yellow-500 text-yellow-800"
+                    : "bg-blue-50 border-blue-500 text-blue-800"
+              }`}
           >
             <div className="flex items-start">
               <div className="flex-shrink-0">
@@ -765,15 +875,14 @@ export default function KepalaSekolahDashboard() {
               <div className="ml-4 flex-shrink-0">
                 <button
                   onClick={() => setToastMessage((prev) => ({ ...prev, show: false }))}
-                  className={`inline-flex rounded-md p-1.5 ${
-                    toastMessage.type === "success"
+                  className={`inline-flex rounded-md p-1.5 ${toastMessage.type === "success"
                       ? "text-green-500 hover:bg-green-100"
                       : toastMessage.type === "error"
-                      ? "text-red-500 hover:bg-red-100"
-                      : toastMessage.type === "warning"
-                      ? "text-yellow-500 hover:bg-yellow-100"
-                      : "text-blue-500 hover:bg-blue-100"
-                  }`}
+                        ? "text-red-500 hover:bg-red-100"
+                        : toastMessage.type === "warning"
+                          ? "text-yellow-500 hover:bg-yellow-100"
+                          : "text-blue-500 hover:bg-blue-100"
+                    }`}
                 >
                   <span className="sr-only">Close</span>
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
