@@ -63,18 +63,18 @@ export default function KSSlipGaji() {
       ]);
 
       if (historyResponse.success && historyResponse.data) {
-        const data = Array.isArray(historyResponse.data) 
-          ? historyResponse.data 
+        const data = Array.isArray(historyResponse.data)
+          ? historyResponse.data
           : (historyResponse.data as any).data || [];
-        
+
         // Ensure total_gaji is a number
         const processedData = data.map((item: any) => ({
           ...item,
-          total_gaji: typeof item.total_gaji === 'number' 
-            ? item.total_gaji 
+          total_gaji: typeof item.total_gaji === 'number'
+            ? item.total_gaji
             : parseFloat(item.total_gaji) || 0
         }));
-        
+
         setSlipGajiData(processedData as SlipGaji[]);
       }
 
@@ -93,7 +93,7 @@ export default function KSSlipGaji() {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
-      
+
       // Format manual untuk menghindari hydration mismatch
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -109,14 +109,14 @@ export default function KSSlipGaji() {
     if (isNaN(amount) || amount === null || amount === undefined) {
       return "Rp 0";
     }
-    
+
     // Ensure amount is a number
     const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
-    
+
     if (isNaN(numAmount)) {
       return "Rp 0";
     }
-    
+
     try {
       // Format manual untuk menghindari hydration mismatch
       const formatted = new Intl.NumberFormat("id-ID", {
@@ -158,45 +158,73 @@ export default function KSSlipGaji() {
 
           {/* Employee Info */}
           {employeeData && (
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-200">
+              {/* Judul */}
+              <h2 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-200 pb-3">
                 Data Karyawan
               </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-gray-600">Nama:</span>{" "}
-                  <span className="font-medium">{employeeData.nama}</span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Nama
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.nama}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">NIK:</span>{" "}
-                  <span className="font-medium">{employeeData.nik}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    NIK
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.nik}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Tempat, Tgl Lahir:</span>{" "}
-                  <span className="font-medium">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Tempat, Tanggal Lahir
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.tempat_lahir},{" "}
                     {isMounted && employeeData.tanggal_lahir
                       ? formatDate(employeeData.tanggal_lahir)
                       : "-"}
-                  </span>
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Departemen:</span>{" "}
-                  <span className="font-medium">{employeeData.departemen}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Departemen
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.departemen}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Jabatan:</span>{" "}
-                  <span className="font-medium">{employeeData.jabatan}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Jabatan
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.jabatan}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Nomor Rekening:</span>{" "}
-                  <span className="font-medium">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Nomor Rekening
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.nomor_rekening || "-"}
-                  </span>
+                  </p>
                 </div>
               </div>
             </div>
           )}
+
 
           {/* Slip Gaji Table */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -279,7 +307,7 @@ export default function KSSlipGaji() {
                 </tbody>
               </table>
             </div>
-            
+
             {/* Total Gaji */}
             {!isLoading && slipGajiData.length > 0 && (
               <div className="border-t bg-gray-50 px-4 py-4">
