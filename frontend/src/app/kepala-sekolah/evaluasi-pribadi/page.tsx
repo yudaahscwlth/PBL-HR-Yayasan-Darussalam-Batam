@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import BottomBack from "@/components/BottomBack";
 
 interface Evaluasi {
   id: number;
@@ -42,7 +43,7 @@ interface TahunAjaran {
 export default function KepalaSekolahEvaluasiPribadiPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  
+
   const [evaluations, setEvaluations] = useState<Evaluasi[]>([]);
   const [tahunAjaranList, setTahunAjaranList] = useState<TahunAjaran[]>([]);
   const [selectedTahunAjaran, setSelectedTahunAjaran] = useState<string>("");
@@ -53,12 +54,12 @@ export default function KepalaSekolahEvaluasiPribadiPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        
+
         const evalRes = await apiClient.evaluation.getPersonal();
         if (evalRes?.success && evalRes.data) {
           const evalData = Array.isArray(evalRes.data) ? evalRes.data : [];
           setEvaluations(evalData);
-          
+
           const tahunAjarans = evalData
             .map((e: Evaluasi) => e.tahun_ajaran)
             .filter((t): t is TahunAjaran => t !== undefined)
@@ -69,9 +70,9 @@ export default function KepalaSekolahEvaluasiPribadiPage() {
               return acc;
             }, [])
             .sort((a, b) => b.nama.localeCompare(a.nama));
-          
+
           setTahunAjaranList(tahunAjarans);
-          
+
           const activeTahun = tahunAjarans.find(t => t.is_aktif);
           if (activeTahun) {
             setSelectedTahunAjaran(activeTahun.id.toString());
@@ -120,18 +121,16 @@ export default function KepalaSekolahEvaluasiPribadiPage() {
 
   return (
     <AccessControl allowedRoles={["kepala sekolah"]}>
-      <div className="min-h-screen bg-gray-50 px-4 py-8 md:px-8 font-sans">
-        <div className="max-w-full mx-auto">
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6 text-gray-700" />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">Evaluasi Pribadi</h1>
+      <div className="min-h-screen bg-gray-100 pb-28">
+        {/* Header Section */}
+        <div className="px-5 pt-3 pb-4">
+          <div className="flex items-center gap-4">
+            <BottomBack variant="inline" />
+            <h1 className="text-xl font-bold text-gray-800">Evaluasi Pribadi</h1>
           </div>
+        </div>
 
+        <div className="px-5">
           {isLoading ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-sky-800" />
@@ -143,7 +142,7 @@ export default function KepalaSekolahEvaluasiPribadiPage() {
                   <h2 className="text-xl font-semibold text-gray-800 border-b pb-4">
                     Evaluasi Pribadi {user?.profile_pribadi?.nama_lengkap || user?.email}
                   </h2>
-                  
+
                   <div className="grid gap-4 max-w-lg">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-700">Nama Penilai :</span>
@@ -172,9 +171,8 @@ export default function KepalaSekolahEvaluasiPribadiPage() {
 
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-700">Status :</span>
-                      <span className={`px-3 py-1 text-white text-xs font-medium rounded-md ${
-                        kategoriList.length > 0 ? 'bg-green-600' : 'bg-gray-400'
-                      }`}>
+                      <span className={`px-3 py-1 text-white text-xs font-medium rounded-md ${kategoriList.length > 0 ? 'bg-green-600' : 'bg-gray-400'
+                        }`}>
                         {kategoriList.length > 0 ? 'Sudah Terisi' : 'Belum Terisi'}
                       </span>
                     </div>
@@ -213,7 +211,7 @@ export default function KepalaSekolahEvaluasiPribadiPage() {
                         </thead>
                         <tbody>
                           {kategoriList.map((item, index) => (
-                            <tr 
+                            <tr
                               key={item.kategori.id}
                               className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
                             >
