@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/api";
 import AccessControl from "@/components/AccessControl";
 import toast from "react-hot-toast";
+import BottomBack from "@/components/BottomBack";
 
 interface SlipGaji {
   id: number;
@@ -144,17 +145,15 @@ export default function KSSlipGaji() {
   return (
     <AccessControl allowedRoles={["kepala sekolah"]}>
       <div className="min-h-screen bg-gray-100">
-        <div className="px-5 py-6">
-          <div className="flex items-center gap-4 mb-4">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-              aria-label="Kembali"
-            >
-              <ArrowLeft className="w-6 h-6 text-gray-700" />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">Slip Gaji</h1>
+        <div className="px-5 pt-3 pb-4">
+          <div className="flex items-center gap-4">
+            <BottomBack variant="inline" />
+            <h1 className="text-xl font-bold text-gray-800">Slip Gaji</h1>
           </div>
+        </div>
+
+        <div className="px-5 mt-4">
+          {/* Employee Info */}
 
           {/* Employee Info */}
           {employeeData && (

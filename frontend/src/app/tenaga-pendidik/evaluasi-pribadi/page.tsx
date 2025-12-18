@@ -43,7 +43,7 @@ interface TahunAjaran {
 export default function TenagaPendidikEvaluasiPribadiPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  
+
   const [evaluations, setEvaluations] = useState<Evaluasi[]>([]);
   const [tahunAjaranList, setTahunAjaranList] = useState<TahunAjaran[]>([]);
   const [selectedTahunAjaran, setSelectedTahunAjaran] = useState<string>("");
@@ -54,12 +54,12 @@ export default function TenagaPendidikEvaluasiPribadiPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        
+
         const evalRes = await apiClient.evaluation.getPersonal();
         if (evalRes?.success && evalRes.data) {
           const evalData = Array.isArray(evalRes.data) ? evalRes.data : [];
           setEvaluations(evalData);
-          
+
           const tahunAjarans = evalData
             .map((e: Evaluasi) => e.tahun_ajaran)
             .filter((t): t is TahunAjaran => t !== undefined)
@@ -70,9 +70,9 @@ export default function TenagaPendidikEvaluasiPribadiPage() {
               return acc;
             }, [])
             .sort((a, b) => b.nama.localeCompare(a.nama));
-          
+
           setTahunAjaranList(tahunAjarans);
-          
+
           const activeTahun = tahunAjarans.find(t => t.is_aktif);
           if (activeTahun) {
             setSelectedTahunAjaran(activeTahun.id.toString());
@@ -129,7 +129,7 @@ export default function TenagaPendidikEvaluasiPribadiPage() {
             <h1 className="text-xl font-bold text-gray-800">Evaluasi Pribadi</h1>
           </div>
         </div>
-        
+
         <div className="px-5">
           {isLoading ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 flex items-center justify-center">
@@ -142,7 +142,7 @@ export default function TenagaPendidikEvaluasiPribadiPage() {
                   <h2 className="text-xl font-semibold text-gray-800 border-b pb-4">
                     Evaluasi Pribadi {user?.profile_pribadi?.nama_lengkap || user?.email}
                   </h2>
-                  
+
                   <div className="grid gap-4 max-w-lg">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-700">Nama Penilai :</span>
@@ -171,9 +171,8 @@ export default function TenagaPendidikEvaluasiPribadiPage() {
 
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-700">Status :</span>
-                      <span className={`px-3 py-1 text-white text-xs font-medium rounded-md ${
-                        kategoriList.length > 0 ? 'bg-green-600' : 'bg-gray-400'
-                      }`}>
+                      <span className={`px-3 py-1 text-white text-xs font-medium rounded-md ${kategoriList.length > 0 ? 'bg-green-600' : 'bg-gray-400'
+                        }`}>
                         {kategoriList.length > 0 ? 'Sudah Terisi' : 'Belum Terisi'}
                       </span>
                     </div>
@@ -212,7 +211,7 @@ export default function TenagaPendidikEvaluasiPribadiPage() {
                         </thead>
                         <tbody>
                           {kategoriList.map((item, index) => (
-                            <tr 
+                            <tr
                               key={item.kategori.id}
                               className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
                             >
@@ -272,4 +271,3 @@ export default function TenagaPendidikEvaluasiPribadiPage() {
     </AccessControl>
   );
 }
-
