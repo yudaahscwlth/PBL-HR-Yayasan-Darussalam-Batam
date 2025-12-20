@@ -261,10 +261,18 @@ export default function AdminDashboard() {
                 <span className="text-sm">{getCurrentDate()}</span>
               </div>
             </div>
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
+              {user?.profile_pribadi?.foto ? (
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/storage/${user.profile_pribadi.foto}`}
+                  alt={user?.profile_pribadi?.nama_lengkap || "Profile"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <svg className="w-6 h-6 text-[#1e4d8b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              )}
             </div>
           </div>
         </div>
