@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import BottomNavbar from "@/components/BottomNavbar";
+import toast from "react-hot-toast";
 import AccessControl from "@/components/AccessControl";
 
 export default function AdminDashboard() {
@@ -14,7 +15,7 @@ export default function AdminDashboard() {
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number; longitude: number; accuracy?: number } | null>(null);
   const [gpsStatus, setGpsStatus] = useState<string>("");
-  const [lastToastTime, setLastToastTime] = useState<number>(0);
+
 
   const isMounted = useRef(true);
 
@@ -87,24 +88,7 @@ export default function AdminDashboard() {
     });
   };
 
-  const showToast = (message: string, type: "success" | "error" | "warning" | "info" = "info") => {
-    const now = Date.now();
-    if (now - lastToastTime < 2000) return; // Debounce
 
-    setLastToastTime(now);
-
-    const toast = document.createElement("div");
-    toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium max-w-sm ${type === "success" ? "bg-green-500" : type === "error" ? "bg-red-500" : type === "warning" ? "bg-yellow-500" : "bg-blue-500"}`;
-
-    const icon = type === "success" ? "✅" : type === "error" ? "❌" : type === "warning" ? "⚠️" : "ℹ️";
-    toast.innerHTML = `${icon} ${message}`;
-
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-      toast.remove();
-    }, 5000);
-  };
 
   const handleCheckIn = async () => {
     try {
@@ -123,7 +107,7 @@ export default function AdminDashboard() {
         );
 
         if (!confirmed) {
-          showToast("Absensi dibatalkan karena akurasi GPS rendah", "warning");
+          toast("Absensi dibatalkan karena akurasi GPS rendah", { icon: "⚠️" });
           return;
         }
       }
@@ -145,22 +129,22 @@ export default function AdminDashboard() {
       if (response.ok) {
         if (isMounted.current) {
           setAttendanceStatus("checked_in");
-          showToast("Check-in berhasil!", "success");
+          toast.success("Check-in berhasil!");
           setGpsStatus("");
         }
       } else {
         if (data.message?.includes("luar area kerja")) {
-          showToast("Anda berada di luar area kerja. Silakan pindah ke lokasi yang tepat.", "error");
+          toast.error("Anda berada di luar area kerja. Silakan pindah ke lokasi yang tepat.");
         } else {
-          showToast(data.message || "Gagal melakukan check-in", "error");
+          toast.error(data.message || "Gagal melakukan check-in");
         }
       }
     } catch (error) {
       console.error("Check-in error:", error);
       if (error instanceof Error && error.message.includes("GPS")) {
-        showToast("Gagal mendapatkan lokasi GPS. Pastikan izin lokasi diaktifkan.", "error");
+        toast.error("Gagal mendapatkan lokasi GPS. Pastikan izin lokasi diaktifkan.");
       } else {
-        showToast("Gagal melakukan check-in. Silakan coba lagi.", "error");
+        toast.error("Gagal melakukan check-in. Silakan coba lagi.");
       }
     } finally {
       if (isMounted.current) {
@@ -187,7 +171,7 @@ export default function AdminDashboard() {
         );
 
         if (!confirmed) {
-          showToast("Absensi dibatalkan karena akurasi GPS rendah", "warning");
+          toast("Absensi dibatalkan karena akurasi GPS rendah", { icon: "⚠️" });
           return;
         }
       }
@@ -209,22 +193,22 @@ export default function AdminDashboard() {
       if (response.ok) {
         if (isMounted.current) {
           setAttendanceStatus("checked_out");
-          showToast("Check-out berhasil!", "success");
+          toast.success("Check-out berhasil!");
           setGpsStatus("");
         }
       } else {
         if (data.message?.includes("luar area kerja")) {
-          showToast("Anda berada di luar area kerja. Silakan pindah ke lokasi yang tepat.", "error");
+          toast.error("Anda berada di luar area kerja. Silakan pindah ke lokasi yang tepat.");
         } else {
-          showToast(data.message || "Gagal melakukan check-out", "error");
+          toast.error(data.message || "Gagal melakukan check-out");
         }
       }
     } catch (error) {
       console.error("Check-out error:", error);
       if (error instanceof Error && error.message.includes("GPS")) {
-        showToast("Gagal mendapatkan lokasi GPS. Pastikan izin lokasi diaktifkan.", "error");
+        toast.error("Gagal mendapatkan lokasi GPS. Pastikan izin lokasi diaktifkan.");
       } else {
-        showToast("Gagal melakukan check-out. Silakan coba lagi.", "error");
+        toast.error("Gagal melakukan check-out. Silakan coba lagi.");
       }
     } finally {
       if (isMounted.current) {
