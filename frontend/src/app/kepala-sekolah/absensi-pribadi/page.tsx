@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/api";
 import BottomBack from "@/components/BottomBack";
+import toast from "react-hot-toast";
 
 interface AttendanceRecord {
   id: number;
@@ -51,7 +52,7 @@ export default function KepalaSekolahAbsensiPribadi() {
   const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
   const [previewFileType, setPreviewFileType] = useState<string | null>(null);
   const [imageLoadError, setImageLoadError] = useState(false);
-  const [lastToastTime, setLastToastTime] = useState<number>(0);
+
 
   // Fetch attendance data
   useEffect(() => {
@@ -121,64 +122,7 @@ export default function KepalaSekolahAbsensiPribadi() {
     }
   };
 
-  // Toast sederhana (mengikuti pola di HRD)
-  const showToast = (
-    message: string,
-    type: "success" | "error" | "warning" | "info" = "info"
-  ) => {
-    const now = Date.now();
-    if (now - lastToastTime < 2000) return;
 
-    setLastToastTime(now);
-
-    const toast = document.createElement("div");
-    toast.className = `fixed top-4 right-4 z-[60] px-6 py-3 rounded-lg shadow-lg text-white font-medium max-w-sm transform transition-all duration-300 ease-in-out ${type === "success"
-      ? "bg-green-500"
-      : type === "error"
-        ? "bg-red-500"
-        : type === "warning"
-          ? "bg-yellow-500"
-          : "bg-blue-500"
-      }`;
-
-    const icon =
-      type === "success"
-        ? "✅"
-        : type === "error"
-          ? "❌"
-          : type === "warning"
-            ? "⚠️"
-            : "ℹ️";
-
-    const toastContent = document.createElement("div");
-    toastContent.className = "flex items-center gap-2";
-    const iconSpan = document.createElement("span");
-    iconSpan.textContent = icon;
-    const messageSpan = document.createElement("span");
-    messageSpan.textContent = message;
-    toastContent.appendChild(iconSpan);
-    toastContent.appendChild(messageSpan);
-    toast.appendChild(toastContent);
-
-    toast.style.opacity = "0";
-    toast.style.transform = "translateX(100%)";
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.opacity = "1";
-      toast.style.transform = "translateX(0)";
-    }, 10);
-
-    setTimeout(() => {
-      toast.style.opacity = "0";
-      toast.style.transform = "translateX(100%)";
-      setTimeout(() => {
-        if (toast.parentNode) {
-          toast.remove();
-        }
-      }, 300);
-    }, 5000);
-  };
 
   const handleOpenModal = () => {
     setFormData({
@@ -246,7 +190,7 @@ export default function KepalaSekolahAbsensiPribadi() {
     try {
       const durasiHari = parseInt(formData.durasi_hari) || 0;
       if (durasiHari < 0) {
-        showToast("Durasi hari tidak boleh negatif", "error");
+        toast.error("Durasi hari tidak boleh negatif");
         setIsSubmitting(false);
         return;
       }
@@ -269,16 +213,9 @@ export default function KepalaSekolahAbsensiPribadi() {
         }
 
         handleCloseModal();
-        showToast(
-          response.message || "Absensi berhasil ditambahkan!",
-          "success"
-        );
+        toast.success(response.message || "Absensi berhasil ditambahkan!");
       } else {
-        showToast(
-          response.message ||
-          "Gagal menambahkan absensi. Silakan coba lagi.",
-          "error"
-        );
+        toast.error(response.message || "Gagal menambahkan absensi. Silakan coba lagi.");
       }
     } catch (error: any) {
       console.error("Error submitting attendance:", error);
@@ -286,7 +223,7 @@ export default function KepalaSekolahAbsensiPribadi() {
         error.response?.data?.message ||
         error.message ||
         "Gagal menambahkan absensi. Silakan coba lagi.";
-      showToast(errorMessage, "error");
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

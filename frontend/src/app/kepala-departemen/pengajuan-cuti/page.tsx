@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
+import toast from "react-hot-toast";
 
 interface LeaveRequest {
   id: number;
@@ -45,11 +46,7 @@ export default function KepalaDepartemenPengajuanCuti() {
   const [entriesRiwayat, setEntriesRiwayat] = useState(10);
   const [currentPageRiwayat, setCurrentPageRiwayat] = useState(1);
 
-  const [toastMessage, setToastMessage] = useState<{
-    type: "success" | "error" | "warning" | "info";
-    message: string;
-    show: boolean;
-  }>({ type: "info", message: "", show: false });
+
 
   // Form state
   const [formData, setFormData] = useState({
@@ -111,15 +108,7 @@ export default function KepalaDepartemenPengajuanCuti() {
     }
   };
 
-  const showToast = (
-    type: "success" | "error" | "warning" | "info",
-    message: string
-  ) => {
-    setToastMessage({ type, message, show: true });
-    setTimeout(() => {
-      setToastMessage((prev) => ({ ...prev, show: false }));
-    }, 5000);
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,10 +119,7 @@ export default function KepalaDepartemenPengajuanCuti() {
       if (
         new Date(formData.tanggal_mulai) > new Date(formData.tanggal_selesai)
       ) {
-        showToast(
-          "error",
-          "Tanggal selesai harus lebih besar dari tanggal mulai"
-        );
+        toast.error("Tanggal selesai harus lebih besar dari tanggal mulai");
         setIsSubmitting(false);
         return;
       }
@@ -150,7 +136,7 @@ export default function KepalaDepartemenPengajuanCuti() {
       const response = await apiClient.leave.create(payload);
 
       if (response.success) {
-        showToast("success", "✅ Pengajuan cuti berhasil dikirim!");
+        toast.success("Pengajuan cuti berhasil dikirim!");
 
         // Reset form
         setFormData({
@@ -165,16 +151,12 @@ export default function KepalaDepartemenPengajuanCuti() {
         setShowModal(false);
         await loadLeaveRequests();
       } else {
-        showToast(
-          "error",
-          response.message || "❌ Gagal mengirim pengajuan cuti"
-        );
+        toast.error(response.message || "Gagal mengirim pengajuan cuti");
       }
     } catch (error: any) {
       console.error("Error submitting leave request:", error);
-      showToast(
-        "error",
-        error.response?.data?.message || "❌ Gagal mengirim pengajuan cuti"
+      toast.error(
+        error.response?.data?.message || "Gagal mengirim pengajuan cuti"
       );
     } finally {
       setIsSubmitting(false);
@@ -977,74 +959,6 @@ export default function KepalaDepartemenPengajuanCuti() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Toast Notification */}
-      {toastMessage.show && (
-        <div className="fixed top-10 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-full px-4">
-          <div
-            className={`p-4 rounded-lg shadow-2xl border-l-4 ${
-              toastMessage.type === "success"
-                ? "bg-green-50 border-green-500 text-green-800"
-                : toastMessage.type === "error"
-                ? "bg-red-50 border-red-500 text-red-800"
-                : toastMessage.type === "warning"
-                ? "bg-yellow-50 border-yellow-500 text-yellow-800"
-                : "bg-blue-50 border-blue-500 text-blue-800"
-            }`}
-          >
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                {toastMessage.type === "success" && (
-                  <span className="text-green-500 text-xl">✅</span>
-                )}
-                {toastMessage.type === "error" && (
-                  <span className="text-red-500 text-xl">❌</span>
-                )}
-                {toastMessage.type === "warning" && (
-                  <span className="text-yellow-500 text-xl">⚠️</span>
-                )}
-                {toastMessage.type === "info" && (
-                  <span className="text-blue-500 text-xl">ℹ️</span>
-                )}
-              </div>
-              <div className="ml-3 flex-1">
-                <p className="text-sm font-medium whitespace-pre-line">
-                  {toastMessage.message}
-                </p>
-              </div>
-              <div className="ml-4 flex-shrink-0">
-                <button
-                  onClick={() =>
-                    setToastMessage((prev) => ({ ...prev, show: false }))
-                  }
-                  className={`inline-flex rounded-md p-1.5 ${
-                    toastMessage.type === "success"
-                      ? "text-green-500 hover:bg-green-100"
-                      : toastMessage.type === "error"
-                      ? "text-red-500 hover:bg-red-100"
-                      : toastMessage.type === "warning"
-                      ? "text-yellow-500 hover:bg-yellow-100"
-                      : "text-blue-500 hover:bg-blue-100"
-                  }`}
-                >
-                  <span className="sr-only">Close</span>
-                  <svg
-                    className="h-4 w-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
