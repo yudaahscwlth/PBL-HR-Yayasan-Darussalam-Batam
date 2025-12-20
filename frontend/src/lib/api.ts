@@ -474,16 +474,34 @@ export const apiClient = {
       id: number,
       komentar?: string
     ): Promise<ApiResponse> => {
-      const response = await api.post(
-        `/leave/${id}/approve-kepsek`,
-        komentar ? { komentar } : {}
-      );
-      return response.data;
+      try {
+        const response = await api.post(
+          `/leave/${id}/approve-kepsek`,
+          komentar ? { komentar } : {}
+        );
+        return response.data;
+      } catch (error: any) {
+        // Return error response in the same format as success
+        if (error.response?.data) {
+          return error.response.data;
+        }
+        throw error;
+      }
     },
 
     rejectKepsek: async (id: number, reason?: string): Promise<ApiResponse> => {
-      const response = await api.post(`/leave/${id}/reject-kepsek`, { reason });
-      return response.data;
+      try {
+        const response = await api.post(`/leave/${id}/reject-kepsek`, {
+          reason,
+        });
+        return response.data;
+      } catch (error: any) {
+        // Return error response in the same format as success
+        if (error.response?.data) {
+          return error.response.data;
+        }
+        throw error;
+      }
     },
 
     approveDirpen: async (

@@ -55,8 +55,6 @@ export default function KepalaSekolahVerifikasiCutiPage() {
   const [entriesRiwayat, setEntriesRiwayat] = useState(10);
   const [currentPageRiwayat, setCurrentPageRiwayat] = useState(1);
 
-
-
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated && user === null) {
@@ -105,16 +103,6 @@ export default function KepalaSekolahVerifikasiCutiPage() {
     }
   };
 
-  const showToast = (
-    type: "success" | "error" | "warning" | "info",
-    message: string
-  ) => {
-    setToastMessage({ type, message, show: true });
-    setTimeout(() => {
-      setToastMessage((prev) => ({ ...prev, show: false }));
-    }, 5000);
-  };
-
   const handleConfirmAction = async () => {
     if (!selectedRequest || !actionType) return;
 
@@ -144,10 +132,8 @@ export default function KepalaSekolahVerifikasiCutiPage() {
       }
 
       if (response.success) {
-        showToast(
-          "success",
-          `✅ Cuti berhasil ${actionType === "approve" ? "disetujui" : "ditolak"
-          }!`
+        toast.success(
+          `Cuti berhasil ${actionType === "approve" ? "disetujui" : "ditolak"}!`
         );
         setShowConfirmModal(false);
         setSelectedRequest(null);
@@ -156,11 +142,9 @@ export default function KepalaSekolahVerifikasiCutiPage() {
         // Reload leave requests to show updated status
         await loadLeaveRequests();
       } else {
-        showToast(
-          "error",
+        toast.error(
           response.message ||
-          `❌ Gagal ${actionType === "approve" ? "menyetujui" : "menolak"
-          } cuti`
+            `Gagal ${actionType === "approve" ? "menyetujui" : "menolak"} cuti`
         );
       }
     } catch (error: any) {
@@ -361,9 +345,7 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                 <span className="font-['Poppins'] shrink-0">Show</span>
                 <select
                   value={entriesVerifikasi}
-                  onChange={(e) =>
-                    setEntriesVerifikasi(Number(e.target.value))
-                  }
+                  onChange={(e) => setEntriesVerifikasi(Number(e.target.value))}
                   className="h-7 md:h-8 w-16 md:w-24 px-2 bg-white rounded border border-black/30 font-['Poppins'] text-black"
                 >
                   <option value={5}>5</option>
@@ -420,10 +402,7 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                 <tbody>
                   {paginatedVerifikasi.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={8}
-                        className="p-4 text-center text-black"
-                      >
+                      <td colSpan={8} className="p-4 text-center text-black">
                         Tidak ada pengajuan cuti yang perlu diverifikasi
                       </td>
                     </tr>
@@ -462,8 +441,9 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                             <button
                               onClick={() =>
                                 handleViewImage(
-                                  `${process.env.NEXT_PUBLIC_API_URL ||
-                                  "http://localhost:8000"
+                                  `${
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    "http://localhost:8000"
                                   }/storage/${request.file_pendukung}`
                                 )
                               }
@@ -536,8 +516,7 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                 Showing{" "}
                 {filteredVerifikasi.length === 0
                   ? 0
-                  : (currentPageVerifikasi - 1) * entriesVerifikasi +
-                  1}{" "}
+                  : (currentPageVerifikasi - 1) * entriesVerifikasi + 1}{" "}
                 to{" "}
                 {Math.min(
                   currentPageVerifikasi * entriesVerifikasi,
@@ -563,10 +542,7 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                 <button
                   onClick={() =>
                     setCurrentPageVerifikasi(
-                      Math.min(
-                        totalPagesVerifikasi,
-                        currentPageVerifikasi + 1
-                      )
+                      Math.min(totalPagesVerifikasi, currentPageVerifikasi + 1)
                     )
                   }
                   disabled={
@@ -593,9 +569,7 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                 <span className="font-['Poppins'] shrink-0">Show</span>
                 <select
                   value={entriesRiwayat}
-                  onChange={(e) =>
-                    setEntriesRiwayat(Number(e.target.value))
-                  }
+                  onChange={(e) => setEntriesRiwayat(Number(e.target.value))}
                   className="h-7 md:h-8 w-16 md:w-24 px-2 bg-white rounded border border-black/30 font-['Poppins'] text-black"
                 >
                   <option value={5}>5</option>
@@ -647,10 +621,7 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                 <tbody>
                   {paginatedRiwayat.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={7}
-                        className="p-4 text-center text-black"
-                      >
+                      <td colSpan={7} className="p-4 text-center text-black">
                         Belum ada riwayat verifikasi cuti
                       </td>
                     </tr>
@@ -689,8 +660,9 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                             <button
                               onClick={() =>
                                 handleViewImage(
-                                  `${process.env.NEXT_PUBLIC_API_URL ||
-                                  "http://localhost:8000"
+                                  `${
+                                    process.env.NEXT_PUBLIC_API_URL ||
+                                    "http://localhost:8000"
                                   }/storage/${request.file_pendukung}`
                                 )
                               }
@@ -754,9 +726,7 @@ export default function KepalaSekolahVerifikasiCutiPage() {
               <div className="flex items-center gap-px bg-zinc-800/10 rounded-sm border border-black/5">
                 <button
                   onClick={() =>
-                    setCurrentPageRiwayat(
-                      Math.max(1, currentPageRiwayat - 1)
-                    )
+                    setCurrentPageRiwayat(Math.max(1, currentPageRiwayat - 1))
                   }
                   disabled={currentPageRiwayat === 1}
                   className="px-2 py-1 md:px-3 md:py-1.5 text-sky-800 text-[9px] md:text-sm hover:bg-gray-200 disabled:opacity-50"
@@ -914,10 +884,11 @@ export default function KepalaSekolahVerifikasiCutiPage() {
                       isSubmitting ||
                       (actionType === "reject" && !komentar.trim())
                     }
-                    className={`flex-1 py-3 rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${actionType === "approve"
-                      ? "bg-sky-800 text-white hover:bg-sky-600"
-                      : "bg-red-600 text-white hover:bg-red-700"
-                      }`}
+                    className={`flex-1 py-3 rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                      actionType === "approve"
+                        ? "bg-sky-800 text-white hover:bg-sky-600"
+                        : "bg-red-600 text-white hover:bg-red-700"
+                    }`}
                   >
                     {isSubmitting ? (
                       <div className="flex items-center justify-center">
@@ -956,19 +927,35 @@ export default function KepalaSekolahVerifikasiCutiPage() {
         )}
         {/* Modal Preview Image */}
         {showImageModal && previewImageUrl && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60" onClick={() => setShowImageModal(false)}>
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60"
+            onClick={() => setShowImageModal(false)}
+          >
             <div
               className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-4xl w-auto max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-4 px-2 pt-2">
-                <h3 className="font-['Poppins'] font-semibold text-lg text-gray-800">Preview File</h3>
+                <h3 className="font-['Poppins'] font-semibold text-lg text-gray-800">
+                  Preview File
+                </h3>
                 <button
                   onClick={() => setShowImageModal(false)}
                   className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-100"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="w-6 h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
