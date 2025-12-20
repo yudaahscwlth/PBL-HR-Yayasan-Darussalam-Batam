@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/api";
 import BottomNavbar from "@/components/BottomNavbar";
+import toast from "react-hot-toast";
 import AccessControl from "@/components/AccessControl";
 
 interface DashboardItem {
@@ -59,16 +60,11 @@ export default function HRDDashboard() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [gpsTolerance, setGpsTolerance] = useState(100); // 50 / 100 / 200 / 500 (meter)
 
-  const [toastMessage, setToastMessage] = useState<{
-    type: "success" | "error" | "warning" | "info";
-    message: string;
-    show: boolean;
-  }>({ type: "info", message: "", show: false });
-  const [lastToastTime, setLastToastTime] = useState<number>(0);
+const [lastToastTime, setLastToastTime] = useState<number>(0);
 
   // Refs
   const isMounted = useRef(true);
-  const toastTimeoutRef = useRef<number | null>(null);
+
   const inFlightLocRef = useRef<
     Promise<{ latitude: number; longitude: number; accuracy?: number }> | null
   >(null);
@@ -77,11 +73,7 @@ export default function HRDDashboard() {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-        toastTimeoutRef.current = null;
-      }
-    };
+};
   }, []);
 
   // Load dashboard data
@@ -151,27 +143,6 @@ export default function HRDDashboard() {
       cancelled = true;
     };
   }, []);
-
-  /** Toast helper (clear timer lama agar tidak menumpuk) */
-  const showToast = (
-    type: "success" | "error" | "warning" | "info",
-    message: string
-  ) => {
-    if (!isMounted.current) return;
-    const now = Date.now();
-    if (now - lastToastTime < 2000) return; // hindari duplikat <2s
-
-    setLastToastTime(now);
-    setToastMessage({ type, message, show: true });
-
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    toastTimeoutRef.current = window.setTimeout(() => {
-      if (isMounted.current) {
-        setToastMessage((prev) => ({ ...prev, show: false }));
-      }
-      toastTimeoutRef.current = null;
-    }, 5000);
-  };
 
   /**
    * getCurrentLocation dengan strategi:
@@ -312,11 +283,11 @@ export default function HRDDashboard() {
     setCurrentLocation(null);
     try {
       await getCurrentLocation();
-      if (isMounted.current) showToast("success", "GPS berhasil di-refresh!");
+      if (isMounted.current) toast.success("GPS berhasil di-refresh!");
     } catch (error) {
       console.error("GPS refresh failed:", error);
       if (isMounted.current)
-        showToast("error", "Gagal refresh GPS. Coba lagi.");
+        toast.error("Gagal refresh GPS. Coba lagi.");
     }
   };
 
@@ -324,16 +295,16 @@ export default function HRDDashboard() {
     setIsGettingLocation(true);
     setLocationError(null);
     setCurrentLocation(null);
-    showToast("info", "🔄 Mereset GPS... Tunggu sebentar.");
+    toast("Mereset GPS... Tunggu sebentar.");
     setTimeout(async () => {
       if (!isMounted.current) return;
       try {
         await getCurrentLocation();
-        if (isMounted.current) showToast("success", "✅ GPS berhasil di-reset!");
+        if (isMounted.current) toast.success("GPS berhasil di-reset!");
       } catch (error) {
         console.error("GPS reset failed:", error);
         if (isMounted.current)
-          showToast("error", "❌ Gagal reset GPS. Coba lagi.");
+          toast.error("Gagal reset GPS. Coba lagi.");
       }
     }, 1200);
   };
@@ -354,9 +325,8 @@ export default function HRDDashboard() {
             `Apakah Anda ingin melanjutkan absensi?`
         );
         if (!confirmProceed) {
-          showToast(
-            "warning",
-            `⚠️ Absensi dibatalkan. Akurasi GPS ${accuracy}m melebihi toleransi ${gpsTolerance}m.`
+          toast.error(
+            `Absensi dibatalkan. Akurasi GPS ${accuracy}m melebihi toleransi ${gpsTolerance}m.`
           );
           setIsLoading(false);
           return;
@@ -399,17 +369,13 @@ export default function HRDDashboard() {
           });
         }
 
-        showToast("success", "✅ Check-in berhasil! Lokasi telah diverifikasi.");
+        toast.success("Check-in berhasil! Lokasi telah diverifikasi.");
       } else {
         if (response.message?.includes("luar area kerja")) {
-          showToast(
-            "error",
-            `🚫 Anda berada di luar area kerja yang diizinkan!\n\n${response.message}`
-          );
+          toast.error(response.message);
         } else {
-          showToast(
-            "error",
-            response.message || "❌ Gagal melakukan check in. Silakan coba lagi."
+          toast.error(
+            response.message || "Gagal melakukan check in. Silakan coba lagi."
           );
         }
       }
@@ -417,11 +383,11 @@ export default function HRDDashboard() {
       console.error("Error checking in:", error);
       console.error("Error response:", error?.response?.data);
       if (error?.message?.includes("lokasi") || error?.message?.includes("GPS")) {
-        showToast("error", `📍 ${error.message}`);
+        toast.error(`${error.message}`);
       } else if (error?.response?.data?.message) {
-        showToast("error", `⚠️ Error: ${error.response.data.message}`);
+        toast.error(`Error: ${error.response.data.message}`);
       } else {
-        showToast("error", "❌ Gagal melakukan check in. Silakan coba lagi.");
+        toast.error("Gagal melakukan check in. Silakan coba lagi.");
       }
     } finally {
       setIsLoading(false);
@@ -444,9 +410,8 @@ export default function HRDDashboard() {
             `Apakah Anda ingin melanjutkan absensi?`
         );
         if (!confirmProceed) {
-          showToast(
-            "warning",
-            `⚠️ Absensi dibatalkan. Akurasi GPS ${accuracy}m melebihi toleransi ${gpsTolerance}m.`
+          toast.error(
+            `Absensi dibatalkan. Akurasi GPS ${accuracy}m melebihi toleransi ${gpsTolerance}m.`
           );
           setIsLoading(false);
           return;
@@ -466,20 +431,13 @@ export default function HRDDashboard() {
           checkOutTime: data.check_out_time || new Date().toISOString(),
         }));
 
-        showToast(
-          "success",
-          "✅ Check-out berhasil! Lokasi telah diverifikasi."
-        );
+        toast.success("Check-out berhasil! Lokasi telah diverifikasi.");
       } else {
         if (response.message?.includes("luar area kerja")) {
-          showToast(
-            "error",
-            `🚫 Anda berada di luar area kerja yang diizinkan untuk check-out!\n\n${response.message}`
-          );
+          toast.error(response.message);
         } else {
-          showToast(
-            "error",
-            response.message || "❌ Gagal melakukan check out. Silakan coba lagi."
+          toast.error(
+            response.message || "Gagal melakukan check out. Silakan coba lagi."
           );
         }
       }
@@ -487,11 +445,11 @@ export default function HRDDashboard() {
       console.error("Error checking out:", error);
       console.error("Error response:", error?.response?.data);
       if (error?.message?.includes("lokasi") || error?.message?.includes("GPS")) {
-        showToast("error", `📍 ${error.message}`);
+        toast.error(`${error.message}`);
       } else if (error?.response?.data?.message) {
-        showToast("error", `⚠️ Error: ${error.response.data.message}`);
+        toast.error(`Error: ${error.response.data.message}`);
       } else {
-        showToast("error", "❌ Gagal melakukan check out. Silakan coba lagi.");
+        toast.error("Gagal melakukan check out. Silakan coba lagi.");
       }
     } finally {
       setIsLoading(false);
@@ -891,58 +849,6 @@ export default function HRDDashboard() {
             </div>
           </div>
         </div>
-
-        {/* Toast Notification */}
-        {toastMessage.show && (
-          <div className="fixed top-4 right-4 z-50 max-w-sm">
-            <div
-              className={`p-4 rounded-lg shadow-lg border-l-4 ${
-                toastMessage.type === "success"
-                  ? "bg-green-50 border-green-500 text-green-800"
-                  : toastMessage.type === "error"
-                  ? "bg-red-50 border-red-500 text-red-800"
-                  : toastMessage.type === "warning"
-                  ? "bg-yellow-50 border-yellow-500 text-yellow-800"
-                  : "bg-blue-50 border-blue-500 text-blue-800"
-              }`}
-            >
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  {toastMessage.type === "success" && <span className="text-green-500 text-xl">✅</span>}
-                  {toastMessage.type === "error" && <span className="text-red-500 text-xl">❌</span>}
-                  {toastMessage.type === "warning" && <span className="text-yellow-500 text-xl">⚠️</span>}
-                  {toastMessage.type === "info" && <span className="text-blue-500 text-xl">ℹ️</span>}
-                </div>
-                <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium whitespace-pre-line">{toastMessage.message}</p>
-                </div>
-                <div className="ml-4 flex-shrink-0">
-                  <button
-                    onClick={() => setToastMessage((prev) => ({ ...prev, show: false }))}
-                    className={`inline-flex rounded-md p-1.5 ${
-                      toastMessage.type === "success"
-                        ? "text-green-500 hover:bg-green-100"
-                        : toastMessage.type === "error"
-                        ? "text-red-500 hover:bg-red-100"
-                        : toastMessage.type === "warning"
-                        ? "text-yellow-500 hover:bg-yellow-100"
-                        : "text-blue-500 hover:bg-blue-100"
-                    }`}
-                  >
-                    <span className="sr-only">Close</span>
-                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Bottom Navigation */}
         <BottomNavbar />
