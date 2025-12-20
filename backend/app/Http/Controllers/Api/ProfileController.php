@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -19,12 +20,12 @@ class ProfileController extends Controller
     public function getCompleteProfile(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         // Load all relationships
         $user->load([
             'profilePribadi',
             'profilePekerjaan.jabatan',
-            'profilePekerjaan.departemen', 
+            'profilePekerjaan.departemen',
             'profilePekerjaan.tempatKerja',
             'orangTua',
             'keluarga',
@@ -53,7 +54,7 @@ class ProfileController extends Controller
     public function getSosialMediaPlatforms(Request $request): JsonResponse
     {
         $platforms = \App\Models\SosialMedia::all();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Social media platforms retrieved successfully',
@@ -67,7 +68,7 @@ class ProfileController extends Controller
     public function updateProfile(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $request->validate([
             'email' => 'required|unique:users,email,' . $user->id . ',id|email:dns',
             'nomor_induk_kependudukan' => 'required',
@@ -145,11 +146,11 @@ class ProfileController extends Controller
 
             if ($request->hasFile('foto')) {
                 $old_foto = $user->profilePribadi->foto ?? null;
-                if (!empty($old_foto) && is_file('storage/'.$old_foto)) {
-                    unlink('storage/'.$old_foto);
+                if (!empty($old_foto) && is_file('storage/' . $old_foto)) {
+                    unlink('storage/' . $old_foto);
                 }
-                
-                $foto = $request->file('foto')->store('profile_img','public');
+
+                $foto = $request->file('foto')->store('profile_img', 'public');
             } else {
                 $foto = $user->profilePribadi->foto ?? null;
             }
@@ -195,6 +196,10 @@ class ProfileController extends Controller
             $tanggal_lahir_keluarga = $request->input('tanggal_lahir_keluarga', []);
             $pekerjaan = $request->input('pekerjaan', []);
 
+            // Get all existing keluarga IDs for this user
+            $existingKeluargaIds = $user->keluarga()->pluck('id')->toArray();
+            $updatedKeluargaIds = [];
+
             // Pastikan semua array memiliki panjang yang sama
             $maxCount = max(
                 count($id_keluarga),
@@ -211,8 +216,10 @@ class ProfileController extends Controller
                 }
 
                 $id = $id_keluarga[$i] ?? null;
+                // Convert empty string to null for new records
+                $id = ($id === '' || $id === null) ? null : $id;
 
-                $user->keluarga()->updateOrCreate(
+                $keluarga = $user->keluarga()->updateOrCreate(
                     ['id' => $id],
                     [
                         'id_user' => $user->id,
@@ -222,6 +229,17 @@ class ProfileController extends Controller
                         'pekerjaan' => $pekerjaan[$i],
                     ]
                 );
+
+                // Track updated IDs
+                if ($keluarga->id) {
+                    $updatedKeluargaIds[] = $keluarga->id;
+                }
+            }
+
+            // Delete keluarga that were removed (exist in DB but not in request)
+            $idsToDeleteKeluarga = array_diff($existingKeluargaIds, $updatedKeluargaIds);
+            if (!empty($idsToDeleteKeluarga)) {
+                $user->keluarga()->whereIn('id', $idsToDeleteKeluarga)->delete();
             }
 
             //update or create user sosial media
@@ -229,6 +247,10 @@ class ProfileController extends Controller
             $id_platform = $request->input('id_platform', []);
             $username = $request->input('username', []);
             $link = $request->input('link', []);
+
+            // Get all existing user_sosial_media IDs for this user
+            $existingSosmedIds = $user->userSosialMedia()->pluck('id')->toArray();
+            $updatedSosmedIds = [];
 
             // Pastikan semua array memiliki panjang yang sama
             $maxCount = max(
@@ -245,8 +267,10 @@ class ProfileController extends Controller
                 }
 
                 $id = $id_user_sosmed[$i] ?? null;
+                // Convert empty string to null for new records
+                $id = ($id === '' || $id === null) ? null : $id;
 
-                $user->userSosialMedia()->updateOrCreate(
+                $sosmed = $user->userSosialMedia()->updateOrCreate(
                     ['id' => $id],
                     [
                         'id_user' => $user->id,
@@ -255,6 +279,17 @@ class ProfileController extends Controller
                         'link' => $link[$i],
                     ]
                 );
+
+                // Track updated IDs
+                if ($sosmed->id) {
+                    $updatedSosmedIds[] = $sosmed->id;
+                }
+            }
+
+            // Delete user_sosial_media that were removed (exist in DB but not in request)
+            $idsToDeleteSosmed = array_diff($existingSosmedIds, $updatedSosmedIds);
+            if (!empty($idsToDeleteSosmed)) {
+                $user->userSosialMedia()->whereIn('id', $idsToDeleteSosmed)->delete();
             }
 
             DB::commit();
@@ -265,7 +300,7 @@ class ProfileController extends Controller
                 'data' => $user->fresh()->load([
                     'profilePribadi',
                     'profilePekerjaan.jabatan',
-                    'profilePekerjaan.departemen', 
+                    'profilePekerjaan.departemen',
                     'profilePekerjaan.tempatKerja',
                     'orangTua',
                     'keluarga',
@@ -274,7 +309,7 @@ class ProfileController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Profile update error: ' . $e->getMessage(), [
+            Log::error('Profile update error: ' . $e->getMessage(), [
                 'user_id' => $user->id,
                 'trace' => $e->getTraceAsString()
             ]);
@@ -307,7 +342,7 @@ class ProfileController extends Controller
     public function updatePersonal(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $request->validate([
             'nama_lengkap' => 'required|string|max:255',
             'nama_panggilan' => 'nullable|string|max:255',
@@ -356,7 +391,7 @@ class ProfileController extends Controller
     public function updateWork(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
         $request->validate([
             'nip' => 'nullable|string|max:50',
             'id_jabatan' => 'nullable|exists:jabatan,id',
@@ -416,4 +451,3 @@ class ProfileController extends Controller
         ]);
     }
 }
-

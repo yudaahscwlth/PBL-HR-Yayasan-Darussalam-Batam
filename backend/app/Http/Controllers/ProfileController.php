@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\File;
 
 class ProfileController extends Controller
 {
-    public function showProfilePage(){
+    public function showProfilePage()
+    {
         $user = Auth::user();
         $sosialMedia = SosialMedia::all();
 
@@ -24,8 +25,8 @@ class ProfileController extends Controller
         $jsonKecamatan = File::get(resource_path('json/kecamatan-indonesia.json'));
         $dataKecamatanJson = json_decode($jsonKecamatan, true);
 
-        return view('general.profile',[
-            'data'=>$user,
+        return view('general.profile', [
+            'data' => $user,
             'dataSosialMedia' => $sosialMedia,
             'lamaPengabdian' => $lamaPengabdian,
             'allKota' => $dataKotaJson,
@@ -33,10 +34,11 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function update(Request $request){
-        $validatedData= $request->validate([
+    public function update(Request $request)
+    {
+        $validatedData = $request->validate([
             //validasi user
-            'email' => 'required|unique:users,email,'. Auth::user()->email .',email|email:dns' ,
+            'email' => 'required|unique:users,email,' . Auth::user()->email . ',email|email:dns',
 
             // Validasi untuk profile
             'nomor_induk_kependudukan' => 'required',
@@ -122,22 +124,21 @@ class ProfileController extends Controller
             'link.*.max' => 'Link sosial media terlalu panjang.',
         ]);
 
-        try{
+        try {
             DB::beginTransaction();
 
-            $user = User::where('id',Auth::user()->id)->firstOrFail();
+            $user = User::where('id', Auth::user()->id)->firstOrFail();
             $user->email = $request->email;
             $user->save();
 
             if ($request->hasFile('foto')) {
                 $old_foto = $user->profilePribadi->foto ?? null;
-                if (!empty($old_foto) && is_file('storage/'.$old_foto)) {
-                    unlink('storage/'.$old_foto);
+                if (!empty($old_foto) && is_file('storage/' . $old_foto)) {
+                    unlink('storage/' . $old_foto);
                 }
                 // Store the photo in the public/profile_img directory
-                $foto = $request->file('foto')->store('profile_img','public');
-
-            }else{
+                $foto = $request->file('foto')->store('profile_img', 'public');
+            } else {
                 $foto = $user->profilePribadi->foto;
             }
 
@@ -181,10 +182,16 @@ class ProfileController extends Controller
             $tanggal_lahir = $request->input('tanggal_lahir_keluarga', []);
             $pekerjaan = $request->input('pekerjaan', []);
 
+            // Get all existing keluarga IDs for this user
+            $existingKeluargaIds = $user->keluarga()->pluck('id')->toArray();
+            $updatedKeluargaIds = [];
+
             for ($i = 0; $i < count($nama); $i++) {
                 $id = $id_keluarga[$i] ?? null;
+                // Convert empty string to null for new records
+                $id = ($id === '' || $id === null) ? null : $id;
 
-                $user->keluarga()->updateOrCreate(
+                $keluarga = $user->keluarga()->updateOrCreate(
                     ['id' => $id],
                     [
                         'id_user' => $user->id,
@@ -194,8 +201,18 @@ class ProfileController extends Controller
                         'pekerjaan' => $pekerjaan[$i],
                     ]
                 );
+
+                // Track updated IDs
+                if ($keluarga->id) {
+                    $updatedKeluargaIds[] = $keluarga->id;
+                }
             }
 
+            // Delete keluarga that were removed (exist in DB but not in request)
+            $idsToDeleteKeluarga = array_diff($existingKeluargaIds, $updatedKeluargaIds);
+            if (!empty($idsToDeleteKeluarga)) {
+                $user->keluarga()->whereIn('id', $idsToDeleteKeluarga)->delete();
+            }
 
             //update or create user sosial media
             $id_user_sosmed = $request->input('id_user_sosmed', []);
@@ -203,10 +220,16 @@ class ProfileController extends Controller
             $username = $request->input('username', []);
             $link = $request->input('link', []);
 
+            // Get all existing user_sosial_media IDs for this user
+            $existingSosmedIds = $user->userSosialMedia()->pluck('id')->toArray();
+            $updatedSosmedIds = [];
+
             for ($i = 0; $i < count($id_platform); $i++) {
                 $id = $id_user_sosmed[$i] ?? null;
+                // Convert empty string to null for new records
+                $id = ($id === '' || $id === null) ? null : $id;
 
-                $user->userSosialMedia()->updateOrCreate(
+                $sosmed = $user->userSosialMedia()->updateOrCreate(
                     ['id' => $id],
                     [
                         'id_user' => $user->id,
@@ -215,6 +238,17 @@ class ProfileController extends Controller
                         'link' => $link[$i],
                     ]
                 );
+
+                // Track updated IDs
+                if ($sosmed->id) {
+                    $updatedSosmedIds[] = $sosmed->id;
+                }
+            }
+
+            // Delete user_sosial_media that were removed (exist in DB but not in request)
+            $idsToDeleteSosmed = array_diff($existingSosmedIds, $updatedSosmedIds);
+            if (!empty($idsToDeleteSosmed)) {
+                $user->userSosialMedia()->whereIn('id', $idsToDeleteSosmed)->delete();
             }
 
             DB::commit();
@@ -223,12 +257,12 @@ class ProfileController extends Controller
                 'notifikasi' => 'Berhasil mengubah data',
                 'type' => 'success',
             ]);
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
 
             DB::rollback();
 
             return redirect()->back()->with([
-                'notifikasi' => 'Gagal mengubah data'.$e ,
+                'notifikasi' => 'Gagal mengubah data' . $e,
                 'type' => 'error',
             ]);
         }
