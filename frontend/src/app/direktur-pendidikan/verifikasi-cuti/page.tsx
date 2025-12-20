@@ -41,6 +41,8 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
     null
   );
   const [komentar, setKomentar] = useState("");
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   // Pagination and search state for Verifikasi Cuti
   const [searchVerifikasi, setSearchVerifikasi] = useState("");
@@ -51,8 +53,6 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
   const [searchRiwayat, setSearchRiwayat] = useState("");
   const [entriesRiwayat, setEntriesRiwayat] = useState(10);
   const [currentPageRiwayat, setCurrentPageRiwayat] = useState(1);
-
-
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -89,19 +89,19 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
       const response = await apiClient.leave.getAll();
       if (response.success) {
         const allRequests = response.data as LeaveRequest[];
-        
+
         // Filter berdasarkan status yang diinginkan untuk direktur pendidikan
         // Sama dengan filter di dashboard direktur pendidikan
         const filteredRequests = allRequests.filter((request) => {
           const status = request.status_pengajuan.toLowerCase();
           return (
-            status === "ditinjau direktur pendidikan" || 
+            status === "ditinjau direktur pendidikan" ||
             status === "disetujui kepala sekolah menunggu tinjauan dirpen" ||
             status === "disetujui hrd menunggu tinjauan dirpen" ||
             status === "ditolak direktur pendidikan"
           );
         });
-        
+
         // Update state with filtered data
         setLeaveRequests(filteredRequests);
       } else {
@@ -196,13 +196,20 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
     setShowConfirmModal(true);
   };
 
+  const handleViewImage = (url: string) => {
+    setPreviewImageUrl(url);
+    setShowImageModal(true);
+  };
+
   const getStatusColor = (status: string) => {
     const statusLower = status.toLowerCase();
-    
+
     if (statusLower === "ditinjau direktur pendidikan") {
       return "bg-yellow-100 text-yellow-800";
-    } else if (statusLower === "disetujui kepala sekolah menunggu tinjauan dirpen") {
-    return "bg-blue-100 text-blue-800";
+    } else if (
+      statusLower === "disetujui kepala sekolah menunggu tinjauan dirpen"
+    ) {
+      return "bg-blue-100 text-blue-800";
     } else if (statusLower === "disetujui hrd menunggu tinjauan dirpen") {
       return "bg-blue-100 text-blue-800";
     } else if (statusLower === "ditolak direktur pendidikan") {
@@ -218,15 +225,17 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
 
   const getStatusText = (status: string) => {
     const statusLower = status.toLowerCase();
-    
+
     const statusMap: { [key: string]: string } = {
       "ditinjau direktur pendidikan": "Ditinjau Direktur Pendidikan",
-      "disetujui kepala sekolah menunggu tinjauan dirpen": "disetujui kepala sekolah menunggu tinjauan dirpen",
-      "disetujui hrd menunggu tinjauan dirpen": "disetujui hrd menunggu tinjauan dirpen",
+      "disetujui kepala sekolah menunggu tinjauan dirpen":
+        "disetujui kepala sekolah menunggu tinjauan dirpen",
+      "disetujui hrd menunggu tinjauan dirpen":
+        "disetujui hrd menunggu tinjauan dirpen",
       "ditolak direktur pendidikan": "Ditolak Direktur Pendidikan",
       "disetujui direktur pendidikan": "Disetujui Direktur Pendidikan",
     };
-    
+
     return statusMap[statusLower] || status;
   };
 
@@ -467,17 +476,38 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
                             </td>
                             <td className="p-2 md:p-3 font-sans text-black text-center">
                               {request.file_pendukung ? (
-                                <a
-                                  href={`${
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    "http://localhost:8000"
-                                  }/storage/${request.file_pendukung}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sky-800 hover:text-sky-900 underline"
+                                <button
+                                  onClick={() =>
+                                    handleViewImage(
+                                      `${
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        "http://localhost:8000"
+                                      }/storage/${request.file_pendukung}`
+                                    )
+                                  }
+                                  className="text-sky-800 hover:text-sky-900 transition-colors"
+                                  title="Lihat Bukti"
                                 >
-                                  Lihat
-                                </a>
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-5 h-5 mx-auto"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                  </svg>
+                                </button>
                               ) : (
                                 "-"
                               )}
@@ -674,17 +704,38 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
                             </td>
                             <td className="p-2 md:p-3 font-sans text-black text-center">
                               {request.file_pendukung ? (
-                                <a
-                                  href={`${
-                                    process.env.NEXT_PUBLIC_API_URL ||
-                                    "http://localhost:8000"
-                                  }/storage/${request.file_pendukung}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sky-800 hover:text-sky-900 underline"
+                                <button
+                                  onClick={() =>
+                                    handleViewImage(
+                                      `${
+                                        process.env.NEXT_PUBLIC_API_URL ||
+                                        "http://localhost:8000"
+                                      }/storage/${request.file_pendukung}`
+                                    )
+                                  }
+                                  className="text-sky-800 hover:text-sky-900 transition-colors"
+                                  title="Lihat Bukti"
                                 >
-                                  Lihat
-                                </a>
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-5 h-5 mx-auto"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                  </svg>
+                                </button>
                               ) : (
                                 "-"
                               )}
@@ -921,6 +972,50 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
                     )}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Modal Preview Image */}
+        {showImageModal && previewImageUrl && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60"
+            onClick={() => setShowImageModal(false)}
+          >
+            <div
+              className="relative bg-white p-2 rounded-2xl shadow-2xl max-w-4xl w-auto max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4 px-2 pt-2">
+                <h3 className="font-['Poppins'] font-semibold text-lg text-gray-800">
+                  Preview File
+                </h3>
+                <button
+                  onClick={() => setShowImageModal(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-100"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="w-6 h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-50 rounded-xl border border-gray-100 p-4">
+                <img
+                  src={previewImageUrl}
+                  alt="Bukti Pendukung"
+                  className="max-w-full max-h-[calc(80vh-3rem)] object-contain rounded-lg shadow-sm"
+                />
               </div>
             </div>
           </div>
