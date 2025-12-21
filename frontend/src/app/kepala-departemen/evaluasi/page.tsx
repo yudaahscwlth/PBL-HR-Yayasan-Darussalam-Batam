@@ -4,8 +4,9 @@ import AccessControl from "@/components/AccessControl";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { ArrowLeft, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import toast from "react-hot-toast";
 
 interface User {
   id: number;
@@ -47,10 +48,6 @@ export default function KepalaDepartemenEvaluasiPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [evaluationExists, setEvaluationExists] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,10 +57,7 @@ export default function KepalaDepartemenEvaluasiPage() {
 
         if (!token) {
           console.error("No token found in localStorage");
-          setMessage({
-            type: "error",
-            text: "Sesi anda telah berakhir. Silakan login kembali.",
-          });
+          toast.error("Sesi anda telah berakhir. Silakan login kembali.");
           setIsLoading(false);
           return;
         }
@@ -109,10 +103,7 @@ export default function KepalaDepartemenEvaluasiPage() {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        setMessage({
-          type: "error",
-          text: "Gagal memuat data. Silakan coba lagi.",
-        });
+        toast.error("Gagal memuat data. Silakan coba lagi.");
       } finally {
         setIsLoading(false);
       }
@@ -184,25 +175,18 @@ export default function KepalaDepartemenEvaluasiPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser || !selectedTahun) {
-      setMessage({
-        type: "error",
-        text: "Mohon pilih pegawai dan tahun ajaran.",
-      });
+      toast.error("Mohon pilih pegawai dan tahun ajaran.");
       return;
     }
 
     // Check if all categories are filled
     if (Object.keys(evaluations).length < kategoriEvaluasi.length) {
-      setMessage({
-        type: "error",
-        text: "Mohon isi nilai untuk semua indikator penilaian.",
-      });
+      toast.error("Mohon isi nilai untuk semua indikator penilaian.");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      setMessage(null);
       const token = localStorage.getItem("auth_token");
 
       const evaluationData = kategoriEvaluasi.map((kategori) => ({
@@ -229,7 +213,7 @@ export default function KepalaDepartemenEvaluasiPage() {
         }
       );
 
-      setMessage({ type: "success", text: "Evaluasi berhasil disimpan." });
+      toast.success("Evaluasi berhasil disimpan.");
 
       // Reset form
       setEvaluations({});
@@ -239,10 +223,7 @@ export default function KepalaDepartemenEvaluasiPage() {
       window.scrollTo(0, 0);
     } catch (error: any) {
       console.error("Error submitting evaluation:", error);
-      setMessage({
-        type: "error",
-        text: error.response?.data?.message || "Gagal menyimpan evaluasi.",
-      });
+      toast.error(error.response?.data?.message || "Gagal menyimpan evaluasi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -270,23 +251,6 @@ export default function KepalaDepartemenEvaluasiPage() {
                 <h2 className="text-xl font-semibold text-gray-800 border-b pb-4">
                   Evaluasi
                 </h2>
-
-                {message && (
-                  <div
-                    className={`p-4 rounded-lg flex items-center gap-3 ${
-                      message.type === "success"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-red-50 text-red-700"
-                    }`}
-                  >
-                    {message.type === "success" ? (
-                      <CheckCircle className="w-5 h-5" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5" />
-                    )}
-                    <p>{message.text}</p>
-                  </div>
-                )}
 
                 <div className="grid gap-6 max-w-lg">
                   <div className="space-y-2">
