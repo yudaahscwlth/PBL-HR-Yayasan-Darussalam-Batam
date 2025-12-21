@@ -71,18 +71,19 @@ export default function HRDSlipGajiHistory() {
       ]);
 
       if (historyResponse.success && historyResponse.data) {
-        const data = Array.isArray(historyResponse.data) 
-          ? historyResponse.data 
+        const data = Array.isArray(historyResponse.data)
+          ? historyResponse.data
           : (historyResponse.data as any).data || [];
-        
+
         // Ensure total_gaji is a number
         const processedData = data.map((item: any) => ({
           ...item,
-          total_gaji: typeof item.total_gaji === 'number' 
-            ? item.total_gaji 
-            : parseFloat(item.total_gaji) || 0
+          total_gaji:
+            typeof item.total_gaji === "number"
+              ? item.total_gaji
+              : parseFloat(item.total_gaji) || 0,
         }));
-        
+
         setSlipGajiData(processedData as SlipGaji[]);
       }
 
@@ -101,10 +102,10 @@ export default function HRDSlipGajiHistory() {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
-      
+
       // Format manual untuk menghindari hydration mismatch
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
     } catch (error) {
@@ -117,14 +118,14 @@ export default function HRDSlipGajiHistory() {
     if (isNaN(amount) || amount === null || amount === undefined) {
       return "Rp 0";
     }
-    
+
     // Ensure amount is a number
-    const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
-    
+    const numAmount = typeof amount === "number" ? amount : parseFloat(amount);
+
     if (isNaN(numAmount)) {
       return "Rp 0";
     }
-    
+
     try {
       // Format manual untuk menghindari hydration mismatch
       const formatted = new Intl.NumberFormat("id-ID", {
@@ -140,14 +141,14 @@ export default function HRDSlipGajiHistory() {
 
   const handleEdit = async (item: SlipGaji) => {
     setEditingId(item.id);
-    
+
     // Set form data
     setFormData({
       tanggal: item.tanggal.split("T")[0],
       total_gaji: item.total_gaji.toString(),
       keterangan: item.keterangan || "",
     });
-    
+
     setShowEditModal(true);
   };
 
@@ -179,7 +180,9 @@ export default function HRDSlipGajiHistory() {
       toast.success("Slip gaji berhasil diupdate");
     } catch (error: any) {
       console.error("Error updating slip gaji:", error);
-      toast.error(error.response?.data?.message || "Gagal mengupdate slip gaji");
+      toast.error(
+        error.response?.data?.message || "Gagal mengupdate slip gaji"
+      );
     }
   };
 
@@ -200,44 +203,64 @@ export default function HRDSlipGajiHistory() {
             </h1>
           </div>
 
-
           {/* Employee Info */}
           {employeeData && (
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-200">
+              {/* Judul */}
+              <h2 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-200 pb-3">
                 Data Karyawan
               </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-gray-600">Nama:</span>{" "}
-                  <span className="font-medium">{employeeData.nama}</span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">Nama</p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.nama}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">NIK:</span>{" "}
-                  <span className="font-medium">{employeeData.nik}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">NIK</p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.nik}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Tempat, Tgl Lahir:</span>{" "}
-                  <span className="font-medium">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Tempat, Tanggal Lahir
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.tempat_lahir},{" "}
                     {isMounted && employeeData.tanggal_lahir
                       ? formatDate(employeeData.tanggal_lahir)
                       : "-"}
-                  </span>
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Departemen:</span>{" "}
-                  <span className="font-medium">{employeeData.departemen}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Departemen
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.departemen}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Jabatan:</span>{" "}
-                  <span className="font-medium">{employeeData.jabatan}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">Jabatan</p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.jabatan}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Nomor Rekening:</span>{" "}
-                  <span className="font-medium">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Nomor Rekening
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.nomor_rekening || "-"}
-                  </span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -291,14 +314,12 @@ export default function HRDSlipGajiHistory() {
                   ) : (
                     slipGajiData.map((item, index) => (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 text-gray-700">{index + 1}</td>
                         <td className="py-3 px-4 text-gray-700">
-                          {index + 1}
-                        </td>
-                        <td className="py-3 px-4 text-gray-700">
-                          {isMounted ? formatDate(item.tanggal) : ''}
+                          {isMounted ? formatDate(item.tanggal) : ""}
                         </td>
                         <td className="py-3 px-4 text-gray-700 font-semibold">
-                          {isMounted ? formatCurrency(item.total_gaji) : ''}
+                          {isMounted ? formatCurrency(item.total_gaji) : ""}
                         </td>
                         <td className="py-3 px-4 text-gray-700">
                           {item.keterangan || "-"}
@@ -317,7 +338,7 @@ export default function HRDSlipGajiHistory() {
                 </tbody>
               </table>
             </div>
-            
+
             {/* Total Gaji */}
             {!isLoading && slipGajiData.length > 0 && (
               <div className="border-t bg-gray-50 px-4 py-4">
@@ -328,7 +349,10 @@ export default function HRDSlipGajiHistory() {
                   <span className="text-lg font-bold text-blue-600">
                     {formatCurrency(
                       slipGajiData.reduce((sum, item) => {
-                        const gaji = typeof item.total_gaji === 'number' ? item.total_gaji : parseFloat(item.total_gaji) || 0;
+                        const gaji =
+                          typeof item.total_gaji === "number"
+                            ? item.total_gaji
+                            : parseFloat(item.total_gaji) || 0;
                         return sum + gaji;
                       }, 0)
                     )}
@@ -348,7 +372,9 @@ export default function HRDSlipGajiHistory() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-800">Edit Slip Gaji</h2>
+              <h2 className="text-xl font-bold text-gray-800">
+                Edit Slip Gaji
+              </h2>
               <button
                 onClick={handleCloseModal}
                 className="p-1 hover:bg-gray-200 rounded-full transition-colors"

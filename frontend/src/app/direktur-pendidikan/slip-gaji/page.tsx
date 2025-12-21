@@ -158,41 +158,68 @@ export default function DPSlipGaji() {
 
           {/* Employee Info */}
           {employeeData && (
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-4 border border-gray-200">
+              {/* Judul */}
+              <h2 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-200 pb-3">
                 Data Karyawan
               </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-gray-600">Nama:</span>{" "}
-                  <span className="font-medium">{employeeData.nama}</span>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Nama
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.nama}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">NIK:</span>{" "}
-                  <span className="font-medium">{employeeData.nik}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    NIK
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.nik}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Tempat, Tgl Lahir:</span>{" "}
-                  <span className="font-medium">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Tempat, Tanggal Lahir
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.tempat_lahir},{" "}
                     {isMounted && employeeData.tanggal_lahir
                       ? formatDate(employeeData.tanggal_lahir)
                       : "-"}
-                  </span>
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Departemen:</span>{" "}
-                  <span className="font-medium">{employeeData.departemen}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Departemen
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.departemen}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Jabatan:</span>{" "}
-                  <span className="font-medium">{employeeData.jabatan}</span>
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Jabatan
+                  </p>
+                  <p className="text-base font-medium text-black">
+                    {employeeData.jabatan}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-gray-600">Nomor Rekening:</span>{" "}
-                  <span className="font-medium">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Nomor Rekening
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.nomor_rekening || "-"}
-                  </span>
+                  </p>
                 </div>
               </div>
             </div>

@@ -39,7 +39,7 @@ export default function HRDSlipGajiRiwayat() {
 
   const loadData = async () => {
     if (!user?.id) return;
-    
+
     try {
       setIsLoading(true);
       const [historyResponse, employeeResponse] = await Promise.all([
@@ -48,18 +48,19 @@ export default function HRDSlipGajiRiwayat() {
       ]);
 
       if (historyResponse.success && historyResponse.data) {
-        const data = Array.isArray(historyResponse.data) 
-          ? historyResponse.data 
+        const data = Array.isArray(historyResponse.data)
+          ? historyResponse.data
           : (historyResponse.data as any).data || [];
-        
+
         // Ensure total_gaji is a number
         const processedData = data.map((item: any) => ({
           ...item,
-          total_gaji: typeof item.total_gaji === 'number' 
-            ? item.total_gaji 
-            : parseFloat(item.total_gaji) || 0
+          total_gaji:
+            typeof item.total_gaji === "number"
+              ? item.total_gaji
+              : parseFloat(item.total_gaji) || 0,
         }));
-        
+
         setSlipGajiData(processedData as SlipGaji[]);
       }
 
@@ -78,9 +79,9 @@ export default function HRDSlipGajiRiwayat() {
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
-      
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
       const year = date.getFullYear();
       return `${day}/${month}/${year}`;
     } catch (error) {
@@ -92,13 +93,13 @@ export default function HRDSlipGajiRiwayat() {
     if (isNaN(amount) || amount === null || amount === undefined) {
       return "Rp 0";
     }
-    
-    const numAmount = typeof amount === 'number' ? amount : parseFloat(amount);
-    
+
+    const numAmount = typeof amount === "number" ? amount : parseFloat(amount);
+
     if (isNaN(numAmount)) {
       return "Rp 0";
     }
-    
+
     try {
       const formatted = new Intl.NumberFormat("id-ID", {
         style: "currency",
@@ -118,7 +119,9 @@ export default function HRDSlipGajiRiwayat() {
       toast.success("PDF berhasil diunduh", { id: "download-pdf" });
     } catch (error: any) {
       console.error("Error downloading PDF:", error);
-      toast.error(error?.message || "Gagal mengunduh PDF", { id: "download-pdf" });
+      toast.error(error?.message || "Gagal mengunduh PDF", {
+        id: "download-pdf",
+      });
     }
   };
 
@@ -149,49 +152,68 @@ export default function HRDSlipGajiRiwayat() {
             >
               <ArrowLeft className="w-6 h-6 text-gray-700" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Riwayat Slip Gaji</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Riwayat Slip Gaji
+            </h1>
           </div>
 
           {/* Employee Data Section */}
           {employeeData && (
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Data Karyawan</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Nama</p>
-                  <p className="text-base font-medium text-gray-800">
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-200">
+              {/* Judul */}
+              <h2 className="text-lg font-bold text-gray-800 mb-6 border-b border-gray-200 pb-3">
+                Data Karyawan
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">Nama</p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.nama || "-"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">NIK</p>
-                  <p className="text-base font-medium text-gray-800">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">NIK</p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.nik || "-"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Tempat, Tgl Lahir</p>
-                  <p className="text-base font-medium text-gray-800">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Tempat, Tanggal Lahir
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.tempat_lahir && employeeData.tanggal_lahir
-                      ? `${employeeData.tempat_lahir}, ${formatDate(employeeData.tanggal_lahir)}`
+                      ? `${employeeData.tempat_lahir}, ${formatDate(
+                          employeeData.tanggal_lahir
+                        )}`
                       : "-"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Departemen</p>
-                  <p className="text-base font-medium text-gray-800">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Departemen
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.departemen || "-"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Jabatan</p>
-                  <p className="text-base font-medium text-gray-800">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">Jabatan</p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.jabatan || "-"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Nomor Rekening</p>
-                  <p className="text-base font-medium text-gray-800">
+
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-600">
+                    Nomor Rekening
+                  </p>
+                  <p className="text-base font-medium text-black">
                     {employeeData.nomor_rekening || "-"}
                   </p>
                 </div>
@@ -202,7 +224,9 @@ export default function HRDSlipGajiRiwayat() {
           {/* Slip Gaji History Table */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="p-4 border-b">
-              <h2 className="text-lg font-semibold text-gray-800">Riwayat Slip Gaji</h2>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Riwayat Slip Gaji
+              </h2>
             </div>
             <div className="overflow-x-auto">
               {isLoading ? (
@@ -219,17 +243,29 @@ export default function HRDSlipGajiRiwayat() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b">
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">No</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Tanggal</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Gaji Per Bulan</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Keterangan</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Aksi</th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          No
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          Tanggal
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          Gaji Per Bulan
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          Keterangan
+                        </th>
+                        <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                          Aksi
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {slipGajiData.map((item, index) => (
                         <tr key={item.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-4 text-gray-700">{index + 1}</td>
+                          <td className="py-3 px-4 text-gray-700">
+                            {index + 1}
+                          </td>
                           <td className="py-3 px-4 text-gray-700">
                             {formatDate(item.tanggal)}
                           </td>
@@ -253,7 +289,7 @@ export default function HRDSlipGajiRiwayat() {
                       ))}
                     </tbody>
                   </table>
-                  
+
                   {/* Total Gaji */}
                   {slipGajiData.length > 0 && (
                     <div className="border-t bg-gray-50 px-4 py-4">
@@ -264,7 +300,10 @@ export default function HRDSlipGajiRiwayat() {
                         <span className="text-sm font-bold text-blue-600">
                           {formatCurrency(
                             slipGajiData.reduce((sum, item) => {
-                              const gaji = typeof item.total_gaji === 'number' ? item.total_gaji : parseFloat(item.total_gaji) || 0;
+                              const gaji =
+                                typeof item.total_gaji === "number"
+                                  ? item.total_gaji
+                                  : parseFloat(item.total_gaji) || 0;
                               return sum + gaji;
                             }, 0)
                           )}
