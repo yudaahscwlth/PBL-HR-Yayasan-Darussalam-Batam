@@ -18,7 +18,7 @@ interface TahunAjaran {
 interface FormData {
   nama: string;
   semester: string;
-  status: string;
+  is_aktif: boolean | string;
 }
 
 export default function HRDTahunAjaran() {
@@ -33,7 +33,7 @@ export default function HRDTahunAjaran() {
   const [formData, setFormData] = useState<FormData>({
     nama: "",
     semester: "ganjil",
-    status: "0",
+    is_aktif: false,
   });
   const [errors, setErrors] = useState<any>({});
   const [notification, setNotification] = useState<{
@@ -88,7 +88,7 @@ export default function HRDTahunAjaran() {
   };
 
   const handleAdd = () => {
-    setFormData({ nama: "", semester: "ganjil", status: "0" });
+    setFormData({ nama: "", semester: "ganjil", is_aktif: false });
     setErrors({});
     setShowAddModal(true);
   };
@@ -98,7 +98,7 @@ export default function HRDTahunAjaran() {
     setFormData({
       nama: item.nama,
       semester: item.semester,
-      status: item.is_aktif.toString(),
+      is_aktif: item.is_aktif !== 0,
     });
     setErrors({});
     setShowEditModal(true);
@@ -115,6 +115,13 @@ export default function HRDTahunAjaran() {
 
     try {
       const token = localStorage.getItem("auth_token");
+      
+      if (!token) {
+        showNotification("Sesi Anda telah berakhir. Silakan login kembali.", "error");
+        setTimeout(() => router.push("/"), 1500);
+        return;
+      }
+
       const response = await axios.post(
         `${API_BASE_URL}/api/tahun-ajaran`,
         formData,
@@ -131,6 +138,19 @@ export default function HRDTahunAjaran() {
         fetchData();
       }
     } catch (error: any) {
+      console.error("Error adding data:", error);
+      
+      // Handle 401 Unauthorized
+      if (error.response?.status === 401) {
+        showNotification("Sesi Anda telah berakhir. Silakan login kembali.", "error");
+        setTimeout(() => {
+          localStorage.removeItem("auth_token");
+          router.push("/");
+        }, 1500);
+        return;
+      }
+      
+      // Handle validation errors
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else {
@@ -150,6 +170,13 @@ export default function HRDTahunAjaran() {
 
     try {
       const token = localStorage.getItem("auth_token");
+      
+      if (!token) {
+        showNotification("Sesi Anda telah berakhir. Silakan login kembali.", "error");
+        setTimeout(() => router.push("/"), 1500);
+        return;
+      }
+
       const response = await axios.put(
         `${API_BASE_URL}/api/tahun-ajaran/${selectedItem.id}`,
         formData,
@@ -166,6 +193,19 @@ export default function HRDTahunAjaran() {
         fetchData();
       }
     } catch (error: any) {
+      console.error("Error updating data:", error);
+      
+      // Handle 401 Unauthorized
+      if (error.response?.status === 401) {
+        showNotification("Sesi Anda telah berakhir. Silakan login kembali.", "error");
+        setTimeout(() => {
+          localStorage.removeItem("auth_token");
+          router.push("/");
+        }, 1500);
+        return;
+      }
+      
+      // Handle validation errors
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       } else {
@@ -496,23 +536,23 @@ export default function HRDTahunAjaran() {
                         Status <span className="text-red-500">*</span>
                       </label>
                       <select
-                        value={formData.status}
+                        value={formData.is_aktif ? "1" : "0"}
                         onChange={(e) =>
-                          setFormData({ ...formData, status: e.target.value })
+                          setFormData({ ...formData, is_aktif: e.target.value === "1" })
                         }
                         className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${
-                          errors.status ? "border-red-500" : "border-gray-300"
+                          errors.is_aktif ? "border-red-500" : "border-gray-300"
                         }`}
                         required
                       >
                         <option value="0">Tidak Aktif</option>
                         <option value="1">Aktif</option>
                       </select>
-                      {errors.status && (
+                      {errors.is_aktif && (
                         <p className="text-red-500 text-xs mt-1">
-                          {Array.isArray(errors.status)
-                            ? errors.status[0]
-                            : errors.status}
+                          {Array.isArray(errors.is_aktif)
+                            ? errors.is_aktif[0]
+                            : errors.is_aktif}
                         </p>
                       )}
                     </div>
@@ -604,23 +644,23 @@ export default function HRDTahunAjaran() {
                         Status <span className="text-red-500">*</span>
                       </label>
                       <select
-                        value={formData.status}
+                        value={formData.is_aktif ? "1" : "0"}
                         onChange={(e) =>
-                          setFormData({ ...formData, status: e.target.value })
+                          setFormData({ ...formData, is_aktif: e.target.value === "1" })
                         }
                         className={`w-full px-3 py-2 border rounded-lg text-gray-900 ${
-                          errors.status ? "border-red-500" : "border-gray-300"
+                          errors.is_aktif ? "border-red-500" : "border-gray-300"
                         }`}
                         required
                       >
                         <option value="0">Tidak Aktif</option>
                         <option value="1">Aktif</option>
                       </select>
-                      {errors.status && (
+                      {errors.is_aktif && (
                         <p className="text-red-500 text-xs mt-1">
-                          {Array.isArray(errors.status)
-                            ? errors.status[0]
-                            : errors.status}
+                          {Array.isArray(errors.is_aktif)
+                            ? errors.is_aktif[0]
+                            : errors.is_aktif}
                         </p>
                       )}
                     </div>

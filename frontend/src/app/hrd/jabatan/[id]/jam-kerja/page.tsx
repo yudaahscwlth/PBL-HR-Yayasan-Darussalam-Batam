@@ -48,6 +48,7 @@ export default function JamKerjaPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; jamKerjaId: number | null }>({ show: false, jamKerjaId: null });
 
   // NEW: store nama jabatan
   const [jabatanName, setJabatanName] = useState<string>("");
@@ -258,14 +259,13 @@ export default function JamKerjaPage() {
     }
   };
 
-  const handleDelete = async (jamKerjaId: number) => {
-    if (!jabatanId) return;
-    if (!confirm("Hapus jam kerja untuk hari ini?")) return;
+  const handleDelete = async () => {
+    if (!jabatanId || !deleteConfirm.jamKerjaId) return;
 
     try {
       const token = localStorage.getItem("auth_token");
       const res = await axios.delete(
-        `${API_BASE_URL}/api/jabatan/${jabatanId}/jam-kerja/${jamKerjaId}`,
+        `${API_BASE_URL}/api/jabatan/${jabatanId}/jam-kerja/${deleteConfirm.jamKerjaId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -278,6 +278,8 @@ export default function JamKerjaPage() {
     } catch (err) {
       console.error(err);
       showNotification("Terjadi kesalahan saat menghapus jam kerja", "error");
+    } finally {
+      setDeleteConfirm({ show: false, jamKerjaId: null });
     }
   };
 
@@ -432,7 +434,7 @@ export default function JamKerjaPage() {
 </button>
 
 <button
-  onClick={() => handleDelete(data.id)}
+  onClick={() => setDeleteConfirm({ show: true, jamKerjaId: data.id })}
   className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-red-200 text-red-800 text-xs hover:bg-red-300"
 >
   <Trash2 className="w-3 h-3" />
@@ -578,6 +580,41 @@ export default function JamKerjaPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirm({ show: false, jamKerjaId: null })} />
+          
+          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Hapus</h3>
+              <p className="text-gray-600 mb-6">
+                Hapus jam kerja untuk hari ini?
+              </p>
+              
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setDeleteConfirm({ show: false, jamKerjaId: null })}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
