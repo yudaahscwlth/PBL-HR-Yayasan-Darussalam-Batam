@@ -39,6 +39,8 @@ export default function KepalaDepartemenAbsensiPribadi() {
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -89,15 +91,35 @@ export default function KepalaDepartemenAbsensiPribadi() {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, itemsPerPage]);
+  }, [searchTerm, itemsPerPage, startDate, endDate]);
 
-  // Filter data based on search term
+  // Filter data based on search term and date range
   const filteredData = attendanceData.filter((record) => {
     const tanggal = (record.tanggal || "").toLowerCase();
     const status = (record.status || "").toLowerCase();
     const ket = (record.keterangan || "").toLowerCase();
     const q = searchTerm.toLowerCase();
-    return tanggal.includes(q) || status.includes(q) || ket.includes(q);
+    
+    // Text search filter
+    const matchesSearch = tanggal.includes(q) || status.includes(q) || ket.includes(q);
+    
+    // Date range filter
+    let matchesDateRange = true;
+    if (startDate || endDate) {
+      const recordDate = new Date(record.tanggal);
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchesDateRange = matchesDateRange && recordDate >= start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchesDateRange = matchesDateRange && recordDate <= end;
+      }
+    }
+    
+    return matchesSearch && matchesDateRange;
   });
 
   // Pagination
@@ -291,7 +313,8 @@ export default function KepalaDepartemenAbsensiPribadi() {
           </div>
 
           {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <div className="flex flex-col gap-4 mb-4">
+            {/* Search Input */}
             <div className="flex-1">
               <input
                 type="text"
@@ -301,18 +324,56 @@ export default function KepalaDepartemenAbsensiPribadi() {
                 className="w-full px-3 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Show:</label>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
+            
+            {/* Date Filter and Items Per Page */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              {/* Date Range Filter */}
+              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center flex-1">
+                <label className="text-sm text-gray-600 whitespace-nowrap">Filter Periode:</label>
+                <div className="flex gap-2 items-center w-full sm:w-auto">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Tanggal Mulai"
+                  />
+                  <span className="text-gray-600">-</span>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    placeholder="Tanggal Akhir"
+                  />
+                  {(startDate || endDate) && (
+                    <button
+                      onClick={() => {
+                        setStartDate("");
+                        setEndDate("");
+                      }}
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition-colors whitespace-nowrap"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {/* Items per page */}
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Show:</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
             </div>
           </div>
 
