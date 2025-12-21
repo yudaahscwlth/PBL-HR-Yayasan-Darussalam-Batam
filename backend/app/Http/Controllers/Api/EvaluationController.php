@@ -16,8 +16,8 @@ class EvaluationController extends Controller
     {
         $user = $request->user();
 
-        // Check if user is HRD, admin, or kepala yayasan (can view all evaluations)
-        if ($user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin', 'kepala yayasan'])) {
+        // Check if user is HRD, admin, direktur pendidikan, or kepala yayasan (can view all evaluations)
+        if ($user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin', 'kepala yayasan', 'direktur pendidikan'])) {
             $evaluations = Evaluasi::with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
                 ->orderBy('created_at', 'desc')
                 ->get();
