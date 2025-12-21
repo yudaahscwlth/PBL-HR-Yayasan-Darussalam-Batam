@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/api";
 import BottomNavbar from "@/components/BottomNavbar";
+import ConfirmationModal from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
 import AccessControl from "@/components/AccessControl";
 
@@ -87,6 +88,18 @@ export default function HRDDashboard() {
   const [gpsTolerance, setGpsTolerance] = useState(100); // 50 / 100 / 200 / 500 (meter)
 
 const [lastToastTime, setLastToastTime] = useState<number>(0);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {}
+  });
 
   // Refs
   const isMounted = useRef(true);
@@ -520,30 +533,9 @@ const [lastToastTime, setLastToastTime] = useState<number>(0);
     }, 1200);
   };
 
-  const handleCheckIn = async () => {
-    setIsLoading(true);
+  // Helper function to handle check-in API call
+  const proceedWithCheckIn = async (location: { latitude: number; longitude: number }) => {
     try {
-      const location = await getCurrentLocation();
-
-      if ((location as any).accuracy && (location as any).accuracy > gpsTolerance) {
-        const accuracy = Math.round((location as any).accuracy);
-        const confirmProceed = confirm(
-          `📍 Akurasi GPS Rendah\n\n` +
-            `Akurasi saat ini: ${accuracy}m\n` +
-            `Toleransi yang diizinkan: ${gpsTolerance}m\n` +
-            `Selisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n` +
-            `💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\n` +
-            `Apakah Anda ingin melanjutkan absensi?`
-        );
-        if (!confirmProceed) {
-          toast.error(
-            `Absensi dibatalkan. Akurasi GPS ${accuracy}m melebihi toleransi ${gpsTolerance}m.`
-          );
-          setIsLoading(false);
-          return;
-        }
-      }
-
       const response = await apiClient.attendance.checkIn({
         latitude_in: location.latitude,
         longitude_in: location.longitude,
@@ -580,16 +572,12 @@ const [lastToastTime, setLastToastTime] = useState<number>(0);
         if (response.message?.includes("luar area kerja")) {
           toast.error(response.message);
         } else {
-          toast.error(
-            response.message || "Gagal melakukan check in. Silakan coba lagi."
-          );
+          toast.error(response.message || "Gagal melakukan check in. Silakan coba lagi.");
         }
       }
     } catch (error: any) {
-      console.error("Error checking in:", error);
-      console.error("Error response:", error?.response?.data);
       if (error?.message?.includes("lokasi") || error?.message?.includes("GPS")) {
-        toast.error(`${error.message}`);
+        toast.error(error.message);
       } else if (error?.response?.data?.message) {
         toast.error(`Error: ${error.response.data.message}`);
       } else {
@@ -600,30 +588,9 @@ const [lastToastTime, setLastToastTime] = useState<number>(0);
     }
   };
 
-  const handleCheckOut = async () => {
-    setIsLoading(true);
+  // Helper function to handle check-out API call
+  const proceedWithCheckOut = async (location: { latitude: number; longitude: number }) => {
     try {
-      const location = await getCurrentLocation();
-
-      if ((location as any).accuracy && (location as any).accuracy > gpsTolerance) {
-        const accuracy = Math.round((location as any).accuracy);
-        const confirmProceed = confirm(
-          `📍 Akurasi GPS Rendah\n\n` +
-            `Akurasi saat ini: ${accuracy}m\n` +
-            `Toleransi yang diizinkan: ${gpsTolerance}m\n` +
-            `Selisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n` +
-            `💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\n` +
-            `Apakah Anda ingin melanjutkan absensi?`
-        );
-        if (!confirmProceed) {
-          toast.error(
-            `Absensi dibatalkan. Akurasi GPS ${accuracy}m melebihi toleransi ${gpsTolerance}m.`
-          );
-          setIsLoading(false);
-          return;
-        }
-      }
-
       const response = await apiClient.attendance.checkOut({
         latitude_out: location.latitude,
         longitude_out: location.longitude,
@@ -642,14 +609,90 @@ const [lastToastTime, setLastToastTime] = useState<number>(0);
         if (response.message?.includes("luar area kerja")) {
           toast.error(response.message);
         } else {
-          toast.error(
-            response.message || "Gagal melakukan check out. Silakan coba lagi."
-          );
+          toast.error(response.message || "Gagal melakukan check out. Silakan coba lagi.");
         }
       }
     } catch (error: any) {
       if (error?.message?.includes("lokasi") || error?.message?.includes("GPS")) {
-        toast.error(`${error.message}`);
+        toast.error(error.message);
+      } else if (error?.response?.data?.message) {
+        toast.error(`Error: ${error.response.data.message}`);
+      } else {
+        toast.error("Gagal melakukan check out. Silakan coba lagi.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCheckIn = async () => {
+    setIsLoading(true);
+    const loadingToast = toast.loading("Mengambil lokasi GPS...");
+    
+    try {
+      const location = await getCurrentLocation();
+      toast.dismiss(loadingToast);
+
+      if ((location as any).accuracy && (location as any).accuracy > gpsTolerance) {
+        const accuracy = Math.round((location as any).accuracy);
+        setIsLoading(false);
+        
+        setConfirmModal({
+          isOpen: true,
+          title: "📍 Akurasi GPS Rendah",
+          message: `Akurasi saat ini: ${accuracy}m\nToleransi yang diizinkan: ${gpsTolerance}m\nSelisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\nApakah Anda ingin melanjutkan absensi?`,
+          onConfirm: async () => {
+            setIsLoading(true);
+            await proceedWithCheckIn(location);
+          },
+        });
+        return;
+      }
+
+      await proceedWithCheckIn(location);
+    } catch (error: any) {
+      toast.dismiss(loadingToast);
+      if (error?.message?.includes("lokasi") || error?.message?.includes("GPS")) {
+        toast.error(error.message);
+      } else if (error?.response?.data?.message) {
+        toast.error(`Error: ${error.response.data.message}`);
+      } else {
+        toast.error("Gagal melakukan check in. Silakan coba lagi.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    setIsLoading(true);
+    const loadingToast = toast.loading("Mengambil lokasi GPS...");
+    
+    try {
+      const location = await getCurrentLocation();
+      toast.dismiss(loadingToast);
+
+      if ((location as any).accuracy && (location as any).accuracy > gpsTolerance) {
+        const accuracy = Math.round((location as any).accuracy);
+        setIsLoading(false);
+        
+        setConfirmModal({
+          isOpen: true,
+          title: "📍 Akurasi GPS Rendah",
+          message: `Akurasi saat ini: ${accuracy}m\nToleransi yang diizinkan: ${gpsTolerance}m\nSelisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\nApakah Anda ingin melanjutkan absensi?`,
+          onConfirm: async () => {
+            setIsLoading(true);
+            await proceedWithCheckOut(location);
+          },
+        });
+        return;
+      }
+
+      await proceedWithCheckOut(location);
+    } catch (error: any) {
+      toast.dismiss(loadingToast);
+      if (error?.message?.includes("lokasi") || error?.message?.includes("GPS")) {
+        toast.error(error.message);
       } else if (error?.response?.data?.message) {
         toast.error(`Error: ${error.response.data.message}`);
       } else {
@@ -1163,6 +1206,18 @@ const [lastToastTime, setLastToastTime] = useState<number>(0);
             </div>
           </div>
         </div>
+
+        {/* Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+          onConfirm={confirmModal.onConfirm}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText="Ya, Lanjutkan"
+          cancelText="Batal"
+          type="warning"
+        />
 
         {/* Bottom Navigation */}
         <BottomNavbar />
