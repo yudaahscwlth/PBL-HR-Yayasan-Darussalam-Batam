@@ -95,10 +95,11 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
         const filteredRequests = allRequests.filter((request) => {
           const status = request.status_pengajuan.toLowerCase();
           return (
-            status === "ditinjau direktur pendidikan" ||
+            status === "ditinjau dirpen" ||
             status === "disetujui kepala sekolah menunggu tinjauan dirpen" ||
             status === "disetujui hrd menunggu tinjauan dirpen" ||
-            status === "ditolak direktur pendidikan"
+            status === "disetujui kepala hrd menunggu tinjauan dirpen" ||
+            status === "ditolak dirpen"
           );
         });
 
@@ -113,15 +114,7 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
     }
   };
 
-  const showToast = (
-    type: "success" | "error" | "warning" | "info",
-    message: string
-  ) => {
-    setToastMessage({ type, message, show: true });
-    setTimeout(() => {
-      setToastMessage((prev) => ({ ...prev, show: false }));
-    }, 5000);
-  };
+
 
   const handleConfirmAction = async () => {
     if (!selectedRequest || !actionType) return;
@@ -152,9 +145,8 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
       }
 
       if (response.success) {
-        showToast(
-          "success",
-          `✅ Cuti berhasil ${
+        toast.success(
+          `Cuti berhasil ${
             actionType === "approve" ? "disetujui" : "ditolak"
           }!`
         );
@@ -165,10 +157,9 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
         // Reload leave requests to show updated status
         await loadLeaveRequests();
       } else {
-        showToast(
-          "error",
+        toast.error(
           response.message ||
-            `❌ Gagal ${
+            `Gagal ${
               actionType === "approve" ? "menyetujui" : "menolak"
             } cuti`
         );
@@ -227,12 +218,17 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
     const statusLower = status.toLowerCase();
 
     const statusMap: { [key: string]: string } = {
+      "ditinjau dirpen": "Ditinjau Direktur Pendidikan",
       "ditinjau direktur pendidikan": "Ditinjau Direktur Pendidikan",
       "disetujui kepala sekolah menunggu tinjauan dirpen":
-        "disetujui kepala sekolah menunggu tinjauan dirpen",
+        "Disetujui Kepala Sekolah (Menunggu Dirpen)",
       "disetujui hrd menunggu tinjauan dirpen":
-        "disetujui hrd menunggu tinjauan dirpen",
+        "Disetujui HRD (Menunggu Dirpen)",
+      "disetujui kepala hrd menunggu tinjauan dirpen":
+        "Disetujui Kepala HRD (Menunggu Dirpen)",
+      "ditolak dirpen": "Ditolak Direktur Pendidikan",
       "ditolak direktur pendidikan": "Ditolak Direktur Pendidikan",
+      "disetujui dirpen": "Disetujui Direktur Pendidikan",
       "disetujui direktur pendidikan": "Disetujui Direktur Pendidikan",
     };
 
@@ -270,15 +266,16 @@ export default function DirekturPendidikanVerifikasiCutiPage() {
   const pendingRequests = leaveRequests.filter((req) => {
     const status = req.status_pengajuan.toLowerCase();
     return (
-      status === "ditinjau direktur pendidikan" ||
+      status === "ditinjau dirpen" ||
       status === "disetujui kepala sekolah menunggu tinjauan dirpen" ||
-      status === "disetujui hrd menunggu tinjauan dirpen"
+      status === "disetujui kepala hrd menunggu tinjauan dirpen" ||
+      status === "disetujui kepala hrd menunggu tinjauan dirpen"
     );
   });
 
   const historyRequests = leaveRequests.filter((req) => {
     const status = req.status_pengajuan.toLowerCase();
-    return status === "ditolak direktur pendidikan";
+    return status === "ditolak dirpen";
   });
 
   const filteredVerifikasi = pendingRequests.filter(
