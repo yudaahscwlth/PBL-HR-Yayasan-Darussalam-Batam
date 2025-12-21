@@ -352,8 +352,6 @@ export default function KepalaDepartemenRekapEvaluasiPage() {
         }
       );
 
-      console.log("Update response:", response.data);
-
       // Check response
       if (!response.data?.success) {
         throw new Error(response.data?.message || "Gagal memperbarui evaluasi");
@@ -374,9 +372,6 @@ export default function KepalaDepartemenRekapEvaluasiPage() {
 
       setIsEditMode(false);
     } catch (error: any) {
-      console.error("Error updating evaluation:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
 
       // Handle different error formats
       let errorMessage = "Gagal memperbarui evaluasi";

@@ -252,7 +252,6 @@ export default function HrdKelolaPegawaiPage() {
       
       // Log validation errors if they exist (422 status)
       if (error.response?.status === 422 && error.response?.data?.errors) {
-        console.error("Validation errors:", error.response.data.errors);
         const firstError = Object.values(error.response.data.errors)[0];
         toast.error(Array.isArray(firstError) ? firstError[0] : "Gagal menambahkan pegawai");
       } else {

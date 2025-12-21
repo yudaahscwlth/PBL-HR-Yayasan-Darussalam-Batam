@@ -301,10 +301,6 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
                           "Gagal memperbarui profile. Pastikan kolom nomor_rekening sudah ada di database.";
       showToast("error", errorMessage);
       
-      // Log detailed error for debugging
-      if (error.response?.data) {
-        console.error("Error details:", error.response.data);
-      }
     } finally {
       setIsLoading(false);
     }

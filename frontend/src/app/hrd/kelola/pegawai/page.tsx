@@ -270,9 +270,6 @@ export default function HrdKelolaPegawaiPage() {
       });
       toast.success("Pegawai berhasil ditambahkan");
     } catch (error: any) {
-      console.error("❌ Error creating user:", error);
-      console.error("📝 Error response:", error.response);
-      
       // Handle validation errors (422)
       if (error.response?.status === 422) {
         const validationErrors = error.response?.data?.errors;

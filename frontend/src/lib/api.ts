@@ -139,7 +139,6 @@ export const apiClient = {
         return response.data;
       } catch (error: unknown) {
         const axiosError = error as AxiosError;
-        console.error("API login error:", axiosError);
 
         // Provide more specific error messages
         if (axiosError.code === "ECONNREFUSED") {
@@ -760,15 +759,11 @@ export const apiClient = {
 
         return response.data;
       } catch (error: any) {
-        console.error("Download template error:", error);
-        console.error("Error response:", error.response);
-        console.error("Error response data:", error.response?.data);
 
         // If error response is blob, try to parse it as JSON
         if (error.response?.data instanceof Blob) {
           try {
             const text = await error.response.data.text();
-            console.log("Blob text content:", text);
             const json = JSON.parse(text);
             throw new Error(
               json.message || json.error?.message || "Gagal download template"

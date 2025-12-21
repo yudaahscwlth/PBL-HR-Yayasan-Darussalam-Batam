@@ -134,7 +134,6 @@ export default function HRDSlipGaji() {
   useEffect(() => {
     if (!isMounted) return;
     
-    console.log("Component mounted, loading data...");
     const initializeData = async () => {
       await Promise.all([
         loadSlipGajiData(),
@@ -176,7 +175,6 @@ export default function HRDSlipGaji() {
     } catch (error: any) {
       console.error("Error loading slip gaji data:", error);
       if (error.response?.data?.message) {
-        console.error("Error message:", error.response.data.message);
       }
     } finally {
       setIsLoading(false);
@@ -214,31 +212,20 @@ export default function HRDSlipGaji() {
   const loadEmployees = async () => {
     try {
       setIsLoadingEmployees(true);
-      console.log("Loading employees...");
       const response = await apiClient.users.getAll();
-      console.log("Users API Response:", response);
-      console.log("Response success:", response.success);
-      console.log("Response data:", response.data);
       
       // Handle response - bisa jadi response langsung adalah data array
       // atau response memiliki struktur {success: true, data: [...]}
       // atau response memiliki struktur {data: [...]} tanpa success
       let employeesData: any[] = [];
       
-      console.log("Checking response structure...");
-      console.log("Is array?", Array.isArray(response));
-      console.log("Has data property?", response && (response as any).data);
-      console.log("Has success property?", response && (response as any).success);
-      
       // Priority 1: Cek jika response memiliki data langsung (tanpa success) - KASUS INI!
       if (response && (response as any).data && Array.isArray((response as any).data)) {
         employeesData = (response as any).data;
-        console.log("✓ Found data array directly:", employeesData.length);
       }
       // Priority 2: Cek jika response langsung adalah array
       else if (Array.isArray(response)) {
         employeesData = response;
-        console.log("✓ Response is direct array:", employeesData.length);
       }
       // Priority 3: Cek jika response memiliki success dan data
       else if (response && (response as any).success && (response as any).data) {
@@ -254,7 +241,6 @@ export default function HRDSlipGaji() {
             employeesData = Object.values((response as any).data);
           }
         }
-        console.log("✓ Response has success property:", employeesData.length);
       }
       // Priority 4: Fallback: jika response adalah object dengan array di dalamnya
       else if (response && typeof response === 'object') {
@@ -263,18 +249,13 @@ export default function HRDSlipGaji() {
         for (const key of keys) {
           if (Array.isArray((response as any)[key])) {
             employeesData = (response as any)[key];
-            console.log(`✓ Found array in key "${key}":`, employeesData.length);
             break;
           }
         }
       }
       
-      console.log("Final parsed employees data:", employeesData);
-      console.log("Number of employees:", employeesData.length);
-      
       if (employeesData.length > 0) {
         setEmployees(employeesData as Employee[]);
-        console.log("✓ Employees state updated:", employeesData.length, "employees");
       } else {
         console.warn("⚠ No employees found after parsing");
         setEmployees([]);
@@ -484,9 +465,6 @@ export default function HRDSlipGaji() {
       
       toast.success("Template berhasil didownload");
     } catch (error: any) {
-      console.error("Error downloading template:", error);
-      console.error("Error response:", error?.response);
-      console.error("Error response data:", error?.response?.data);
       
       // Extract error message from various possible locations
       let errorMessage = "Gagal download template";
@@ -569,11 +547,6 @@ export default function HRDSlipGaji() {
         setUploadResult((response.data as UploadResult) || null);
       }
     } catch (error: any) {
-      console.error("Error uploading Excel:", error);
-      console.error("Error response:", error?.response);
-      console.error("Error response status:", error?.response?.status);
-      console.error("Error response data:", error?.response?.data);
-      console.error("Error response headers:", error?.response?.headers);
       
       // Extract error message
       let errorMessage = "Gagal mengupload file Excel";

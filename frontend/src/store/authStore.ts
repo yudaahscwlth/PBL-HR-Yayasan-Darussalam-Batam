@@ -72,7 +72,6 @@ export const useAuthStore = create<AuthStore>()(
             });
           }
         } catch (error: unknown) {
-          console.error("Login error:", error);
           const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
           const errorMessage = axiosError.response?.data?.message || axiosError.message || "Login failed";
           set({

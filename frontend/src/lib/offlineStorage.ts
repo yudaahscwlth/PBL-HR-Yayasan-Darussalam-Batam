@@ -139,7 +139,6 @@ export class OfflineStorage {
         const request = store.add(data);
 
         request.onsuccess = () => {
-          console.log(`Data added to ${storeName}:`, data);
           resolve(request.result);
         };
 
@@ -206,7 +205,6 @@ export class OfflineStorage {
         const request = store.put(data);
 
         request.onsuccess = () => {
-          console.log(`Data updated in ${storeName}:`, data);
           resolve(request.result);
         };
 
@@ -331,11 +329,6 @@ export class OfflineStorage {
     if (attendanceData.length > 0) {
       await this.saveUserAttendance(attendanceData);
     }
-    console.log("[OfflineStorage] Last login session saved:", {
-      user: userData.email,
-      attendanceCount: attendanceData.length,
-      savedAt: new Date().toISOString(),
-    });
   }
 
   // Get complete last login session
@@ -550,8 +543,6 @@ export class SyncService {
 
     // TODO: Integrate with your actual API client
     // This is a placeholder for the actual sync logic
-
-    console.log(`[SyncService] Syncing ${actionType} to ${endpoint}:`, data);
 
     // Simulate API call
     await new Promise((resolve, reject) => {

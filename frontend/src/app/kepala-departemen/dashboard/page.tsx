@@ -349,8 +349,6 @@ export default function KepalaDepartemenDashboard() {
       }
     } catch (error: unknown) {
       const err = error as { message?: string; response?: { data?: { message?: string } } };
-      console.error("Error checking in:", error);
-      console.error("Error response:", err.response?.data);
 
       if (err.message && (err.message.includes("lokasi") || err.message.includes("GPS"))) {
         toast.error(err.message);
@@ -421,8 +419,6 @@ export default function KepalaDepartemenDashboard() {
       }
     } catch (error: unknown) {
       const err = error as { message?: string; response?: { data?: { message?: string } } };
-      console.error("Error checking out:", error);
-      console.error("Error response:", err.response?.data);
 
       if (err.message && (err.message.includes("lokasi") || err.message.includes("GPS"))) {
         toast.error(err.message);

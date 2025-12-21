@@ -380,8 +380,6 @@ const [lastToastTime, setLastToastTime] = useState<number>(0);
         }
       }
     } catch (error: any) {
-      console.error("Error checking in:", error);
-      console.error("Error response:", error?.response?.data);
       if (error?.message?.includes("lokasi") || error?.message?.includes("GPS")) {
         toast.error(`${error.message}`);
       } else if (error?.response?.data?.message) {
@@ -442,8 +440,6 @@ const [lastToastTime, setLastToastTime] = useState<number>(0);
         }
       }
     } catch (error: any) {
-      console.error("Error checking out:", error);
-      console.error("Error response:", error?.response?.data);
       if (error?.message?.includes("lokasi") || error?.message?.includes("GPS")) {
         toast.error(`${error.message}`);
       } else if (error?.response?.data?.message) {
