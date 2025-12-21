@@ -131,7 +131,7 @@ export default function NotifikasiPage() {
         basePath = "/kepala-yayasan";
       }
       
-      router.push(`${basePath}/pengajuan-cuti`);
+      router.push(`${basePath}/verifikasi-cuti`);
     } else if (notification.category === "slip_gaji") {
       // Navigate to slip gaji riwayat
       const userRoles = user?.roles || [];

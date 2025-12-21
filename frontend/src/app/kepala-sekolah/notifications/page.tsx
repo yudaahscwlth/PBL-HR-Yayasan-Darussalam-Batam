@@ -112,7 +112,7 @@ export default function NotifikasiPage() {
 
     // Navigate based on category
     if (notification.category === "leave") {
-      router.push("/kepala-sekolah/verifikasi-cuti");
+      router.push("/kepala-sekolah/pengajuan-cuti");
     } else if (notification.category === "slip_gaji") {
       router.push("/kepala-sekolah/slip-gaji");
     }
