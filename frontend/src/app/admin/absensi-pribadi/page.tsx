@@ -295,26 +295,7 @@ export default function AdminAbsensiPribadi() {
                 </button>
               </div>
             </div>
-          )}
-
-          {/* Legend */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Legend:</h3>
-            <div className="flex flex-wrap gap-4 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 bg-green-100 rounded-full"></span>
-                <span className="text-green-800">Hadir</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 bg-blue-100 rounded-full"></span>
-                <span className="text-blue-800">Terlambat</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 bg-red-100 rounded-full"></span>
-                <span className="text-red-800">Tidak Hadir</span>
-              </div>
-            </div>
-          </div>
+            )}
         </div>
       </div>
 
