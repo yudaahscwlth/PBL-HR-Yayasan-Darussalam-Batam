@@ -63,6 +63,8 @@ export default function KepalaDepartemenRekapCutiPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
   const [previewFileType, setPreviewFileType] = useState<
@@ -149,21 +151,45 @@ export default function KepalaDepartemenRekapCutiPage() {
     fetchData();
   }, [userId]);
 
-  // Filter data berdasarkan pencarian
+  // Filter data berdasarkan pencarian dan date range
   const filteredData = leaveData.filter((record) => {
+    // Text search filter
     const tipe = (record.tipe_cuti || "").toLowerCase();
     const alasan = (record.alasan_pendukung || "").toLowerCase();
     const status = (record.status_pengajuan || "").toLowerCase();
     const tanggalMulai = (record.tanggal_mulai || "").toLowerCase();
     const tanggalSelesai = (record.tanggal_selesai || "").toLowerCase();
     const q = searchTerm.toLowerCase();
-    return (
+    const matchesSearch =
       tipe.includes(q) ||
       alasan.includes(q) ||
       status.includes(q) ||
       tanggalMulai.includes(q) ||
-      tanggalSelesai.includes(q)
-    );
+      tanggalSelesai.includes(q);
+
+    // Date range filter - check if leave period overlaps with filter range
+    let matchesDateRange = true;
+    if (startDate || endDate) {
+      const leaveStart = new Date(record.tanggal_mulai);
+      const leaveEnd = new Date(record.tanggal_selesai);
+      
+      if (startDate && endDate) {
+        const filterStart = new Date(startDate);
+        const filterEnd = new Date(endDate);
+        // Check for overlap: leave period overlaps with filter range
+        matchesDateRange = leaveStart <= filterEnd && leaveEnd >= filterStart;
+      } else if (startDate) {
+        const filterStart = new Date(startDate);
+        // Leave ends on or after filter start
+        matchesDateRange = leaveEnd >= filterStart;
+      } else if (endDate) {
+        const filterEnd = new Date(endDate);
+        // Leave starts on or before filter end
+        matchesDateRange = leaveStart <= filterEnd;
+      }
+    }
+
+    return matchesSearch && matchesDateRange;
   });
 
   // Pagination
@@ -358,34 +384,78 @@ export default function KepalaDepartemenRekapCutiPage() {
                 </h2>
 
                 {/* Search and Filter */}
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div className="flex-1 text-gray-700">
-                    <input
-                      type="text"
-                      placeholder="Cari berdasarkan tipe cuti, status, alasan, atau tanggal..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800"
-                    />
+                <div className="space-y-4 mb-4">
+                  {/* Search Bar */}
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 text-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Cari berdasarkan tipe cuti, status atau alasan..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Show:</label>
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                          setItemsPerPage(Number(e.target.value));
+                          setCurrentPage(1);
+                        }}
+                        className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-600">Show:</label>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800"
-                    >
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
+
+                  {/* Date Range Filter */}
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Periode Cuti Mulai</label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800 text-gray-700"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Periode Cuti Selesai</label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800 text-gray-700"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        className="px-4 py-2 bg-sky-800 text-white rounded-lg hover:bg-sky-900 transition-colors font-medium"
+                      >
+                        Filter
+                      </button>
+                      <button
+                        onClick={() => {
+                          setStartDate("");
+                          setEndDate("");
+                          setSearchTerm("");
+                          setCurrentPage(1);
+                        }}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                      >
+                        Reset
+                      </button>
+                    </div>
                   </div>
                 </div>
 

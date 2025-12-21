@@ -57,6 +57,8 @@ export default function HrdRekapAbsensiPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
   const [previewFileType, setPreviewFileType] = useState<"image" | "pdf" | "other" | null>(null);
@@ -155,13 +157,33 @@ export default function HrdRekapAbsensiPage() {
     fetchData();
   }, [userId]);
 
-  // Filter data based on search term
+  // Filter data based on search term and date range
   const filteredData = attendanceData.filter((record) => {
+    // Text search filter
     const tanggal = (record.tanggal || "").toLowerCase();
     const status = (record.status || "").toLowerCase();
     const ket = (record.keterangan || "").toLowerCase();
     const q = searchTerm.toLowerCase();
-    return tanggal.includes(q) || status.includes(q) || ket.includes(q);
+    const matchesSearch = tanggal.includes(q) || status.includes(q) || ket.includes(q);
+
+    // Date range filter
+    let matchesDateRange = true;
+    if (startDate || endDate) {
+      const recordDate = new Date(record.tanggal);
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        matchesDateRange = recordDate >= start && recordDate <= end;
+      } else if (startDate) {
+        const start = new Date(startDate);
+        matchesDateRange = recordDate >= start;
+      } else if (endDate) {
+        const end = new Date(endDate);
+        matchesDateRange = recordDate <= end;
+      }
+    }
+
+    return matchesSearch && matchesDateRange;
   });
 
   // Pagination
@@ -318,34 +340,78 @@ export default function HrdRekapAbsensiPage() {
                 <h2 className="text-lg font-bold text-gray-800 mb-4">Riwayat Absensi</h2>
 
                 {/* Search and Filter */}
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                  <div className="flex-1 text-gray-700">
-                    <input
-                      type="text"
-                      placeholder="Cari berdasarkan tanggal, status, atau keterangan..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800"
-                    />
+                <div className="space-y-4 mb-4">
+                  {/* Search Bar */}
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 text-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Cari berdasarkan status atau keterangan..."
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-600">Show:</label>
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                          setItemsPerPage(Number(e.target.value));
+                          setCurrentPage(1);
+                        }}
+                        className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-600">Show:</label>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="px-3 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800"
-                    >
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
+
+                  {/* Date Range Filter */}
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800 text-gray-700"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai</label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-800 text-gray-700"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        className="px-4 py-2 bg-sky-800 text-white rounded-lg hover:bg-sky-900 transition-colors font-medium"
+                      >
+                        Filter
+                      </button>
+                      <button
+                        onClick={() => {
+                          setStartDate("");
+                          setEndDate("");
+                          setSearchTerm("");
+                          setCurrentPage(1);
+                        }}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                      >
+                        Reset
+                      </button>
+                    </div>
                   </div>
                 </div>
 
