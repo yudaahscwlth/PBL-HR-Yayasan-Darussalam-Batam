@@ -444,7 +444,7 @@ class AttendanceController extends Controller
         
         // Check if user has permission to view other users' attendance
         $isAdmin = $authUser->hasAnyRole(['superadmin']);
-        $isHRD = $authUser->hasAnyRole(['kepala hrd', 'staff hrd', 'kepala departemen']);
+        $isHRD = $authUser->hasAnyRole(['kepala hrd', 'staff hrd', 'kepala departemen', 'direktur pendidikan']);
         
         if (!$isAdmin && !$isHRD && $authUser->id != $userId) {
             return response()->json([
