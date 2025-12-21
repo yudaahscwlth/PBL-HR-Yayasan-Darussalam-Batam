@@ -28,6 +28,7 @@ interface ProfileData {
     kecamatan: string;
     alamat_lengkap: string;
     no_hp: string;
+    nomor_rekening: string | null;
     foto: string | null;
   };
   profile_pekerjaan: {
@@ -102,6 +103,7 @@ export default function HrdEditProfilePage() {
     kecamatan: "",
     alamat_lengkap: "",
     no_hp: "",
+    nomor_rekening: "",
     foto: null as File | null,
 
     // Data Pekerjaan
@@ -211,6 +213,7 @@ export default function HrdEditProfilePage() {
             kecamatan: user.profile_pribadi?.kecamatan || "",
             alamat_lengkap: user.profile_pribadi?.alamat_lengkap || "",
             no_hp: user.profile_pribadi?.no_hp || "",
+            nomor_rekening: user.profile_pribadi?.nomor_rekening || "",
             foto: null,
 
             nik_karyawan: user.profile_pekerjaan?.nomor_induk_karyawan || "",
@@ -537,6 +540,13 @@ export default function HrdEditProfilePage() {
                             <div>
                                 <label className={labelClass}>NPWP</label>
                                 <input type="text" name="npwp" value={formData.npwp} onChange={handleInputChange} className={inputClass} />
+                            </div>
+                            <div>
+                                <label className={labelClass}>Nomor Rekening</label>
+                                <div className="relative">
+                                    <input type="text" name="nomor_rekening" value={formData.nomor_rekening} onChange={handleInputChange} className={`${inputClass} pl-10`} placeholder="Masukkan nomor rekening" />
+                                    <CreditCard className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                                </div>
                             </div>
                             <div>
                                 <label className={labelClass}>Tempat Lahir</label>

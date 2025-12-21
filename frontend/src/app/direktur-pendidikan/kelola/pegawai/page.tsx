@@ -247,9 +247,17 @@ export default function HrdKelolaPegawaiPage() {
         role: ''
       });
       toast.success("Pegawai berhasil ditambahkan");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating user:", error);
-      toast.error("Gagal menambahkan pegawai");
+      
+      // Log validation errors if they exist (422 status)
+      if (error.response?.status === 422 && error.response?.data?.errors) {
+        console.error("Validation errors:", error.response.data.errors);
+        const firstError = Object.values(error.response.data.errors)[0];
+        toast.error(Array.isArray(firstError) ? firstError[0] : "Gagal menambahkan pegawai");
+      } else {
+        toast.error(error.response?.data?.message || "Gagal menambahkan pegawai");
+      }
     }
   };
 

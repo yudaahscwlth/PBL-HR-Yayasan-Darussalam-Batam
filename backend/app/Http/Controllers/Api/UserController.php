@@ -47,7 +47,7 @@ class UserController extends Controller
             'id_jabatan' => 'required|exists:jabatans,id',
             'id_departemen' => 'required|exists:departemens,id',
             'id_tempat_kerja' => 'required|exists:tempat_kerjas,id',
-            'status' => 'required|string',
+            'status' => 'required|string|in:aktif,nonaktif,kontrak,tetap,magang,honorer,pensiun,cuti,skorsing',
             'role' => 'required|string|exists:roles,name',
         ]);
 

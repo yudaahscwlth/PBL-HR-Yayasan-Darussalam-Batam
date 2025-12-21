@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import toast from "react-hot-toast";
 import AccessControl from "@/components/AccessControl";
-import toast from "react-hot-toast";
 
 interface LeaveRequest {
   id: number;
@@ -110,7 +109,7 @@ export default function HRDPengajuanCutiPage() {
 
     try {
       if (
-        new Date(formData.taggal_mulai) > new Date(formData.tanggal_selesai)
+        new Date(formData.tanggal_mulai) > new Date(formData.tanggal_selesai)
       ) {
         toast.error("Tanggal selesai harus lebih besar dari tanggal mulai");
         setIsSubmitting(false);
