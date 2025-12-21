@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { API_CONFIG } from "@/config/api";
+import toast from "react-hot-toast";
 import {
   User,
   Briefcase,
@@ -192,31 +193,6 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
     konf_password: "",
   });
 
-  const [toastMessage, setToastMessage] = useState<{
-    type: "success" | "error" | "warning" | "info";
-    message: string;
-    show: boolean;
-  }>({
-    type: "success",
-    message: "",
-    show: false,
-  });
-
-  const [lastToastTime, setLastToastTime] = useState(0);
-
-  const showToast = (
-    type: "success" | "error" | "warning" | "info",
-    message: string
-  ) => {
-    const now = Date.now();
-    if (now - lastToastTime < 3000) return; // Prevent spamming
-    setLastToastTime(now);
-    setToastMessage({ type, message, show: true });
-    setTimeout(() => {
-      setToastMessage((prev) => ({ ...prev, show: false }));
-    }, 5000);
-  };
-
   const fetchProfileData = async () => {
     try {
       const response = await api.get("/profile/complete");
@@ -322,13 +298,10 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
       });
 
       if (response.data.success) {
-        showToast("success", "Profile berhasil diperbarui!");
+        toast.success("Profile berhasil diperbarui!");
         fetchProfileData();
       } else {
-        showToast(
-          "error",
-          response.data.message || "Gagal memperbarui profile"
-        );
+        toast.error(response.data.message || "Gagal memperbarui profile");
       }
     } catch (error: any) {
       console.error("Error updating profile:", error);
@@ -336,7 +309,7 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
         error.response?.data?.message ||
         error.message ||
         "Gagal memperbarui profile. Pastikan kolom nomor_rekening sudah ada di database.";
-      showToast("error", errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -345,7 +318,7 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordForm.password_baru !== passwordForm.konf_password) {
-      showToast("error", "Konfirmasi password tidak cocok!");
+      toast.error("Konfirmasi password tidak cocok!");
       return;
     }
 
@@ -357,7 +330,7 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
         konf_password: passwordForm.konf_password,
       });
 
-      showToast("success", "Password berhasil diubah!");
+      toast.success("Password berhasil diubah!");
       setPasswordForm({
         password_lama: "",
         password_baru: "",
@@ -371,7 +344,7 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
         (error.response?.data?.errors
           ? Object.values(error.response.data.errors).flat().join(", ")
           : "Gagal mengubah password");
-      showToast("error", errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -1270,74 +1243,6 @@ export default function ProfileEdit({ allowedRoles }: ProfileEditProps) {
             </div>
           </div>
         </main>
-
-        {/* Toast Notification */}
-        {toastMessage.show && (
-          <div className="fixed top-4 right-4 z-50 max-w-sm">
-            <div
-              className={`p-4 rounded-lg shadow-lg border-l-4 ${
-                toastMessage.type === "success"
-                  ? "bg-green-50 border-green-500 text-green-800"
-                  : toastMessage.type === "error"
-                  ? "bg-red-50 border-red-500 text-red-800"
-                  : toastMessage.type === "warning"
-                  ? "bg-yellow-50 border-yellow-500 text-yellow-800"
-                  : "bg-blue-50 border-blue-500 text-blue-800"
-              }`}
-            >
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  {toastMessage.type === "success" && (
-                    <span className="text-green-500 text-xl">✅</span>
-                  )}
-                  {toastMessage.type === "error" && (
-                    <span className="text-red-500 text-xl">❌</span>
-                  )}
-                  {toastMessage.type === "warning" && (
-                    <span className="text-yellow-500 text-xl">⚠️</span>
-                  )}
-                  {toastMessage.type === "info" && (
-                    <span className="text-blue-500 text-xl">ℹ️</span>
-                  )}
-                </div>
-                <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium whitespace-pre-line">
-                    {toastMessage.message}
-                  </p>
-                </div>
-                <div className="ml-4 flex-shrink-0">
-                  <button
-                    onClick={() =>
-                      setToastMessage((prev) => ({ ...prev, show: false }))
-                    }
-                    className={`inline-flex rounded-md p-1.5 ${
-                      toastMessage.type === "success"
-                        ? "text-green-500 hover:bg-green-100"
-                        : toastMessage.type === "error"
-                        ? "text-red-500 hover:bg-red-100"
-                        : toastMessage.type === "warning"
-                        ? "text-yellow-500 hover:bg-yellow-100"
-                        : "text-blue-500 hover:bg-blue-100"
-                    }`}
-                  >
-                    <span className="sr-only">Close</span>
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </AccessControl>
   );
