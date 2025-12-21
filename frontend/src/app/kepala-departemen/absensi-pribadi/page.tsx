@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import { API_CONFIG } from "@/config/api";
-import BottomNavbar from "@/components/BottomNavbar";
 import toast from "react-hot-toast";
 
 interface AttendanceRecord {
@@ -22,7 +22,20 @@ interface AttendanceRecord {
   updated_at: string;
 }
 
+interface LogActivity {
+  id: number;
+  aksi: string;
+  data_lama: any;
+  data_baru: any;
+  user: {
+    id: number;
+    nama_lengkap: string;
+  } | null;
+  created_at: string;
+}
+
 export default function KepalaDepartemenAbsensiPribadi() {
+  const router = useRouter();
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -176,7 +189,12 @@ export default function KepalaDepartemenAbsensiPribadi() {
     let fullUrl = fileUrl;
     if (!fileUrl.startsWith("http")) {
       const baseUrl = API_CONFIG.BASE_URL;
-      const path = fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`;
+      // Add /storage/ prefix if not already present
+      const path = fileUrl.startsWith("/storage/")
+        ? fileUrl
+        : fileUrl.startsWith("/")
+        ? `/storage${fileUrl}`
+        : `/storage/${fileUrl}`;
       fullUrl = `${baseUrl}${path}`;
     }
 
@@ -361,7 +379,10 @@ export default function KepalaDepartemenAbsensiPribadi() {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <button className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 transition-colors">
+                        <button 
+                          onClick={() => router.push(`/kepala-departemen/absensi-pribadi/log/${record.id}`)}
+                          className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 transition-colors"
+                        >
                           Log Absensi
                         </button>
                       </td>
