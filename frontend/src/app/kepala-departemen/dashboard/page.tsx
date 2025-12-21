@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import BottomNavbar from "@/components/BottomNavbar";
+import ConfirmationModal from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
 
 interface AttendanceData {
@@ -85,6 +86,19 @@ export default function KepalaDepartemenDashboard() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [gpsTolerance, setGpsTolerance] = useState(100); // Default 100m tolerance
+
+  // Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ 
+    isOpen: false, 
+    title: "", 
+    message: "", 
+    onConfirm: () => {} 
+  });
 
   // Redirect if not authenticated or not Kepala Departemen
   useEffect(() => {
@@ -292,33 +306,9 @@ export default function KepalaDepartemenDashboard() {
     }, 2000);
   };
 
-  const handleCheckIn = async () => {
-    setIsLoading(true);
+  // Helper function to handle check-in API call
+  const proceedWithCheckIn = async (location: { latitude: number; longitude: number }) => {
     try {
-      // Get current GPS location
-      const location = await getCurrentLocation();
-
-      // Check GPS accuracy before proceeding
-      const locationWithAccuracy = location as { latitude: number; longitude: number; accuracy?: number };
-      if (locationWithAccuracy.accuracy && locationWithAccuracy.accuracy > gpsTolerance) {
-        const accuracy = Math.round(locationWithAccuracy.accuracy);
-        const confirmProceed = confirm(
-          `📍 Akurasi GPS Rendah\n\n` +
-            `Akurasi saat ini: ${accuracy}m\n` +
-            `Toleransi yang diizinkan: ${gpsTolerance}m\n` +
-            `Selisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n` +
-            `💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\n` +
-            `Apakah Anda ingin melanjutkan absensi?`
-        );
-
-        if (!confirmProceed) {
-          toast(`Absensi dibatalkan. Akurasi GPS ${accuracy}m melebihi toleransi ${gpsTolerance}m.`, { icon: "⚠️" });
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Call API with GPS coordinates
       const response = await apiClient.attendance.checkIn({
         latitude_in: location.latitude,
         longitude_in: location.longitude,
@@ -340,16 +330,14 @@ export default function KepalaDepartemenDashboard() {
         loadAttendanceHistory();
         toast.success("Check-in berhasil! Lokasi telah diverifikasi.");
       } else {
-        // Handle specific error messages
         if (response.message?.includes("luar area kerja")) {
-          toast.error(`Anda berada di luar area kerja yang diizinkan!\n\n${response.message}`);
+          toast.error(response.message);
         } else {
           toast.error(response.message || "Gagal melakukan check in. Silakan coba lagi.");
         }
       }
     } catch (error: unknown) {
       const err = error as { message?: string; response?: { data?: { message?: string } } };
-
       if (err.message && (err.message.includes("lokasi") || err.message.includes("GPS"))) {
         toast.error(err.message);
       } else if (err.response?.data?.message) {
@@ -362,33 +350,9 @@ export default function KepalaDepartemenDashboard() {
     }
   };
 
-  const handleCheckOut = async () => {
-    setIsLoading(true);
+  // Helper function to handle check-out API call
+  const proceedWithCheckOut = async (location: { latitude: number; longitude: number }) => {
     try {
-      // Get current GPS location
-      const location = await getCurrentLocation();
-
-      // Check GPS accuracy before proceeding
-      const locationWithAccuracy = location as { latitude: number; longitude: number; accuracy?: number };
-      if (locationWithAccuracy.accuracy && locationWithAccuracy.accuracy > gpsTolerance) {
-        const accuracy = Math.round(locationWithAccuracy.accuracy);
-        const confirmProceed = confirm(
-          `📍 Akurasi GPS Rendah\n\n` +
-            `Akurasi saat ini: ${accuracy}m\n` +
-            `Toleransi yang diizinkan: ${gpsTolerance}m\n` +
-            `Selisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n` +
-            `💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\n` +
-            `Apakah Anda ingin melanjutkan absensi?`
-        );
-
-        if (!confirmProceed) {
-          toast(`Absensi dibatalkan. Akurasi GPS ${accuracy}m melebihi toleransi ${gpsTolerance}m.`, { icon: "⚠️" });
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Call API with GPS coordinates
       const response = await apiClient.attendance.checkOut({
         latitude_out: location.latitude,
         longitude_out: location.longitude,
@@ -410,14 +374,104 @@ export default function KepalaDepartemenDashboard() {
         loadAttendanceHistory();
         toast.success("Check-out berhasil! Lokasi telah diverifikasi.");
       } else {
-        // Handle specific error messages
         if (response.message?.includes("luar area kerja")) {
-          toast.error(`Anda berada di luar area kerja yang diizinkan untuk check-out!\n\n${response.message}`);
+          toast.error(response.message);
         } else {
           toast.error(response.message || "Gagal melakukan check out. Silakan coba lagi.");
         }
       }
     } catch (error: unknown) {
+      const err = error as { message?: string; response?: { data?: { message?: string } } };
+      if (err.message && (err.message.includes("lokasi") || err.message.includes("GPS"))) {
+        toast.error(err.message);
+      } else if (err.response?.data?.message) {
+        toast.error(`Error: ${err.response.data.message}`);
+      } else {
+        toast.error("Gagal melakukan check out. Silakan coba lagi.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCheckIn = async () => {
+    setIsLoading(true);
+    const loadingToast = toast.loading("Mengambil lokasi GPS...");
+    
+    try {
+      // Get current GPS location
+      const location = await getCurrentLocation();
+      toast.dismiss(loadingToast);
+
+      // Check GPS accuracy before proceeding
+      const locationWithAccuracy = location as { latitude: number; longitude: number; accuracy?: number };
+      if (locationWithAccuracy.accuracy && locationWithAccuracy.accuracy > gpsTolerance) {
+        const accuracy = Math.round(locationWithAccuracy.accuracy);
+        setIsLoading(false); // Stop loading while showing modal
+        
+        // Show confirmation modal
+        setConfirmModal({
+          isOpen: true,
+          title: "Akurasi GPS Rendah",
+          message: `Akurasi saat ini: ${accuracy}m\nToleransi yang diizinkan: ${gpsTolerance}m\nSelisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\nApakah Anda ingin melanjutkan absensi?`,
+          onConfirm: async () => {
+            setIsLoading(true);
+            await proceedWithCheckIn(location);
+          },
+        });
+        return;
+      }
+
+      // Proceed directly if GPS accuracy is good
+      await proceedWithCheckIn(location);
+    } catch (error: unknown) {
+      toast.dismiss(loadingToast);
+      const err = error as { message?: string; response?: { data?: { message?: string } } };
+
+      if (err.message && (err.message.includes("lokasi") || err.message.includes("GPS"))) {
+        toast.error(err.message);
+      } else if (err.response?.data?.message) {
+        toast.error(`Error: ${err.response.data.message}`);
+      } else {
+        toast.error("Gagal melakukan check in. Silakan coba lagi.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    setIsLoading(true);
+    const loadingToast = toast.loading("Mengambil lokasi GPS...");
+    
+    try {
+      // Get current GPS location
+      const location = await getCurrentLocation();
+      toast.dismiss(loadingToast);
+
+      // Check GPS accuracy before proceeding
+      const locationWithAccuracy = location as { latitude: number; longitude: number; accuracy?: number };
+      if (locationWithAccuracy.accuracy && locationWithAccuracy.accuracy > gpsTolerance) {
+        const accuracy = Math.round(locationWithAccuracy.accuracy);
+        setIsLoading(false); // Stop loading while showing modal
+        
+        // Show confirmation modal
+        setConfirmModal({
+          isOpen: true,
+          title: "📍 Akurasi GPS Rendah",
+          message: `Akurasi saat ini: ${accuracy}m\nToleransi yang diizinkan: ${gpsTolerance}m\nSelisih: ${accuracy - gpsTolerance}m di luar toleransi\n\n💡 Tips: Pindah ke area terbuka atau ubah toleransi GPS\n\nApakah Anda ingin melanjutkan absensi?`,
+          onConfirm: async () => {
+            setIsLoading(true);
+            await proceedWithCheckOut(location);
+          },
+        });
+        return;
+      }
+
+      // Proceed directly if GPS accuracy is good
+      await proceedWithCheckOut(location);
+    } catch (error: unknown) {
+      toast.dismiss(loadingToast);
       const err = error as { message?: string; response?: { data?: { message?: string } } };
 
       if (err.message && (err.message.includes("lokasi") || err.message.includes("GPS"))) {
@@ -860,6 +914,18 @@ export default function KepalaDepartemenDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Ya, Lanjutkan"
+        cancelText="Batal"
+        type="warning"
+      />
 
       {/* Bottom Navigation */}
       <BottomNavbar />
