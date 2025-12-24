@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\TempatKerja;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -147,5 +148,40 @@ class TempatKerjaController extends Controller
             'success' => true,
             'message' => 'Berhasil menghapus data!'
         ], 200);
+    }
+
+    /**
+     * Get members of a specific workplace (filtered by "tenaga pendidik" role)
+     * 
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getMembers($id)
+    {
+        try {
+            $users = User::whereHas('profilePekerjaan', function($q) use ($id) {
+                $q->where('id_tempat_kerja', $id);
+            })
+            ->whereHas('roles', function($q) {
+                $q->where('name', 'tenaga pendidik');
+            })
+            ->whereDoesntHave('roles', function($q) {
+                $q->whereIn('name', ['superadmin', 'kepala yayasan']);
+            })
+            ->with(['profilePribadi', 'profilePekerjaan', 'profilePekerjaan.jabatan', 'profilePekerjaan.tempatKerja'])
+            ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data pegawai berhasil diambil',
+                'data' => $users
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data pegawai',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

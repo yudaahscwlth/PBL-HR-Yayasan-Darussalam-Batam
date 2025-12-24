@@ -162,27 +162,30 @@ export default function KepalaSekolahKelolaPegawaiPage() {
             try {
                 setIsLoading(true);
                 const token = localStorage.getItem("auth_token");
+                
+                // Get current user's workplace ID
+                const currentWorkplaceId = currentUser?.profile_pekerjaan?.id_tempat_kerja;
+                
+                if (!currentWorkplaceId) {
+                    console.error("User has no workplace ID");
+                    setUsers([]);
+                    setIsLoading(false);
+                    return;
+                }
 
-                // Fetch ALL users (Kepala Sekolah sees all)
+                // Fetch users from the same workplace with "tenaga pendidik" role
                 const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/users`,
+                    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/tempat-kerja/${currentWorkplaceId}/members`,
                     {
                         headers: { Authorization: `Bearer ${token}` }
                     }
                 );
 
                 const fetchedData = response.data.data;
-                const allUsers = Array.isArray(fetchedData) ? fetchedData : fetchedData?.data || [];
+                const allUsers = Array.isArray(fetchedData) ? fetchedData : [];
 
-                // Filter out superadmin and kepala yayasan, and also filter out current user
-                const filteredUsers = allUsers.filter((u: any) => {
-                    const firstRole = u.roles?.[0];
-                    const roleName = typeof firstRole === 'string' ? firstRole : firstRole?.name;
-                    const userRole = roleName?.toLowerCase()?.trim() || '';
-                    const isRestrictedRole = userRole === 'superadmin' || userRole === 'kepala yayasan';
-
-                    return !isRestrictedRole && u.id !== currentUser?.id;
-                });
+                // Filter out current user
+                const filteredUsers = allUsers.filter((u: User) => u.id !== currentUser?.id);
 
                 setUsers(filteredUsers);
             } catch (error) {
@@ -309,7 +312,7 @@ export default function KepalaSekolahKelolaPegawaiPage() {
 
                     {/* Main Content Card */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h2 className="text-lg font-bold text-gray-800 mb-6">Daftar Seluruh Pegawai</h2>
+                        <h2 className="text-lg font-bold text-gray-800 mb-6">Daftar Tenaga Pendidik</h2>
 
                         {/* Actions Bar */}
                         <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">

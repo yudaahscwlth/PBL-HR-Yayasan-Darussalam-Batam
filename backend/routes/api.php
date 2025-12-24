@@ -97,6 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Tempat Kerja routes
     Route::apiResource('tempat-kerja', TempatKerjaController::class);
+    Route::get('/tempat-kerja/{id}/members', [TempatKerjaController::class, 'getMembers']);
 
     // Sosial Media routes
     Route::apiResource('sosial-media', SosialMediaController::class);
