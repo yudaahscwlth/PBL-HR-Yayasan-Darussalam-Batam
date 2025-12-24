@@ -64,12 +64,23 @@ export default function KepalaDepartemenEvaluasiPage() {
 
         const headers = { Authorization: `Bearer ${token}` };
 
+        // Get current user's department ID
+        const currentDeptId = currentUser?.profile_pekerjaan?.id_departemen;
+        
+        if (!currentDeptId) {
+          console.error("User has no department ID");
+          toast.error("Data departemen tidak ditemukan.");
+          setIsLoading(false);
+          return;
+        }
+
         console.log("Fetching evaluation data...");
         const [usersRes, kategoriRes, tahunRes] = await Promise.all([
+          // Fetch only employees from the same department
           axios.get(
             `${
               process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-            }/api/users`,
+            }/api/departemen/${currentDeptId}/members`,
             { headers }
           ),
           axios.get(
@@ -87,6 +98,7 @@ export default function KepalaDepartemenEvaluasiPage() {
         ]);
 
         console.log("Data fetched successfully");
+        // Filter out current user (already filtered by backend, but double-check)
         const filteredUsers = usersRes.data.data.filter(
           (u: User) => u.id !== currentUser?.id
         );
@@ -109,7 +121,9 @@ export default function KepalaDepartemenEvaluasiPage() {
       }
     };
 
-    fetchData();
+    if (currentUser?.profile_pekerjaan?.id_departemen) {
+      fetchData();
+    }
   }, [currentUser]);
 
   // Check if evaluation already exists when user and tahun ajaran are selected

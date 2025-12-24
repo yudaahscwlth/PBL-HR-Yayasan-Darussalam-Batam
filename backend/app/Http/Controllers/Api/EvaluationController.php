@@ -57,7 +57,8 @@ class EvaluationController extends Controller
         $user = $request->user();
 
         // Check if user has permission to create evaluations
-        if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
+        // Allow: HRD, Superadmin, Kepala Sekolah, and Kepala Departemen
+        if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin', 'kepala sekolah', 'kepala departemen'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to create evaluations',
@@ -131,7 +132,8 @@ class EvaluationController extends Controller
         $user = $request->user();
 
         // Check if user has permission to update evaluations
-        if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin'])) {
+        // Allow: HRD, Superadmin, Kepala Sekolah, and Kepala Departemen
+        if (!$user->hasAnyRole(['kepala hrd', 'staff hrd', 'superadmin', 'kepala sekolah', 'kepala departemen'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized to update evaluations',

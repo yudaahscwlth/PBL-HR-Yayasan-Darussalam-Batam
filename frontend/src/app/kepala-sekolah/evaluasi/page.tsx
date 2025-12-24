@@ -65,11 +65,22 @@ export default function KepalaSekolahEvaluasiPage() {
 
                 const headers = { Authorization: `Bearer ${token}` };
 
+                // Get current user's workplace ID
+                const currentWorkplaceId = currentUser?.profile_pekerjaan?.id_tempat_kerja;
+                
+                if (!currentWorkplaceId) {
+                    console.error("User has no workplace ID");
+                    toast.error("Data tempat kerja tidak ditemukan.");
+                    setIsLoading(false);
+                    return;
+                }
+
                 console.log("Fetching evaluation data...");
                 const [usersRes, kategoriRes, tahunRes] = await Promise.all([
+                    // Fetch only tenaga pendidik from the same workplace
                     axios.get(
                         `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-                        }/api/users`,
+                        }/api/tempat-kerja/${currentWorkplaceId}/members`,
                         { headers }
                     ),
                     axios.get(
@@ -85,6 +96,7 @@ export default function KepalaSekolahEvaluasiPage() {
                 ]);
 
                 console.log("Data fetched successfully");
+                // Filter out current user (already filtered by backend, but double-check)
                 const filteredUsers = usersRes.data.data.filter(
                     (u: User) => u.id !== currentUser?.id
                 );
@@ -107,7 +119,9 @@ export default function KepalaSekolahEvaluasiPage() {
             }
         };
 
-        fetchData();
+        if (currentUser?.profile_pekerjaan?.id_tempat_kerja) {
+            fetchData();
+        }
     }, [currentUser]);
 
     // Check if evaluation already exists when user and tahun ajaran are selected
