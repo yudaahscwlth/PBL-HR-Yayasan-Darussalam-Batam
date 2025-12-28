@@ -21,21 +21,42 @@ class EvaluationController extends Controller
             $evaluations = Evaluasi::with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
                 ->orderBy('created_at', 'desc')
                 ->get();
-        } elseif ($user->hasRole('kepala departemen')) {
-        // Kepala departemen hanya melihat evaluasi dari departemen yang sama
-        $departemenId = $user->profilePekerjaan?->id_departemen;
+        } elseif ($user->hasRole('kepala sekolah')) {
+            // Kepala sekolah hanya melihat evaluasi dari tenaga pendidik di sekolah yang sama
+            $tempatKerjaId = $user->profilePekerjaan?->id_tempat_kerja;
 
-        if ($departemenId) {
-            $evaluations = Evaluasi::whereHas('user.profilePekerjaan', function ($query) use ($departemenId) {
-                $query->where('id_departemen', $departemenId);
-            })
-                ->with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
-                ->orderBy('created_at', 'desc')
-                ->get();
+            if ($tempatKerjaId) {
+                $evaluations = Evaluasi::whereHas('user', function ($query) use ($tempatKerjaId) {
+                    // Check if user is tenaga pendidik
+                    $query->whereHas('roles', function ($roleQuery) {
+                        $roleQuery->where('name', 'tenaga pendidik');
+                    });
+                    // Check if user is from same workplace
+                    $query->whereHas('profilePekerjaan', function ($pkQuery) use ($tempatKerjaId) {
+                        $pkQuery->where('id_tempat_kerja', $tempatKerjaId);
+                    });
+                })
+                    ->with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            } else {
+                $evaluations = collect([]);
+            }
+        } elseif ($user->hasRole('kepala departemen')) {
+            // Kepala departemen hanya melihat evaluasi dari departemen yang sama
+            $departemenId = $user->profilePekerjaan?->id_departemen;
+
+            if ($departemenId) {
+                $evaluations = Evaluasi::whereHas('user.profilePekerjaan', function ($query) use ($departemenId) {
+                    $query->where('id_departemen', $departemenId);
+                })
+                    ->with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            } else {
+                $evaluations = collect([]);
+            }
         } else {
-            $evaluations = collect([]);
-        }
-    } else {
             $evaluations = Evaluasi::where('id_user', $user->id)
                 ->with(['kategoriEvaluasi'])
                 ->orderBy('created_at', 'desc')
