@@ -88,8 +88,24 @@ export default function KepalaSekolahDetailProfilePage() {
                 const user = response.data.data;
                 setProfileData(user);
 
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error fetching user:", error);
+                
+                // Handle 403 Forbidden error - redirect to unauthorized page
+                // Use replace instead of push to avoid infinite loop when clicking back
+                if (error.response?.status === 403) {
+                    router.replace('/unauthorized');
+                    return;
+                }
+                
+                // Handle 404 Not Found error - user doesn't exist or not accessible
+                // Redirect to unauthorized page instead of showing error toast
+                if (error.response?.status === 404) {
+                    router.replace('/unauthorized');
+                    return;
+                }
+                
+                // For other errors, show toast and redirect to pegawai list
                 toast.error("Gagal memuat data pegawai");
                 router.push("/kepala-sekolah/kelola/pegawai");
             } finally {
