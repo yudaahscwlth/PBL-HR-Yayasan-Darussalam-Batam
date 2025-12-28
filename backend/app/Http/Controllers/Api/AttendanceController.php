@@ -444,9 +444,76 @@ class AttendanceController extends Controller
         
         // Check if user has permission to view other users' attendance
         $isAdmin = $authUser->hasAnyRole(['superadmin']);
-        $isHRD = $authUser->hasAnyRole(['kepala hrd', 'staff hrd', 'kepala departemen', 'direktur pendidikan']);
+        $isHRD = $authUser->hasAnyRole(['kepala hrd', 'staff hrd', 'direktur pendidikan']);
+        $isKepalaSekolah = $authUser->hasAnyRole(['kepala sekolah']);
+        $isKepalaDepartemen = $authUser->hasAnyRole(['kepala departemen']);
         
-        if (!$isAdmin && !$isHRD && $authUser->id != $userId) {
+        // Allow users to view their own attendance
+        if ($authUser->id == $userId) {
+            // User viewing their own data - always allowed
+        }
+        // Admin and HRD have full access
+        else if ($isAdmin || $isHRD) {
+            // Full access - no additional checks needed
+        }
+        // Kepala Sekolah can only view tenaga pendidik from same workplace
+        else if ($isKepalaSekolah) {
+            // Get target user with their profile
+            $targetUser = \App\Models\User::with(['profilePekerjaan.jabatan', 'profilePekerjaan.tempatKerja'])
+                ->find($userId);
+            
+            if (!$targetUser) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found',
+                ], 404);
+            }
+            
+            // Get kepala sekolah's workplace
+            $authUserWorkplace = $authUser->profilePekerjaan?->id_tempat_kerja;
+            $targetUserWorkplace = $targetUser->profilePekerjaan?->id_tempat_kerja;
+            
+            // Check if target user is tenaga pendidik
+            $isTenagaPendidik = $targetUser->hasRole('tenaga pendidik');
+            
+            // Check if same workplace
+            $isSameWorkplace = $authUserWorkplace && $targetUserWorkplace && ($authUserWorkplace == $targetUserWorkplace);
+            
+            if (!$isTenagaPendidik || !$isSameWorkplace) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user\'s attendance. Kepala Sekolah can only view Tenaga Pendidik from the same workplace.',
+                ], 403);
+            }
+        }
+        // Kepala Departemen can only view staff from same department
+        else if ($isKepalaDepartemen) {
+            // Get target user with their profile
+            $targetUser = \App\Models\User::with(['profilePekerjaan.departemen'])
+                ->find($userId);
+            
+            if (!$targetUser) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found',
+                ], 404);
+            }
+            
+            // Get kepala departemen's department
+            $authUserDepartment = $authUser->profilePekerjaan?->id_departemen;
+            $targetUserDepartment = $targetUser->profilePekerjaan?->id_departemen;
+            
+            // Check if same department
+            $isSameDepartment = $authUserDepartment && $targetUserDepartment && ($authUserDepartment == $targetUserDepartment);
+            
+            if (!$isSameDepartment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user\'s attendance. Kepala Departemen can only view staff from the same department.',
+                ], 403);
+            }
+        }
+        else {
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to view this user\'s attendance',

@@ -112,9 +112,67 @@ class UserController extends Controller
     /**
      * Display the specified user
      */
-    public function show(User $user): JsonResponse
+    public function show(Request $request, User $user): JsonResponse
     {
-        $user->load(['roles', 'permissions', 'profilePribadi', 'profilePekerjaan.jabatan', 'profilePekerjaan.departemen', 'profilePekerjaan.tempatKerja']);
+        $authUser = $request->user();
+        
+        // Check if user has permission to view this profile
+        $isAdmin = $authUser->hasAnyRole(['superadmin']);
+        $isHRD = $authUser->hasAnyRole(['kepala hrd', 'staff hrd', 'direktur pendidikan']);
+        $isKepalaSekolah = $authUser->hasAnyRole(['kepala sekolah']);
+        $isKepalaDepartemen = $authUser->hasAnyRole(['kepala departemen']);
+        
+        // Allow users to view their own profile
+        if ($authUser->id == $user->id) {
+            // User viewing their own profile - always allowed
+        }
+        // Admin and HRD have full access
+        else if ($isAdmin || $isHRD) {
+            // Full access - no additional checks needed
+        }
+        // Kepala Sekolah can only view tenaga pendidik from same workplace
+        else if ($isKepalaSekolah) {
+            // Get auth user's workplace
+            $authUserWorkplace = $authUser->profilePekerjaan?->id_tempat_kerja;
+            $targetUserWorkplace = $user->profilePekerjaan?->id_tempat_kerja;
+            
+            // Check if target user is tenaga pendidik
+            $isTenagaPendidik = $user->hasRole('tenaga pendidik');
+            
+            // Check if same workplace
+            $isSameWorkplace = $authUserWorkplace && $targetUserWorkplace && ($authUserWorkplace == $targetUserWorkplace);
+            
+            if (!$isTenagaPendidik || !$isSameWorkplace) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user\'s profile. Kepala Sekolah can only view Tenaga Pendidik from the same workplace.',
+                ], 403);
+            }
+        }
+        // Kepala Departemen can only view staff from same department
+        else if ($isKepalaDepartemen) {
+            // Get auth user's department
+            $authUserDepartment = $authUser->profilePekerjaan?->id_departemen;
+            $targetUserDepartment = $user->profilePekerjaan?->id_departemen;
+            
+            // Check if same department
+            $isSameDepartment = $authUserDepartment && $targetUserDepartment && ($authUserDepartment == $targetUserDepartment);
+            
+            if (!$isSameDepartment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user\'s profile. Kepala Departemen can only view staff from the same department.',
+                ], 403);
+            }
+        }
+        else {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to view this user\'s profile',
+            ], 403);
+        }
+        
+        $user->load(['roles', 'permissions', 'profilePribadi', 'profilePekerjaan.jabatan', 'profilePekerjaan.departemen', 'profilePekerjaan.tempatKerja', 'orangTua', 'keluarga', 'userSosialMedia.sosialMedia']);
         
         return response()->json([
             'success' => true,
