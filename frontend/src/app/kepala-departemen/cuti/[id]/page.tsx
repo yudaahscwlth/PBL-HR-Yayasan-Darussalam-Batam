@@ -141,15 +141,29 @@ export default function KepalaDepartemenRekapCutiPage() {
         } else {
           console.error("Gagal memuat data cuti:", leaveResponse.message);
         }
-      } catch (error) {
-        console.error("Error fetching leave recap:", error);
+      } catch (error: any) {
+        console.error("Error fetching data:", error);
+        
+        // Handle 403 Forbidden error - redirect to unauthorized page
+        // Use replace instead of push to avoid infinite loop when clicking back
+        if (error.response?.status === 403) {
+          router.replace('/unauthorized');
+          return;
+        }
+        
+        // Handle 404 Not Found error - user doesn't exist or not accessible
+        // Redirect to unauthorized page instead of showing empty page
+        if (error.response?.status === 404) {
+          router.replace('/unauthorized');
+          return;
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [userId]);
+  }, [userId, router]);
 
   // Filter data berdasarkan pencarian dan date range
   const filteredData = leaveData.filter((record) => {

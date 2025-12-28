@@ -27,6 +27,10 @@ class EvaluationController extends Controller
 
             if ($tempatKerjaId) {
                 $evaluations = Evaluasi::whereHas('user', function ($query) use ($tempatKerjaId) {
+                    // EXCLUSION: Cannot access superadmin and kepala yayasan evaluations
+                    $query->whereDoesntHave('roles', function ($roleQuery) {
+                        $roleQuery->whereIn('name', ['superadmin', 'kepala yayasan']);
+                    });
                     // Check if user is tenaga pendidik
                     $query->whereHas('roles', function ($roleQuery) {
                         $roleQuery->where('name', 'tenaga pendidik');
@@ -47,8 +51,15 @@ class EvaluationController extends Controller
             $departemenId = $user->profilePekerjaan?->id_departemen;
 
             if ($departemenId) {
-                $evaluations = Evaluasi::whereHas('user.profilePekerjaan', function ($query) use ($departemenId) {
-                    $query->where('id_departemen', $departemenId);
+                $evaluations = Evaluasi::whereHas('user', function ($query) use ($departemenId) {
+                    // EXCLUSION: Cannot access superadmin and kepala yayasan evaluations
+                    $query->whereDoesntHave('roles', function ($roleQuery) {
+                        $roleQuery->whereIn('name', ['superadmin', 'kepala yayasan']);
+                    });
+                    // Check if user is from same department
+                    $query->whereHas('profilePekerjaan', function ($pkQuery) use ($departemenId) {
+                        $pkQuery->where('id_departemen', $departemenId);
+                    });
                 })
                     ->with(['user.profilePribadi', 'kategoriEvaluasi', 'penilai.profilePribadi', 'tahunAjaran'])
                     ->orderBy('created_at', 'desc')

@@ -473,6 +473,14 @@ class AttendanceController extends Controller
             $authUserWorkplace = $authUser->profilePekerjaan?->id_tempat_kerja;
             $targetUserWorkplace = $targetUser->profilePekerjaan?->id_tempat_kerja;
             
+            // EXCLUSION: Cannot access superadmin and kepala yayasan attendance
+            if ($targetUser->hasAnyRole(['superadmin', 'kepala yayasan'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user\'s attendance.',
+                ], 403);
+            }
+            
             // Check if target user is tenaga pendidik
             $isTenagaPendidik = $targetUser->hasRole('tenaga pendidik');
             
@@ -497,6 +505,14 @@ class AttendanceController extends Controller
                     'success' => false,
                     'message' => 'User not found',
                 ], 404);
+            }
+            
+            // EXCLUSION: Cannot access superadmin and kepala yayasan attendance
+            if ($targetUser->hasAnyRole(['superadmin', 'kepala yayasan'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user\'s attendance.',
+                ], 403);
             }
             
             // Get kepala departemen's department

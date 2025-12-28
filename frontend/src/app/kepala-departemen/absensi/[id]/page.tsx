@@ -112,42 +112,18 @@ export default function KepalaDepartemenRekapAbsensiPage() {
       } catch (error: any) {
         console.error("Error fetching data:", error);
         
-        // If the API endpoint doesn't exist, try fetching all attendance and filter client-side
+        // Handle 403 Forbidden error - redirect to unauthorized page
+        // Use replace instead of push to avoid infinite loop when clicking back
+        if (error.response?.status === 403) {
+          router.replace('/unauthorized');
+          return;
+        }
+        
+        // Handle 404 Not Found error - user doesn't exist or not accessible
+        // Redirect to unauthorized page instead of showing empty page
         if (error.response?.status === 404) {
-          try {
-            const token = localStorage.getItem("auth_token");
-            const headers = { Authorization: `Bearer ${token}` };
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            
-            // Fallback: Get all attendance records and filter by user_id
-            const allAttendanceResponse = await axios.get(`${baseUrl}/api/attendance/all`, { headers });
-            const allRecords = allAttendanceResponse.data.data || [];
-            const records = allRecords.filter((record: any) => record.id_user === parseInt(userId));
-            
-            setAttendanceData(records);
-
-            // Calculate summary
-            const summary: AttendanceSummary = {
-              hadir: 0,
-              terlambat: 0,
-              sakit: 0,
-              cuti: 0,
-              alpha: 0,
-            };
-
-            records.forEach((record: AttendanceRecord) => {
-              const status = (record.status || "").toLowerCase();
-              if (status === "hadir") summary.hadir++;
-              else if (status === "terlambat") summary.terlambat++;
-              else if (status === "sakit") summary.sakit++;
-              else if (status === "cuti") summary.cuti++;
-              else if (status === "tidak hadir" || status === "alpha" || status === "alpa") summary.alpha++;
-            });
-
-            setAttendanceSummary(summary);
-          } catch (fallbackError) {
-            console.error("Fallback also failed:", fallbackError);
-          }
+          router.replace('/unauthorized');
+          return;
         }
       } finally {
         setIsLoading(false);
@@ -155,7 +131,7 @@ export default function KepalaDepartemenRekapAbsensiPage() {
     };
 
     fetchData();
-  }, [userId]);
+  }, [userId, router]);
 
   // Filter data based on search term and date range
   const filteredData = attendanceData.filter((record) => {

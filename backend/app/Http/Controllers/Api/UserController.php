@@ -132,6 +132,14 @@ class UserController extends Controller
         }
         // Kepala Sekolah can only view tenaga pendidik from same workplace
         else if ($isKepalaSekolah) {
+            // EXCLUSION: Cannot access superadmin and kepala yayasan profiles
+            if ($user->hasAnyRole(['superadmin', 'kepala yayasan'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user\'s profile.',
+                ], 403);
+            }
+            
             // Get auth user's workplace
             $authUserWorkplace = $authUser->profilePekerjaan?->id_tempat_kerja;
             $targetUserWorkplace = $user->profilePekerjaan?->id_tempat_kerja;
@@ -151,6 +159,14 @@ class UserController extends Controller
         }
         // Kepala Departemen can only view staff from same department
         else if ($isKepalaDepartemen) {
+            // EXCLUSION: Cannot access superadmin and kepala yayasan profiles
+            if ($user->hasAnyRole(['superadmin', 'kepala yayasan'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to view this user\'s profile.',
+                ], 403);
+            }
+            
             // Get auth user's department
             $authUserDepartment = $authUser->profilePekerjaan?->id_departemen;
             $targetUserDepartment = $user->profilePekerjaan?->id_departemen;

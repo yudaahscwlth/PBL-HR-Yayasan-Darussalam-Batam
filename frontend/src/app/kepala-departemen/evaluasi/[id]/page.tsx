@@ -200,8 +200,23 @@ export default function KepalaDepartemenRekapEvaluasiPage() {
             evaluationResponse.message
           );
         }
-      } catch (error) {
-        console.error("Error fetching evaluation recap:", error);
+      } catch (error: any) {
+        console.error("Error fetching data:", error);
+        
+        // Handle 403 Forbidden error - redirect to unauthorized page
+        // Use replace instead of push to avoid infinite loop when clicking back
+        if (error.response?.status === 403) {
+          router.replace('/unauthorized');
+          return;
+        }
+        
+        // Handle 404 Not Found error - user doesn't exist or not accessible
+        // Redirect to unauthorized page instead of showing empty page
+        if (error.response?.status === 404) {
+          router.replace('/unauthorized');
+          return;
+        }
+        
         toast.error("Gagal memuat data evaluasi");
       } finally {
         setIsLoading(false);
@@ -209,7 +224,7 @@ export default function KepalaDepartemenRekapEvaluasiPage() {
     };
 
     fetchData();
-  }, [userId, selectedTahunAjaran]);
+  }, [userId, selectedTahunAjaran, router]);
 
   // Filter evaluations by selected tahun ajaran
   useEffect(() => {
