@@ -21,74 +21,105 @@ class StructuredAccountSeeder extends Seeder
     public function run(): void
     {
         // Pastikan data master sudah ada
-        $tempatKerjas = TempatKerja::all();
-        $departemens = Departemen::all();
+        $tempatKerja = TempatKerja::first();
+        $departemen = Departemen::first();
         $jabatans = Jabatan::all();
 
-        if ($tempatKerjas->isEmpty() || $departemens->isEmpty() || $jabatans->isEmpty()) {
+        if (!$tempatKerja || !$departemen || $jabatans->isEmpty()) {
             $this->command->warn('Seeder dibatalkan: Tempat kerja, departemen, atau jabatan kosong.');
             return;
         }
 
-        $this->command->info('Memulai pembuatan 31 akun terstruktur...');
+        $this->command->info('Memulai pembuatan 8 akun sesuai roles...');
 
         $accountCount = 0;
 
-        // 1. Superadmin (Kantor Yayasan)
-        $superadmin = $this->createUser('superadmin', 'Superadmin', $tempatKerjas->first()->id, $departemens->first()->id, 'kepala yayasan');
+        // 1. Superadmin - gunakan jabatan Kepala Yayasan
+        $superadmin = $this->createUser(
+            'superadmin', 
+            'Superadmin', 
+            $tempatKerja->id, 
+            $departemen->id, 
+            'Kepala Yayasan'
+        );
         if ($superadmin) $accountCount++;
 
-        // 2. Kepala Yayasan (Kantor Yayasan)
-        $kepalaYayasan = $this->createUser('kepala yayasan', 'Kepala Yayasan', $tempatKerjas->first()->id, $departemens->first()->id, 'kepala yayasan');
+        // 2. Kepala Yayasan
+        $kepalaYayasan = $this->createUser(
+            'kepala yayasan', 
+            'Kepala Yayasan', 
+            $tempatKerja->id, 
+            $departemen->id, 
+            'Kepala Yayasan'
+        );
         if ($kepalaYayasan) $accountCount++;
 
-        // 3. Direktur Pendidikan (Kantor Yayasan)
-        $dirpen = $this->createUser('direktur pendidikan', 'Direktur Pendidikan', $tempatKerjas->first()->id, $departemens->first()->id, 'direktur pendidikan');
+        // 3. Direktur Pendidikan
+        $dirpen = $this->createUser(
+            'direktur pendidikan', 
+            'Direktur Pendidikan', 
+            $tempatKerja->id, 
+            $departemen->id, 
+            'Direktur Pendidikan'
+        );
         if ($dirpen) $accountCount++;
 
-        // 4. Kepala HRD (Kantor Yayasan)
-        $kepalaHrd = $this->createUser('kepala hrd', 'Kepala HRD', $tempatKerjas->first()->id, $departemens->first()->id, 'kepala hrd');
+        // 4. Kepala HRD
+        $kepalaHrd = $this->createUser(
+            'kepala hrd', 
+            'Kepala HRD', 
+            $tempatKerja->id, 
+            $departemen->id, 
+            'Kepala HRD'
+        );
         if ($kepalaHrd) $accountCount++;
 
-        // 5. 8 Staff HRD (Semua Tempat Kerja)
-        foreach ($tempatKerjas as $tempatKerja) {
-            $staffHrd = $this->createUser('staff hrd', 'Staff HRD ' . $tempatKerja->nama_tempat, $tempatKerja->id, $departemens->first()->id, 'staff hrd');
-            if ($staffHrd) $accountCount++;
+        // 5. Staff HRD
+        $staffHrd = $this->createUser(
+            'staff hrd', 
+            'Staff HRD', 
+            $tempatKerja->id, 
+            $departemen->id, 
+            'Staff HRD'
+        );
+        if ($staffHrd) $accountCount++;
+
+        // 6. Kepala Departemen
+        $kepalaDept = $this->createUser(
+            'kepala departemen', 
+            'Kepala Departemen', 
+            $tempatKerja->id, 
+            $departemen->id, 
+            'Kepala Departemen'
+        );
+        if ($kepalaDept) {
+            $accountCount++;
+            // Update departemen dengan kepala departemen
+            $departemen->update(['id_kepala_departemen' => $kepalaDept->id]);
         }
 
-        // 6. 3 Kepala Departemen (Kantor Yayasan)
-        $kepalaDepartemenUsers = [];
-        foreach ($departemens as $departemen) {
-            $kepalaDept = $this->createUser('kepala departemen', 'Kepala Departemen ' . $departemen->nama_departemen, $tempatKerjas->first()->id, $departemen->id, 'kepala departemen');
-            if ($kepalaDept) {
-                $accountCount++;
-                $kepalaDepartemenUsers[] = $kepalaDept;
-            }
-        }
+        // 7. Kepala Sekolah
+        $kepalaSekolah = $this->createUser(
+            'kepala sekolah', 
+            'Kepala Sekolah', 
+            $tempatKerja->id, 
+            $departemen->id, 
+            'Kepala Sekolah'
+        );
+        if ($kepalaSekolah) $accountCount++;
 
-        // Update departemen dengan kepala departemen yang baru dibuat
-        foreach ($departemens as $index => $departemen) {
-            if (isset($kepalaDepartemenUsers[$index])) {
-                $departemen->update([
-                    'id_kepala_departemen' => $kepalaDepartemenUsers[$index]->id
-                ]);
-            }
-        }
-
-        // 7. 8 Kepala Sekolah (Semua Tempat Kerja)
-        foreach ($tempatKerjas as $tempatKerja) {
-            $kepalaSekolah = $this->createUser('kepala sekolah', 'Kepala Sekolah ' . $tempatKerja->nama_tempat, $tempatKerja->id, $departemens->first()->id, 'kepala sekolah');
-            if ($kepalaSekolah) $accountCount++;
-        }
-
-        // 8. 8 Tenaga Pendidik (Semua Tempat Kerja)
-        foreach ($tempatKerjas as $tempatKerja) {
-            $tenagaPendidik = $this->createUser('tenaga pendidik', 'Tenaga Pendidik ' . $tempatKerja->nama_tempat, $tempatKerja->id, $departemens->first()->id, 'tenaga pendidik');
-            if ($tenagaPendidik) $accountCount++;
-        }
+        // 8. Tenaga Pendidik
+        $tenagaPendidik = $this->createUser(
+            'tenaga pendidik', 
+            'Tenaga Pendidik', 
+            $tempatKerja->id, 
+            $departemen->id, 
+            'Tenaga Pendidik'
+        );
+        if ($tenagaPendidik) $accountCount++;
 
         $this->command->info("=== SELESAI ===");
-        $this->command->info("Berhasil membuat {$accountCount} akun terstruktur.");
+        $this->command->info("Berhasil membuat {$accountCount} akun.");
         $this->command->info("Total user sekarang: " . User::count());
     }
 
@@ -99,7 +130,7 @@ class StructuredAccountSeeder extends Seeder
     {
         try {
             // Generate unique email
-            $email = $this->generateEmail($roleName, $tempatKerjaId, $departemenId);
+            $email = $this->generateEmail($roleName);
             
             // Check if user already exists
             $existingUser = User::where('email', $email)->first();
@@ -132,6 +163,7 @@ class StructuredAccountSeeder extends Seeder
                 'kecamatan' => 'Batu Aji',
                 'alamat_lengkap' => 'Jl. Pendidikan No. ' . rand(1, 100),
                 'no_hp' => '08' . rand(1111111111, 9999999999),
+                'nomor_rekening' => rand(1000000000, 9999999999),
                 'foto' => null,
             ]);
 
@@ -163,27 +195,13 @@ class StructuredAccountSeeder extends Seeder
     }
 
     /**
-     * Generate email based on role, tempat kerja, and departemen
+     * Generate email based on role name
      */
-    private function generateEmail($roleName, $tempatKerjaId, $departemenId)
+    private function generateEmail($roleName)
     {
         // Clean role name for email
         $roleClean = str_replace(' ', '', strtolower($roleName));
         
-        // Get tempat kerja name (simplified)
-        $tempatKerjaNames = [
-            1 => 'kantor',
-            2 => 'tk',
-            3 => 'sd', 
-            4 => 'smp',
-            5 => 'sma',
-            6 => 'smk',
-            7 => 'poltek',
-            8 => 'xplay'
-        ];
-        
-        $tempatKerjaName = $tempatKerjaNames[$tempatKerjaId] ?? 'kantor';
-        
-        return "{$roleClean}_{$tempatKerjaName}_{$departemenId}@gmail.com";
+        return "{$roleClean}@gmail.com";
     }
 }

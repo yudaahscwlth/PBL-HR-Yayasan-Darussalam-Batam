@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Modify nomor_rekening to be nullable
-        \Illuminate\Support\Facades\DB::statement('ALTER TABLE profile_pribadi MODIFY nomor_rekening VARCHAR(255) NULL');
+        Schema::create('otp', function (Blueprint $table) {
+            $table->id();
+            $table->string('email');
+            $table->string('kode_otp');
+            $table->timestamp('expires_at')->useCurrent();
+        });
     }
 
     /**
@@ -20,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('profile_pribadi', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('otp');
     }
 };

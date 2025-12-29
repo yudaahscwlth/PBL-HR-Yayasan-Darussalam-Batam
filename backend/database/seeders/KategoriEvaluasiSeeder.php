@@ -14,18 +14,18 @@ class KategoriEvaluasiSeeder extends Seeder
     public function run(): void
     {
         $kategori = [
-            '<p>Administrasi</p>',
-            '<p>Hubungan Dengan Atasan</p>',
-            '<p>Hubungan Dengan Teman Sejawat</p>',
-            '<p>Hubungan Dengan Peserta Didik</p>',
-            '<p>Sikap dan Kerja sama</p>',
-            '<p>Motivasi dan Inisiatif</p>',
-            '<p>Disiplin</p>',
-            '<p>Kualitas Kerja dan Prestasi Kerja</p>',
-            '<p>Komitmen Terhadap Pekerjaan</p>',
-            '<p>Kreativitas dan Inovasi</p>',
-            '<p>Pengembangan keahlian, ilmu pengetahuan dan pendidikan</p>',
-            '<p>Kegiatan Pengembangan Karakter </p><ul><li>Team Building and Upgrading</li><li>Workshop</li><li>Pengajian bulanan</li><li>Upacara 17 Agustus</li></ul><p><em>(Ketidakhadiran dalam kegiatan tersebut mengurangi nilai)</em></p>',
+            'Administrasi',
+            'Hubungan Dengan Atasan',
+            'Hubungan Dengan Teman Sejawat',
+            'Hubungan Dengan Peserta Didik',
+            'Sikap dan Kerja sama',
+            'Motivasi dan Inisiatif',
+            'Disiplin',
+            'Kualitas Kerja dan Prestasi Kerja',
+            'Komitmen Terhadap Pekerjaan',
+            'Kreativitas dan Inovasi',
+            'Pengembangan keahlian, ilmu pengetahuan dan pendidikan',
+            'Kegiatan Pengembangan: Team Building and Upgrading, Workshop, Pengajian bulanan, Upacara 17 Agustus (Ketidakhadiran dalam kegiatan tersebut mengurangi nilai)',
         ];
 
         foreach ($kategori as $item) {

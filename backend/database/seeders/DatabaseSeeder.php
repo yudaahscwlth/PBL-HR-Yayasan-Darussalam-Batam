@@ -18,16 +18,13 @@ class DatabaseSeeder extends Seeder
             JabatanSeeder::class,
             DepartementSeeder::class,
             TempatKerjaSeeder::class,
-            StructuredAccountSeeder::class, // New structured seeder for 31 accounts
+            StructuredAccountSeeder::class,
             KeluargaSeeder::class,
             OrangTuaSeeder::class,
             SosialMediaSeeder::class,
             UserSosialMediaSeeder::class,
-            AbsensiSeeder::class,
-            PengajuanCutiSeeder::class,
             TahunAjaranSeeder::class,
             KategoriEvaluasiSeeder::class,
-            EvaluasiSeeder::class,
             JamKerjaSeeder::class,
         ]);
     }

@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('kecamatan')->nullable();
             $table->text('alamat_lengkap')->nullable();
             $table->string('no_hp')->nullable();
+            $table->string('nomor_rekening')->nullable();
             $table->string('foto')->nullable();
             $table->timestamps();
         });
