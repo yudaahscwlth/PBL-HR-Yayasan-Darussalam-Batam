@@ -658,7 +658,7 @@ class AttendanceController extends Controller
                         'id_absensi' => $attendance->id,
                         'aksi' => 'manual_create',
                         'data_baru' => json_encode([
-                            'tanggal' => $attendance->tanggal->format('Y-m-d'),
+                            'tanggal' => Carbon::parse($attendance->tanggal)->format('Y-m-d'),
                             'status' => $attendance->status,
                             'keterangan' => $attendance->keterangan,
                             'file_pendukung' => $attendance->file_pendukung,
@@ -746,7 +746,7 @@ class AttendanceController extends Controller
             'data' => [
                 'attendance' => [
                     'id' => $attendance->id,
-                    'tanggal' => $attendance->tanggal->format('Y-m-d'),
+                    'tanggal' => Carbon::parse($attendance->tanggal)->format('Y-m-d'),
                     'status' => $attendance->status,
                     'check_in' => $attendance->check_in ? $attendance->check_in->format('Y-m-d H:i:s') : null,
                     'check_out' => $attendance->check_out ? $attendance->check_out->format('Y-m-d H:i:s') : null,
