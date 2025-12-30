@@ -1,7 +1,7 @@
 {
   "name": "HR Darussalam",
   "short_name": "HR Darussalam",
-  "description": "Sistem Manajemen HR Darussalam - Kelola absensi, cuti, dan evaluasi pegawai",
+  "description": "Sistem Informasi HR Yayasan Darussalam Batam - Kelola absensi, cuti, dan evaluasi pegawai secara digital",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -57,36 +57,8 @@
       "purpose": "any maskable"
     }
   ],
-  "shortcuts": [
-    {
-      "name": "Absensi",
-      "short_name": "Absensi",
-      "description": "Check-in dan check-out absensi",
-      "url": "/absensi",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Pengajuan Cuti",
-      "short_name": "Cuti",
-      "description": "Ajukan cuti pegawai",
-      "url": "/cuti",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
-    }
-  ],
-  "categories": ["business", "productivity"],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "/screenshots/mobile.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
+  "categories": [
+    "business",
+    "productivity"
   ]
 }
-

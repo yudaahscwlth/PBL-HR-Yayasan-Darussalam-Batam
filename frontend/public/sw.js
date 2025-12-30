@@ -1,15 +1,17 @@
 // Service Worker untuk HR Darussalam PWA - Next.js Optimized
-const STATIC_CACHE = "hr-darussalam-static-v4";
-const DYNAMIC_CACHE = "hr-darussalam-dynamic-v4";
-const OFFLINE_CACHE = "hr-darussalam-offline-v4";
+const STATIC_CACHE = "hr-darussalam-static-v20";
+const DYNAMIC_CACHE = "hr-darussalam-dynamic-v20";
+const OFFLINE_CACHE = "hr-darussalam-offline-v20";
 
-// Essential URLs to cache immediately
+// Essential URLs to cache immediately (static assets only, NOT HTML pages)
+// Note: Do NOT cache "/" as Next.js pages need proper hydration
 const STATIC_ASSETS = [
-  "/",
+  "/offline.html",
   "/manifest.json",
+  "/favicon.ico",
+  "/icons/logo-original.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
-  // Remove HTML files since Next.js uses routing
 ];
 
 // Next.js specific assets patterns
@@ -20,14 +22,22 @@ const NEXTJS_ASSETS = [
   '/_next/static/js/',
 ];
 
-// Install event - cache static assets
+// Install event - cache static assets including offline page
 self.addEventListener("install", (event) => {
   console.log("[SW] Install event triggered");
-  
+
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
+    caches.open(STATIC_CACHE).then(async (cache) => {
       console.log("[SW] Caching static assets");
-      return cache.addAll(STATIC_ASSETS);
+      // Cache each asset individually to handle failures gracefully
+      for (const url of STATIC_ASSETS) {
+        try {
+          await cache.add(url);
+          console.log(`[SW] Cached: ${url}`);
+        } catch (error) {
+          console.warn(`[SW] Failed to cache ${url}:`, error);
+        }
+      }
     }).then(() => {
       console.log("[SW] All static assets cached");
       return self.skipWaiting();
@@ -38,14 +48,14 @@ self.addEventListener("install", (event) => {
 // Activate event - clean up old caches
 self.addEventListener("activate", (event) => {
   console.log("[SW] Activate event triggered");
-  
+
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== STATIC_CACHE && 
-              cacheName !== DYNAMIC_CACHE && 
-              cacheName !== OFFLINE_CACHE) {
+          if (cacheName !== STATIC_CACHE &&
+            cacheName !== DYNAMIC_CACHE &&
+            cacheName !== OFFLINE_CACHE) {
             console.log("[SW] Deleting old cache:", cacheName);
             return caches.delete(cacheName);
           }
@@ -110,7 +120,7 @@ function getCacheStrategy(request) {
 // Network-first strategy with timeout
 async function networkFirst(request) {
   const TIMEOUT = 8000; // 8 second timeout
-  
+
   try {
     // Create timeout promise
     const timeoutPromise = new Promise((_, reject) => {
@@ -130,39 +140,39 @@ async function networkFirst(request) {
         console.warn("[SW] Failed to cache response:", err);
       });
     }
-    
+
     return networkResponse;
   } catch (error) {
     console.log("[SW] Network failed, trying cache:", error.message);
-    
+
     // Try to get from cache
     const cachedResponse = await caches.match(request);
-    
+
     if (cachedResponse) {
       console.log("[SW] Serving from cache:", request.url);
       return cachedResponse;
     }
-    
-    // Special handling for navigation requests
+
+    // Special handling for navigation requests - serve inline offline page
     if (request.mode === "navigate" || request.destination === "document") {
-      console.log("[SW] Navigation request offline, serving offline page");
+      console.log("[SW] Navigation request offline, serving inline offline page");
       return serveOfflinePage();
     }
-    
+
     // For API requests, return proper error
     if (request.url.includes('/api/')) {
       return new Response(
-        JSON.stringify({ 
-          error: "Offline", 
-          message: "Tidak dapat terhubung ke server" 
+        JSON.stringify({
+          error: "Offline",
+          message: "Tidak dapat terhubung ke server"
         }),
-        { 
+        {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
         }
       );
     }
-    
+
     return new Response("Offline - No cached data available", {
       status: 503,
       statusText: "Service Unavailable",
@@ -175,16 +185,16 @@ async function networkFirst(request) {
 async function cacheFirst(request) {
   // Try cache first
   const cachedResponse = await caches.match(request);
-  
+
   if (cachedResponse) {
     console.log("[SW] Cache hit:", request.url);
     return cachedResponse;
   }
-  
+
   // If not in cache, try network
   try {
     const networkResponse = await fetch(request);
-    
+
     if (networkResponse && networkResponse.status === 200) {
       // Cache the new response
       const cache = await caches.open(STATIC_CACHE);
@@ -192,24 +202,24 @@ async function cacheFirst(request) {
         console.warn("[SW] Failed to cache static asset:", err);
       });
     }
-    
+
     return networkResponse;
   } catch (error) {
     console.log("[SW] Network failed for cache-first request:", request.url);
-    
+
     // Return appropriate fallbacks based on request type
     if (request.destination === "image") {
       return getPlaceholderImage();
     }
-    
+
     if (request.destination === "style") {
       return getEmptyCSS();
     }
-    
+
     if (request.destination === "script") {
       return getEmptyJS();
     }
-    
+
     // For fonts, return empty response to avoid console errors
     if (request.destination === "font") {
       return new Response('', {
@@ -217,7 +227,7 @@ async function cacheFirst(request) {
         statusText: 'Font not available offline'
       });
     }
-    
+
     throw error;
   }
 }
@@ -225,7 +235,7 @@ async function cacheFirst(request) {
 // Stale-while-revalidate strategy
 async function staleWhileRevalidate(request) {
   const cachedResponse = await caches.match(request);
-  
+
   // Always try to update cache in background
   const fetchPromise = fetch(request).then(async (networkResponse) => {
     if (networkResponse && networkResponse.status === 200) {
@@ -238,21 +248,33 @@ async function staleWhileRevalidate(request) {
   }).catch(err => {
     console.warn("[SW] Background update failed:", err);
   });
-  
+
   // Return cached response immediately, or wait for network
   return cachedResponse || fetchPromise;
 }
 
-// Offline page response
+// Offline page response - tries cache first, then simple fallback
 async function serveOfflinePage() {
   try {
-    // Try to get cached offline page
-    const offlineResponse = await caches.match('/pwa/offline');
-    if (offlineResponse) {
-      return offlineResponse;
+    // Try to get offline.html from cache
+    const cachedOffline = await caches.match('/offline.html');
+    if (cachedOffline) {
+      console.log("[SW] Serving offline.html from cache");
+      return cachedOffline;
     }
-    
-    // Fallback to simple offline page
+
+    // Try to fetch offline.html (might work on slow connections)
+    try {
+      const fetchedOffline = await fetch('/offline.html');
+      if (fetchedOffline && fetchedOffline.ok) {
+        return fetchedOffline;
+      }
+    } catch (e) {
+      console.log("[SW] Cannot fetch offline.html");
+    }
+
+    // Simple fallback if offline.html is not available
+    console.log("[SW] Serving simple fallback offline page");
     return new Response(
       `<!DOCTYPE html>
       <html lang="id">
@@ -261,69 +283,49 @@ async function serveOfflinePage() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>HR Darussalam - Offline</title>
         <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%);
             min-height: 100vh;
-            margin: 0;
-            padding: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            text-align: center;
+            padding: 20px;
           }
-          .container {
-            background: rgba(255,255,255,0.1);
-            padding: 40px 30px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-          }
-          .icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-          }
-          h1 {
-            margin: 0 0 16px 0;
-            font-size: 24px;
-            font-weight: 600;
-          }
-          p {
-            margin: 0 0 24px 0;
-            opacity: 0.9;
-            line-height: 1.5;
-          }
-          button {
+          .card {
             background: white;
-            color: #667eea;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+          }
+          .icon { font-size: 64px; margin-bottom: 20px; }
+          h1 { color: #1e40af; font-size: 24px; margin-bottom: 10px; }
+          p { color: #6b7280; font-size: 14px; margin-bottom: 20px; }
+          button {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            font-size: 14px;
-            transition: transform 0.2s;
+            width: 100%;
           }
-          button:hover {
-            transform: translateY(-2px);
-          }
-          button:active {
-            transform: translateY(0);
-          }
+          button:hover { opacity: 0.9; }
         </style>
       </head>
       <body>
-        <div class="container">
+        <div class="card">
           <div class="icon">📶</div>
-          <h1>Koneksi Terputus</h1>
-          <p>Anda sedang offline. Beberapa fitur mungkin tidak tersedia. Pastikan perangkat terhubung ke internet untuk pengalaman terbaik.</p>
-          <button onclick="window.location.reload()">Coba Lagi</button>
+          <h1>Mode Offline</h1>
+          <p>Anda sedang tidak terhubung ke internet.<br>Periksa koneksi dan coba lagi.</p>
+          <button onclick="window.location.reload()">🔄 Coba Lagi</button>
         </div>
         <script>
-          // Auto-retry when online
           window.addEventListener('online', function() {
             window.location.reload();
           });
@@ -333,7 +335,7 @@ async function serveOfflinePage() {
       {
         status: 200,
         statusText: "OK",
-        headers: { 
+        headers: {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'no-cache'
         }
@@ -341,15 +343,10 @@ async function serveOfflinePage() {
     );
   } catch (error) {
     console.error("[SW] Failed to serve offline page:", error);
-    
-    // Ultimate fallback
-    return new Response(
-      "Anda sedang offline. Silakan cek koneksi internet Anda.",
-      {
-        status: 200,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-      }
-    );
+    return new Response("Anda sedang offline. Silakan cek koneksi internet Anda.", {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
   }
 }
 
@@ -363,7 +360,7 @@ function getPlaceholderImage() {
       </text>
     </svg>`,
     {
-      headers: { 
+      headers: {
         "Content-Type": "image/svg+xml",
         "Cache-Control": "public, max-age=86400"
       }
@@ -375,7 +372,7 @@ function getEmptyCSS() {
   return new Response(
     "/* CSS not available offline */",
     {
-      headers: { 
+      headers: {
         "Content-Type": "text/css",
         "Cache-Control": "public, max-age=300"
       }
@@ -387,7 +384,7 @@ function getEmptyJS() {
   return new Response(
     "// JS not available offline",
     {
-      headers: { 
+      headers: {
         "Content-Type": "application/javascript",
         "Cache-Control": "public, max-age=300"
       }
@@ -413,7 +410,7 @@ self.addEventListener("fetch", (event) => {
       'fonts.gstatic.com',
       'unpkg.com'
     ];
-    
+
     if (!allowedCDNs.some(cdn => url.hostname.includes(cdn))) {
       return;
     }
@@ -425,9 +422,9 @@ self.addEventListener("fetch", (event) => {
   }
 
   const strategy = getCacheStrategy(request);
-  
+
   console.log(`[SW] ${strategy}: ${request.url}`);
-  
+
   event.respondWith(
     (async () => {
       try {
@@ -444,14 +441,14 @@ self.addEventListener("fetch", (event) => {
         }
       } catch (error) {
         console.error("[SW] Fetch strategy failed:", error);
-        
+
         // Final fallback for navigation requests
         if (request.mode === "navigate" || request.destination === "document") {
           return serveOfflinePage();
         }
-        
+
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: "Service unavailable",
             message: "Tidak dapat memuat resource yang diminta"
           }),
@@ -469,7 +466,7 @@ self.addEventListener("fetch", (event) => {
 // Background sync event
 self.addEventListener("sync", (event) => {
   console.log("[SW] Background sync event:", event.tag);
-  
+
   if (event.tag === "sync-data") {
     event.waitUntil(syncOfflineData());
   }
@@ -479,7 +476,7 @@ self.addEventListener("sync", (event) => {
 async function syncOfflineData() {
   try {
     console.log("[SW] Starting background sync...");
-    
+
     // Notify clients about sync start
     const allClients = await self.clients.matchAll();
     allClients.forEach(client => {
@@ -489,11 +486,11 @@ async function syncOfflineData() {
         timestamp: new Date().toISOString()
       });
     });
-    
+
     // Here you would implement actual sync logic with your API
     // For now, simulate sync process
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     // Notify completion
     allClients.forEach(client => {
       client.postMessage({
@@ -502,11 +499,11 @@ async function syncOfflineData() {
         timestamp: new Date().toISOString()
       });
     });
-    
+
     console.log("[SW] Background sync completed");
   } catch (error) {
     console.error("[SW] Background sync failed:", error);
-    
+
     // Notify error
     const allClients = await self.clients.matchAll();
     allClients.forEach(client => {
@@ -553,13 +550,13 @@ self.addEventListener("push", (event) => {
 // Notification click event
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  
+
   if (event.action === "dismiss") {
     return;
   }
-  
+
   const urlToOpen = event.notification.data.url || "/";
-  
+
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((clientList) => {
       // If a window is already open, focus it
@@ -568,7 +565,7 @@ self.addEventListener("notificationclick", (event) => {
           return client.focus();
         }
       }
-      
+
       // Otherwise, open a new window
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
@@ -580,11 +577,11 @@ self.addEventListener("notificationclick", (event) => {
 // Handle messages from clients
 self.addEventListener("message", (event) => {
   const { data } = event;
-  
+
   if (data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
-  
+
   if (data.type === "GET_VERSION") {
     event.ports[0]?.postMessage({
       type: "VERSION",
@@ -592,7 +589,7 @@ self.addEventListener("message", (event) => {
       cacheVersion: STATIC_CACHE
     });
   }
-  
+
   if (data.type === "CACHE_URLS") {
     // Cache additional URLs on demand
     const urlsToCache = data.urls || [];

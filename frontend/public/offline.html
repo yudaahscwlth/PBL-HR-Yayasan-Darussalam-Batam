@@ -1,97 +1,479 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Offline - HR Darussalam</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
 
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Oxygen, Ubuntu, Cantarell, sans-serif;
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HR Darussalam - Offline</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-      .container {
-        background: white;
-        border-radius: 20px;
-        padding: 40px;
-        max-width: 500px;
-        text-align: center;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      }
+    body {
+      font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
 
-      .icon {
-        font-size: 80px;
-        margin-bottom: 20px;
-      }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
 
-      h1 {
-        color: #1e40af;
-        font-size: 28px;
-        margin-bottom: 15px;
-      }
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-      p {
-        color: #6b7280;
-        font-size: 16px;
-        line-height: 1.6;
-        margin-bottom: 30px;
-      }
+    .logo {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 12px;
+      background: white;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
 
-      .button {
-        background: #1e40af;
-        color: white;
-        border: none;
-        padding: 15px 30px;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.3s;
-      }
+    .logo img {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+    }
 
-      .button:hover {
-        background: #1e3a8a;
-      }
+    .header h1 {
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
 
-      .logo {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 20px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="icon">📡</div>
-      <h1>Tidak Ada Koneksi Internet</h1>
-      <p>
-        Mohon maaf, Anda sedang offline. Aplikasi HR Darussalam memerlukan
-        koneksi internet untuk berfungsi dengan baik.
-      </p>
-      <p>Silakan periksa koneksi internet Anda dan coba lagi.</p>
-      <button class="button" onclick="window.location.reload()">
-        🔄 Coba Lagi
-      </button>
+    .header p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 13px;
+    }
+
+    /* Status Banner */
+    .status-banner {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    }
+
+    .status-icon {
+      font-size: 24px;
+    }
+
+    .status-text h3 {
+      color: #78350f;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .status-text p {
+      color: #92400e;
+      font-size: 12px;
+    }
+
+    /* Card */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #1e40af;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .card-title span {
+      font-size: 18px;
+    }
+
+    /* About Section */
+    .about-text {
+      color: #4b5563;
+      font-size: 12px;
+      line-height: 1.7;
+      text-align: justify;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .feature-item {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .feature-title {
+      color: #1e40af;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .feature-desc {
+      color: #6b7280;
+      font-size: 10px;
+    }
+
+    /* Feature List */
+    .feature-list {
+      list-style: none;
+    }
+
+    .feature-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      color: #374151;
+      font-size: 12px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+
+    .feature-list li span {
+      color: #3b82f6;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* PWA Info */
+    .pwa-info {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .pwa-info h4 {
+      color: #1e40af;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pwa-info p {
+      color: #4b5563;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    /* Actions */
+    .actions {
+      margin-top: 16px;
+    }
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 10px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1e40af, #3b82f6);
+      color: white;
+      box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 11px;
+    }
+
+    .footer p {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <img src="/icons/logo-original.png" alt="HR Darussalam"
+          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🏫</text></svg>'" />
+      </div>
+      <h1>HR Darussalam</h1>
+      <p>Yayasan Darussalam Batam</p>
     </div>
 
-    <script>
-      // Auto reload ketika online
-      window.addEventListener("online", () => {
-        window.location.reload();
-      });
-    </script>
-  </body>
-</html>
+    <!-- Status Banner -->
+    <div class="status-banner">
+      <div class="status-icon">⚠️</div>
+      <div class="status-text">
+        <h3>Mode Offline</h3>
+        <p>Anda sedang tidak terhubung ke internet</p>
+      </div>
+    </div>
 
+    <!-- User Info Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>👤</span> Data Pengguna Tersimpan
+      </div>
+      <div id="userInfo" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="color: #6b7280; font-size: 11px; display: block;">Nama</label>
+            <span id="userName" style="color: #1e40af; font-weight: 600; font-size: 13px;">-</span>
+          </div>
+          <div>
+            <label style="color: #6b7280; font-size: 11px; display: block;">Email</label>
+            <span id="userEmail" style="color: #1e40af; font-weight: 600; font-size: 13px;">-</span>
+          </div>
+          <div>
+            <label style="color: #6b7280; font-size: 11px; display: block;">Role</label>
+            <span id="userRole" style="color: #1e40af; font-weight: 600; font-size: 13px;">-</span>
+          </div>
+          <div>
+            <label style="color: #6b7280; font-size: 11px; display: block;">Login Terakhir</label>
+            <span id="lastLogin" style="color: #1e40af; font-weight: 600; font-size: 13px;">-</span>
+          </div>
+        </div>
+      </div>
+      <div id="noData" style="text-align: center; padding: 16px; color: #6b7280;">
+        <span style="font-size: 32px; display: block; margin-bottom: 8px;">📂</span>
+        <p style="font-size: 13px;">Tidak ada data tersimpan</p>
+        <p style="font-size: 11px; margin-top: 4px;">Login saat online untuk menyimpan data offline</p>
+      </div>
+    </div>
+
+    <!-- About Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>ℹ️</span> Tentang Aplikasi
+      </div>
+      <p class="about-text">
+        Sistem Informasi HR Yayasan Darussalam Batam adalah aplikasi modern berbasis Progressive Web App (PWA) yang
+        dirancang khusus untuk membantu pengelolaan Sumber Daya Manusia di lingkungan Yayasan Darussalam Batam secara
+        digital, efisien, dan terintegrasi.
+      </p>
+
+      <!-- Features Grid -->
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">👥</div>
+          <div class="feature-title">Manajemen Pegawai</div>
+          <div class="feature-desc">Data lengkap pegawai</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">⏰</div>
+          <div class="feature-title">Absensi Digital</div>
+          <div class="feature-desc">Check-in & check-out</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📅</div>
+          <div class="feature-title">Pengajuan Cuti</div>
+          <div class="feature-desc">Cuti & izin online</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          <div class="feature-title">Evaluasi Kinerja</div>
+          <div class="feature-desc">Penilaian pegawai</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features List Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>⭐</span> Fitur Lengkap Aplikasi
+      </div>
+      <ul class="feature-list">
+        <li><span>📊</span> Dashboard interaktif dengan statistik real-time</li>
+        <li><span>📷</span> Absensi dengan lokasi GPS dan foto selfie</li>
+        <li><span>📅</span> Riwayat absensi harian, mingguan, dan bulanan</li>
+        <li><span>✉️</span> Pengajuan cuti dengan alur persetujuan bertahap</li>
+        <li><span>👤</span> Profil pegawai dengan data pribadi lengkap</li>
+        <li><span>🔔</span> Notifikasi real-time untuk update penting</li>
+        <li><span>📱</span> Siap pakai di semua perangkat dengan PWA</li>
+      </ul>
+
+      <!-- PWA Info -->
+      <div class="pwa-info">
+        <h4>📲 Tentang PWA</h4>
+        <p>
+          Aplikasi ini adalah Progressive Web App (PWA) yang dapat diinstall di perangkat Anda seperti aplikasi native.
+          PWA memungkinkan akses cepat, notifikasi push, dan penggunaan offline untuk data yang sudah tersimpan.
+        </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="btn-primary" onclick="window.location.reload()">
+          🔄 Coba Lagi
+        </button>
+        <button class="btn-secondary" onclick="history.back()">
+          ← Kembali
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>© 2025 Yayasan Darussalam Batam</p>
+      <p>Dikembangkan dengan ❤️ untuk kemajuan pendidikan</p>
+    </div>
+  </div>
+
+  <script>
+    // Load user data from localStorage/cookies
+    function loadUserData() {
+      try {
+        var userData = null;
+
+        // Try cookie
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+          var parts = cookies[i].trim().split('=');
+          if (parts[0] === 'user_data') {
+            try { userData = JSON.parse(decodeURIComponent(parts[1])); } catch (e) { }
+          }
+        }
+
+        // Try localStorage
+        var authStorage = localStorage.getItem('auth-storage');
+        if (authStorage) {
+          try {
+            var authData = JSON.parse(authStorage);
+            if (authData.state && authData.state.user) {
+              userData = authData.state.user;
+            }
+          } catch (e) { }
+        }
+
+        if (userData) {
+          document.getElementById('userInfo').style.display = 'block';
+          document.getElementById('noData').style.display = 'none';
+
+          document.getElementById('userName').textContent =
+            (userData.profile_pribadi && userData.profile_pribadi.nama_lengkap) || userData.name || 'Tidak tersedia';
+          document.getElementById('userEmail').textContent = userData.email || 'Tidak tersedia';
+
+          var roles = userData.roles || [];
+          document.getElementById('userRole').textContent =
+            roles.length > 0 ? roles.map(function (r) { return r.charAt(0).toUpperCase() + r.slice(1); }).join(', ') : 'Tidak tersedia';
+
+          var lastLoginTime = localStorage.getItem('lastLoginTime');
+          if (lastLoginTime) {
+            var date = new Date(lastLoginTime);
+            document.getElementById('lastLogin').textContent =
+              date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          }
+        } else {
+          document.getElementById('userInfo').style.display = 'none';
+          document.getElementById('noData').style.display = 'block';
+        }
+      } catch (e) {
+        console.log('Error:', e);
+        document.getElementById('noData').style.display = 'block';
+      }
+    }
+
+    // Logout and redirect to login when back online
+    function handleOnlineEvent() {
+      // Clear auth data for security
+      try {
+        localStorage.removeItem('auth-storage');
+        localStorage.removeItem('auth_token');
+        document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'user_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      } catch (e) {
+        console.log('Error clearing auth:', e);
+      }
+
+      // Redirect to login page
+      setTimeout(function () {
+        window.location.replace('/');
+      }, 1000);
+    }
+
+    // Listen for online event
+    window.addEventListener('online', handleOnlineEvent);
+
+    // Check connection periodically
+    setInterval(function () {
+      if (navigator.onLine) {
+        handleOnlineEvent();
+      }
+    }, 3000);
+
+    // Load data on page load
+    loadUserData();
+  </script>
+</body>
+
+</html>

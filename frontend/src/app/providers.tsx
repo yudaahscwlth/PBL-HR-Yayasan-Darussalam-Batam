@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import RegisterServiceWorker from "../components/RegisterServiceWorker";
-import NetworkStatus from "@/components/NetworkStatus";
+import OfflineDetector from "@/components/OfflineDetector";
 import { Toaster } from "react-hot-toast";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -18,11 +18,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }, [checkAuth]);
 
   return (
-    <>
-      <NetworkStatus />
+    <OfflineDetector>
       <RegisterServiceWorker />
       {isMounted && <Toaster position="top-right" />}
       {children}
-    </>
+    </OfflineDetector>
   );
 }

@@ -4,6 +4,19 @@ import { AuthState, User, LoginRequest, UserRole } from "@/types/auth";
 import { apiClient } from "@/lib/api";
 import { offlineStorage } from "@/lib/offlineStorage";
 
+// Cookie utility functions for middleware auth sync
+const setCookie = (name: string, value: string, days = 7) => {
+  if (typeof document === "undefined") return;
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+};
+
+const clearCookie = (name: string) => {
+  if (typeof document === "undefined") return;
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+};
+
 interface AuthStore extends AuthState {
   // Additional methods for role-based access
   hasRole: (role: UserRole) => boolean;
@@ -32,10 +45,19 @@ export const useAuthStore = create<AuthStore>()(
           const response = await apiClient.auth.login(credentials.email, credentials.password);
 
           if (response.success && response.user) {
-            // Store token if provided
+            // Store token in localStorage and cookie for middleware
             if (response.token) {
               localStorage.setItem("auth_token", response.token);
+              setCookie("auth_token", response.token, 7);
             }
+
+            // Store user data in cookie for middleware auth
+            const userDataForCookie = {
+              id: response.user.id,
+              email: response.user.email,
+              roles: response.user.roles || [],
+            };
+            setCookie("user_data", JSON.stringify(userDataForCookie), 7);
 
             set({
               user: response.user,
@@ -51,8 +73,8 @@ export const useAuthStore = create<AuthStore>()(
               try {
                 const attendanceResponse = await apiClient.attendance.getHistory();
                 if (attendanceResponse.success && attendanceResponse.data) {
-                  attendanceData = Array.isArray(attendanceResponse.data) 
-                    ? attendanceResponse.data 
+                  attendanceData = Array.isArray(attendanceResponse.data)
+                    ? attendanceResponse.data
                     : [];
                 }
               } catch (attendanceError) {
@@ -93,6 +115,10 @@ export const useAuthStore = create<AuthStore>()(
           // Clear local storage
           localStorage.removeItem("auth_token");
           localStorage.removeItem("user_data");
+
+          // Clear cookies for middleware
+          clearCookie("auth_token");
+          clearCookie("user_data");
 
           set({
             user: null,

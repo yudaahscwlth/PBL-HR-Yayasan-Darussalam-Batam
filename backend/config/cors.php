@@ -25,11 +25,16 @@ return [
         'http://localhost:3001',
         'http://127.0.0.1:3001',
         'http://192.168.100.5:3001',
+        'http://192.168.100.69:3000',
+        'http://10.172.22.210:3000',
         'http://localhost:8000',
         'http://127.0.0.1:8000',
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '/^http:\/\/192\.168\.\d+\.\d+:\d+$/',
+        '/^http:\/\/10\.\d+\.\d+\.\d+:\d+$/',
+    ],
 
     'allowed_headers' => ['*'],
 

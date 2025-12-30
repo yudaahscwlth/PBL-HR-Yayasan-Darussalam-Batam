@@ -7,10 +7,18 @@ export class OfflineStorage {
   private isInitialized = false;
 
   constructor() {
-    this.initDB().catch(console.error);
+    // Only initialize in browser environment
+    if (typeof window !== "undefined" && typeof indexedDB !== "undefined") {
+      this.initDB().catch(console.error);
+    }
   }
 
   private async initDB(): Promise<void> {
+    // Skip if not in browser
+    if (typeof window === "undefined" || typeof indexedDB === "undefined") {
+      return;
+    }
+
     if (this.isInitialized) return;
 
     return new Promise((resolve, reject) => {
