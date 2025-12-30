@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreign('id_user')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');
             $table->date('tanggal');
             $table->decimal('total_gaji', 15, 2);
-            $table->string('nomor_rekening')->nullable();
             $table->text('keterangan')->nullable();
             $table->timestamps();
             $table->softDeletes();
